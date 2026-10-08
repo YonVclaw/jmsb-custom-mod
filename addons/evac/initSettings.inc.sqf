@@ -2,7 +2,7 @@
 
 [
     QGVAR(enabled), "CHECKBOX",
-    ["Enable Medic Evac", "Master toggle for the medic 'Evacuate (Reinforce)' action that replaces respawn."],
+    ["Enable Medic Evac", "Master toggle for the medic 'Evacuate (Reinforce)' action that replaces respawn. Stands down on its own when Advanced Combat Medicine (ACM) is loaded, which brings its own evacuation."],
     ["1st Joint Multi-Functional Strike Battalion", "Evac"],
     true,   // default
     true    // isGlobal

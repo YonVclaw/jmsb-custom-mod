@@ -1,5 +1,15 @@
 #include "script_component.hpp"
 
+// ACM BRINGS ITS OWN EVACUATION - ACM_evacuation, litters and all - so with it
+// loaded this system stands down entirely (user, 2026-10-08: "with acm loaded
+// we need to disable our medivac system"): no server handler, no casualty
+// clone, and FUNC(canConvert) keeps the action off the menu. The setting
+// stays visible; it has nothing to switch on.
+if (missionNamespace getVariable [QEGVAR(patches,usesACM), false]) exitWith {
+    INFO("ACM loaded - medic evac stands down");
+};
+
+
 // --- server: build the injured AI casualty clone + heal the player onto the medic
 // Runs on the server, which can read the casualty's ACE medical vars (they are all
 // broadcast) and owns the AI it creates.

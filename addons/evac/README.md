@@ -6,6 +6,9 @@ Medic-gated evacuation replacing respawn: a medic heals the real player
 onto themselves and a permanently unconscious clone is left behind carrying the
 same loadout and injuries.
 
+With Advanced Combat Medicine (ACM) loaded the whole system stands down - ACM
+brings its own evacuation - and the action never appears.
+
 <!-- generated below this line by tools/gen_addon_readmes.py - do not edit -->
 
 ## Requires

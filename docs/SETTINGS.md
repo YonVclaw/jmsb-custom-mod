@@ -126,7 +126,7 @@ ships with, which a mission or the forced list below can override.
 
 | Setting | Type | Category | Default | What it does |
 |---|---|---|---|---|
-| Enable Medic Evac | CHECKBOX | 1st Joint Multi-Functional Strike Battalion > Evac | `true` | Master toggle for the medic 'Evacuate (Reinforce)' action that replaces respawn. |
+| Enable Medic Evac | CHECKBOX | 1st Joint Multi-Functional Strike Battalion > Evac | `true` | Master toggle for the medic 'Evacuate (Reinforce)' action that replaces respawn. Stands down on its own when Advanced Combat Medicine (ACM) is loaded, |
 | Medics Only | CHECKBOX | 1st Joint Multi-Functional Strike Battalion > Evac | `true` | If checked, only ACE medics can evacuate a downed player. Uncheck to let anyone do it. |
 | Evac Time (s) | SLIDER | 1st Joint Multi-Functional Strike Battalion > Evac | `[0, 60, EVAC_DEFAULT_TIME, 0]` | How long the medic's evacuate progress bar takes, in seconds. |
 

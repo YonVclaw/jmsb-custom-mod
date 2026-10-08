@@ -21,6 +21,8 @@ Author:
 params ["_medic", "_casualty"];
 
 if !(GVAR(enabled)) exitWith { false };
+// ACM brings its own evacuation; ours stands down behind it (see XEH_postInit).
+if (missionNamespace getVariable [QEGVAR(patches,usesACM), false]) exitWith { false };
 if (_medic isEqualTo _casualty) exitWith { false };
 if !(isPlayer _casualty) exitWith { false };
 if !(alive _casualty) exitWith { false };

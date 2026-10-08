@@ -41,6 +41,9 @@ EGVAR(patches,usesSimplex)      = isClass (configFile >> "CfgPatches" >> "sss_ma
 // reading jmfsb_patches_usesAlive gets nil, not false, when the adapter's PBO
 // was skipped for want of ALiVE_main.
 EGVAR(patches,usesACEAX)        = isClass (configFile >> "CfgPatches" >> "aceax_main");
+// Advanced Combat Medicine. jmfsb_acm sets its treatment tiers; jmfsb_evac
+// stands down behind it, because ACM brings its own evacuation.
+EGVAR(patches,usesACM)          = isClass (configFile >> "CfgPatches" >> "ACM_main");
 
 EGVAR(Staging,ZoneStatus) = false;
 GVAR(isPlayer) = hasInterface || {isPlayer player};
