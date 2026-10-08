@@ -1,0 +1,2 @@
+Everything under this folder is written by tools/aegis_port from the public Aegis, Atlas
+and OpF sources (APL-SA). Do not hand-edit it: change the generator and re-run.

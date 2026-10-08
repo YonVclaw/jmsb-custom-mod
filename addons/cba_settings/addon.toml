@@ -1,0 +1,16 @@
+# $PBOPREFIX$ IS DELIBERATELY NOT z\jmfsb\addons\cba_settings.
+#
+# CBA locates a mission's default settings by the pbo prefix alone: the file has
+# to land at cba_settings_userconfig or CBA never reads it. The prefix is a
+# contract with another mod rather than a mistake, so the check is turned off
+# for this addon and this addon only.
+ignore_pboprefix = true
+
+[rapify]
+enabled = true
+
+[binarize]
+enabled = true
+
+[asc]
+enabled = true

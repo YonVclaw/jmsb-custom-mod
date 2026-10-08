@@ -1,0 +1,34 @@
+// Backwards-compatibility aliases (visible) — old pre-side-prefix class
+// names kept as children of the renamed classes. Do not add content here.
+    class FA_ammo_62_DBP25: FA_o_ammo_62_DBP25 {};
+    class FA_ammo_62_DBP25_T_Red: FA_o_ammo_62_DBP25_T_Red {};
+    class FA_ammo_62_DBP25_T_Yellow: FA_o_ammo_62_DBP25_T_Yellow {};
+    class FA_ammo_62_DBP25_T_Green: FA_o_ammo_62_DBP25_T_Green {};
+    class FA_ammo_62_DBP25_T_White: FA_o_ammo_62_DBP25_T_White {};
+    class FA_ammo_62_DBP25_T_Blue: FA_o_ammo_62_DBP25_T_Blue {};
+    class FA_ammo_62_DBP25_T_Orange: FA_o_ammo_62_DBP25_T_Orange {};
+    class FA_ammo_62_DBP25_T_IR: FA_o_ammo_62_DBP25_T_IR {};
+    class FA_ammo_62_DBP26_AP: FA_o_ammo_62_DBP26_AP {};
+    class FA_ammo_62_DBP26_AP_T_Red: FA_o_ammo_62_DBP26_AP_T_Red {};
+    class FA_ammo_62_DBP26_AP_T_Yellow: FA_o_ammo_62_DBP26_AP_T_Yellow {};
+    class FA_ammo_62_DBP26_AP_T_Green: FA_o_ammo_62_DBP26_AP_T_Green {};
+    class FA_ammo_62_DBP26_AP_T_White: FA_o_ammo_62_DBP26_AP_T_White {};
+    class FA_ammo_62_DBP26_AP_T_Blue: FA_o_ammo_62_DBP26_AP_T_Blue {};
+    class FA_ammo_62_DBP26_AP_T_Orange: FA_o_ammo_62_DBP26_AP_T_Orange {};
+    class FA_ammo_62_DBP26_AP_T_IR: FA_o_ammo_62_DBP26_AP_T_IR {};
+    class FA_ammo_62_DBP88B: FA_o_ammo_62_DBP88B {};
+    class FA_ammo_62_DBP88B_T_Red: FA_o_ammo_62_DBP88B_T_Red {};
+    class FA_ammo_62_DBP88B_T_Yellow: FA_o_ammo_62_DBP88B_T_Yellow {};
+    class FA_ammo_62_DBP88B_T_Green: FA_o_ammo_62_DBP88B_T_Green {};
+    class FA_ammo_62_DBP88B_T_White: FA_o_ammo_62_DBP88B_T_White {};
+    class FA_ammo_62_DBP88B_T_Blue: FA_o_ammo_62_DBP88B_T_Blue {};
+    class FA_ammo_62_DBP88B_T_Orange: FA_o_ammo_62_DBP88B_T_Orange {};
+    class FA_ammo_62_DBP88B_T_IR: FA_o_ammo_62_DBP88B_T_IR {};
+    class FA_ammo_62_DBJ25_PAB: FA_o_ammo_62_DBJ25_PAB {};
+    class FA_ammo_62_DBJ25_PAB_T_Red: FA_o_ammo_62_DBJ25_PAB_T_Red {};
+    class FA_ammo_62_DBJ25_PAB_T_Yellow: FA_o_ammo_62_DBJ25_PAB_T_Yellow {};
+    class FA_ammo_62_DBJ25_PAB_T_Green: FA_o_ammo_62_DBJ25_PAB_T_Green {};
+    class FA_ammo_62_DBJ25_PAB_T_White: FA_o_ammo_62_DBJ25_PAB_T_White {};
+    class FA_ammo_62_DBJ25_PAB_T_Blue: FA_o_ammo_62_DBJ25_PAB_T_Blue {};
+    class FA_ammo_62_DBJ25_PAB_T_Orange: FA_o_ammo_62_DBJ25_PAB_T_Orange {};
+    class FA_ammo_62_DBJ25_PAB_T_IR: FA_o_ammo_62_DBJ25_PAB_T_IR {};

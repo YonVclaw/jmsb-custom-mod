@@ -1,0 +1,29 @@
+#include "script_component.hpp"
+
+class CfgPatches {
+    class ADDON {
+        name = COMPONENT_NAME;
+        units[] = {};
+        weapons[] = {};
+        requiredVersion = REQUIRED_VERSION;
+        requiredAddons[] = {
+            "ace_ballistics",
+            "jmfsb_fa_main",
+            "jmfsb_fa_ammo",           // .50 vehicle belts
+            "jmfsb_fa_mediumcaliber",  // 30mm + 35mm natures
+            "jmfsb_fa_maincaliber",    // 105mm MGS rounds
+            "jmfsb_fa_missiles",       // Titan-rack SAMs + 1Rnd tube variants
+            "vve_core",               // target vehicle weapons
+            "cba_main"
+        };
+        author = QAUTHOR;
+        VERSION_CONFIG;
+        skipWhenMissingDependencies = 1;
+        // Pure wiring compat: appends existing FA magazines onto VVE weapons.
+        // Defines no new magazines/ammo of its own.
+        ammo[] = {};
+        magazines[] = {};
+    };
+};
+
+#include "CfgWeapons.hpp"

@@ -1,0 +1,41 @@
+#include "script_component.hpp"
+/*
+ * Author: CPL.Brostrom.A -- Tinkered with by YonV
+ * The mission's postInit, as an addon's - was scripts\postInit.sqf.
+ */
+
+if (is3DEN) exitWith {};
+
+INFO("postInit","Initializing...");
+
+call FUNC(playerpost);
+
+// THE BATTALION PATCH ON EVERY UNIFORM (FUNC(unitPatch)). CBA's loadout event
+// fires on spawn, respawn, the arsenal and any uniform swap, which are every
+// moment a shoulder can come up bare.
+if (hasInterface) then {
+    ["loadout", {
+        params ["_unit"];
+        [_unit] call FUNC(unitPatch);
+    }, true] call CBA_fnc_addPlayerEventHandler;
+};
+
+// THE TWELVE JMSB ZEN MODULES REGISTER HERE, AND NOT IN preInit, WHICH IS WHERE
+// THEY WERE. `zen_custom_modules_fnc_register` is not reliably there to be
+// called that early: the registration either never reached Zeus's module tree
+// or was dropped when ZEN built its own, so the modules showed nothing to fill
+// in and did nothing when placed - even though ten of the twelve open a proper
+// `zen_dialog_fnc_create` card and every target function exists. Every other
+// addon here already registers at postInit: `respawn`, `patrol_base`,
+// `teleport`. This was the odd one out.
+call FUNC(zenModuels);
+
+// THE RADAR NETWORK (2026-09-09). Server only, and it says so itself. Here
+// rather than in the mission's initServer.sqf, which is where these twenty
+// lines used to be copied into every mission - the classes are a CBA setting
+// now, so the mod owns the wiring too.
+if (isServer) then {
+    call FUNC(radarNetwork);
+};
+
+INFO("postInit","Initialization completed.");

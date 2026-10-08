@@ -1,0 +1,11 @@
+PREP(buildIndex);
+PREP(panelControl);
+PREP(collapsePanel);
+PREP(layout);
+PREP(resolve);
+PREP(buildOptions);
+PREP(refreshChecks);
+PREP(refreshOptions);
+PREP(onValueButton);
+PREP(pickVariant);
+PREP(onRightPanelFilled);

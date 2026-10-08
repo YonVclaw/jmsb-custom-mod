@@ -1,0 +1,42 @@
+#include "script_component.hpp"
+/*
+ * Author: YonV
+ * Restricts marking on the vanilla map:
+ *  - Players may draw and place icons in the DIRECT channel only (personal, close-proximity).
+ *  - Markers in any other channel (global/side/command/group/vehicle) are
+ *    deleted, unless the player is an admin (the admin panel's list or a
+ *    logged-in server admin, e.g. importing map data). Sharing a marker is
+ *    TAC//PAD's job.
+ *
+ * THERE IS NO cTab. This used to let a cTab device through by name and the
+ * comment outlived the code by a month (2026-09-09); the check below has not
+ * mentioned one for as long.
+ * Script/Zeus markers (not "_USER_DEFINED") are never touched.
+ *
+ * Example:
+ * call jmfsb_init_fnc_mapDrawing
+ *
+ * Public: No
+ */
+
+if (!hasInterface) exitWith {};
+
+#define CHANNEL_DIRECT 5
+
+addMissionEventHandler ["MarkerCreated", {
+    params ["_marker", "_channelNumber", "_owner", "_local"];
+
+    if (!_local) exitWith {};                        // only police markers created on this machine
+    if !("_USER_DEFINED" in _marker) exitWith {};    // ignore script/Zeus markers
+    if (_channelNumber == CHANNEL_DIRECT) exitWith {}; // direct channel - personal marking allowed
+
+    if (call BIS_fnc_admin > 0) exitWith {};         // logged-in/voted server admin
+    if (!isNil "admp_fnc_isAdmin" && {[player] call admp_fnc_isAdmin}) exitWith {};
+
+    deleteMarker _marker;
+    [
+        "Map Marking",
+        "Limited to the DIRECT channel. Use TAC//PAD to share markers with your side or group.",
+        NOTE_BAD
+    ] call JMFSBFUNC(notify,notify);
+}];

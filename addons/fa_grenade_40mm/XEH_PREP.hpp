@@ -1,0 +1,12 @@
+PREP(init);
+PREP(handle);
+PREP(chute);
+PREP(relay);
+PREP(emp);
+PREP(msmoke);
+PREP(decoy);
+PREP(ugs);
+PREP(jammer);
+PREP(enemiesNear);
+PREP(notify);
+PREP(jamUAV);

@@ -1,0 +1,77 @@
+// 6.2x40 caseless joins the 6.5 caseless Katiba CBA well so it feeds the mod's
+// CSAT rifles with no per-weapon patching.
+class CfgMagazineWells {
+    // Katiba rifle — 30Rnd caseless (green mag body)
+    class CBA_65x39_Katiba {
+        ADDON[] += {
+            // DBP-25 standard
+            "FA_o_30Rnd_62_DBP25",
+            "FA_30Rnd_62_DBP25",
+            "FA_o_30Rnd_62_DBP25_T_Red",
+            "FA_30Rnd_62_DBP25_T_Red",
+            "FA_o_30Rnd_62_DBP25_T_Yellow",
+            "FA_30Rnd_62_DBP25_T_Yellow",
+            "FA_o_30Rnd_62_DBP25_T_Green",
+            "FA_30Rnd_62_DBP25_T_Green",
+            "FA_o_30Rnd_62_DBP25_T_White",
+            "FA_30Rnd_62_DBP25_T_White",
+            "FA_o_30Rnd_62_DBP25_T_Blue",
+            "FA_30Rnd_62_DBP25_T_Blue",
+            "FA_o_30Rnd_62_DBP25_T_Orange",
+            "FA_30Rnd_62_DBP25_T_Orange",
+            "FA_o_30Rnd_62_DBP25_T_IR",
+            "FA_30Rnd_62_DBP25_T_IR",
+            // DBP-26 AP
+            "FA_o_30Rnd_62_DBP26_AP",
+            "FA_30Rnd_62_DBP26_AP",
+            "FA_o_30Rnd_62_DBP26_AP_T_Red",
+            "FA_30Rnd_62_DBP26_AP_T_Red",
+            "FA_o_30Rnd_62_DBP26_AP_T_Yellow",
+            "FA_30Rnd_62_DBP26_AP_T_Yellow",
+            "FA_o_30Rnd_62_DBP26_AP_T_Green",
+            "FA_30Rnd_62_DBP26_AP_T_Green",
+            "FA_o_30Rnd_62_DBP26_AP_T_White",
+            "FA_30Rnd_62_DBP26_AP_T_White",
+            "FA_o_30Rnd_62_DBP26_AP_T_Blue",
+            "FA_30Rnd_62_DBP26_AP_T_Blue",
+            "FA_o_30Rnd_62_DBP26_AP_T_Orange",
+            "FA_30Rnd_62_DBP26_AP_T_Orange",
+            "FA_o_30Rnd_62_DBP26_AP_T_IR",
+            "FA_30Rnd_62_DBP26_AP_T_IR",
+            // DBP-88B heavy
+            "FA_o_30Rnd_62_DBP88B",
+            "FA_30Rnd_62_DBP88B",
+            "FA_o_30Rnd_62_DBP88B_T_Red",
+            "FA_30Rnd_62_DBP88B_T_Red",
+            "FA_o_30Rnd_62_DBP88B_T_Yellow",
+            "FA_30Rnd_62_DBP88B_T_Yellow",
+            "FA_o_30Rnd_62_DBP88B_T_Green",
+            "FA_30Rnd_62_DBP88B_T_Green",
+            "FA_o_30Rnd_62_DBP88B_T_White",
+            "FA_30Rnd_62_DBP88B_T_White",
+            "FA_o_30Rnd_62_DBP88B_T_Blue",
+            "FA_30Rnd_62_DBP88B_T_Blue",
+            "FA_o_30Rnd_62_DBP88B_T_Orange",
+            "FA_30Rnd_62_DBP88B_T_Orange",
+            "FA_o_30Rnd_62_DBP88B_T_IR",
+            "FA_30Rnd_62_DBP88B_T_IR",
+            // DBJ-25 PAB airburst (counter-UAS)
+            "FA_o_30Rnd_62_DBJ25_PAB",
+            "FA_30Rnd_62_DBJ25_PAB",
+            "FA_o_30Rnd_62_DBJ25_PAB_T_Red",
+            "FA_30Rnd_62_DBJ25_PAB_T_Red",
+            "FA_o_30Rnd_62_DBJ25_PAB_T_Yellow",
+            "FA_30Rnd_62_DBJ25_PAB_T_Yellow",
+            "FA_o_30Rnd_62_DBJ25_PAB_T_Green",
+            "FA_30Rnd_62_DBJ25_PAB_T_Green",
+            "FA_o_30Rnd_62_DBJ25_PAB_T_White",
+            "FA_30Rnd_62_DBJ25_PAB_T_White",
+            "FA_o_30Rnd_62_DBJ25_PAB_T_Blue",
+            "FA_30Rnd_62_DBJ25_PAB_T_Blue",
+            "FA_o_30Rnd_62_DBJ25_PAB_T_Orange",
+            "FA_30Rnd_62_DBJ25_PAB_T_Orange",
+            "FA_o_30Rnd_62_DBJ25_PAB_T_IR",
+            "FA_30Rnd_62_DBJ25_PAB_T_IR"
+        };
+    };
+};

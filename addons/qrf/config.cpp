@@ -1,0 +1,22 @@
+#include "script_component.hpp"
+
+class CfgPatches {
+    class ADDON {
+        name = COMPONENT_NAME;
+        units[] = {"jmfsb_moduleQRF"};
+        weapons[] = {};
+        requiredVersion = REQUIRED_VERSION;
+        requiredAddons[] = {
+            "jmfsb_main",
+            "jmfsb_common",
+            "jmfsb_notify",
+            "cba_xeh"
+        };
+        skipWhenMissingDependencies = 1;
+        author = QAUTHOR;
+        VERSION_CONFIG;
+    };
+};
+
+#include "CfgEventHandlers.hpp"
+#include "CfgVehicles.hpp"

@@ -1,0 +1,49 @@
+#include "script_component.hpp"
+/* ----------------------------------------------------------------------------
+Function: jmfsb_pac_fnc_bootLog
+
+Description:
+    One line of the boot sequence, where it can be seen: the .rpt (which a
+    dedicated server's console shows live), and on screen when the server
+    is a hosted game or the editor. Every step of FUNC(boot) goes through
+    here so the whole sequence reads top to bottom in one grep:
+
+        [TAC//PAC BOOT 3/7] store: profile 12 player(s) -> file gfa_pac.ini read
+
+    The lines are also kept in GVAR(bootLog) and published, so the admin
+    page can show the last boot without the .rpt.
+
+Parameters:
+    0: Step, e.g. "3/7" <STRING>
+    1: Text <STRING>
+
+Returns:
+    Nothing
+
+Author:
+    YonV
+---------------------------------------------------------------------------- */
+
+params [["_step", "", [""]], ["_text", "", [""]]];
+
+private _line = format ["[TAC//PAC BOOT %1] %2", _step, _text];
+diag_log _line;
+
+GVAR(bootLog) pushBack _line;
+
+// PUBLISHED PER LINE, small and cheap, so a client's boot screen
+// (FUNC(bootScreen)) shows the steps as they happen and not only the whole
+// log at READY. GVAR(bootStep) is the fraction done, off the "n/6" step.
+if (isServer) then {
+    private _parts = _step splitString "/";
+    if (count _parts >= 2) then {
+        // HALFWAY THROUGH THE STEP THE LINE NAMES, and never backwards: a line
+        // is logged as a step starts or as it ends, and step three's own
+        // progress (FUNC(bootDoc)) fills its share one document at a time.
+        private _n = parseNumber (_parts # 0);
+        private _of = (parseNumber (_parts # 1)) max 1;
+        GVAR(bootStep) = (missionNamespace getVariable [QGVAR(bootStep), 0]) max ((_n - 0.5) / _of);
+        publicVariable QGVAR(bootStep);
+    };
+    publicVariable QGVAR(bootLog);
+};
