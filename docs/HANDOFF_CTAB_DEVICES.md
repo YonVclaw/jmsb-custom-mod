@@ -1,6 +1,6 @@
 # Handoff — cTab Device Suite (`ctab_devices` + friends)
 
-_Last updated: 2026-08-05, build **0.1.0.502**. Author: Claude (session work directed by YonV)._
+_Last updated: 2026-08-05, build **0.1.0.502**. Author: YonV._
 
 This documents the state of the cTab-based device work in jmfsb, how the moving
 parts fit together, and — in detail — the issues hit along the way, because
@@ -330,5 +330,3 @@ Technical traps, each burned into a mechanism above:
 - cTab references: repo `O:\GIT\cTab` (read-only), loaded-build unpack
   `c:\Users\jwise\play\ctab`. BCE source `O:\GIT\Better-CAS-Environment-`
   (read-only, APL-SA — attribute Aaren on anything adapted).
-- Session memory (richer history than this doc):
-  `C:\Users\jwise\.claude\projects\o--GIT-jmfsb\memory\project_ctab_s7.md`.

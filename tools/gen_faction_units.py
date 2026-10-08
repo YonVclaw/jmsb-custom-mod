@@ -28,7 +28,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ADDONS = os.path.join(ROOT, "addons")
 
 # EVERY .hpp IN THE ADDON, not a list of filenames. A fixed list is a list
-# somebody forgets to add to: it silently emptied MFRC's units[] when its
+# somebody forgets to add to: it silently emptied the 1st JMSB's units[] when its
 # classes turned out to live in CfgVehicles.hpp, and silently dropped HIMF's
 # two aircraft when they turned out to live in aircraft.hpp. The regex below
 # only matches OUR classes, so scanning everything costs nothing and cannot
@@ -40,7 +40,7 @@ def pieces(addon_dir):
 # units[] declares CfgVehicles classes and nothing else. A faction entry and a
 # group entry are `class jmfsb_x: base {` too, so a file that declares one of
 # those config roots is skipped outright rather than filtered class by class -
-# MFRC's four factions turned up in its units[] the first time this scanned
+# the 1st JMSB's four factions turned up in its units[] the first time this scanned
 # every file.
 OTHER_ROOTS = ("CfgFactionClasses", "CfgGroups", "CfgWeapons", "CfgMagazines")
 

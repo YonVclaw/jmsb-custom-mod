@@ -156,8 +156,50 @@ def weapons(rows, beaut):
     return L
 
 
+# WHAT MIG GIVES NO ARSENAL DATA OF ITS OWN. The Caiman visor is two classes, up and down, with no
+# XtdGearInfos anywhere in MIG, so it sat in the arsenal as two loose items beside every other MIG piece's
+# one entry (user, 2026-10-08: "all the mig gear needs to have extended arsenal configs"). One model of
+# ours with a position option folds them into one entry like the rest.
+EXTRA_MODELS = {
+    "MIG_Helmets": [
+        "        class GVAR(MIG_GALVION_VISOR)",
+        "        {",
+        '            label = "Caiman Visor";',
+        '            author = "Galvion";',
+        '            options[] = {"position"};',
+        "            class position",
+        "            {",
+        '                label = "Position";',
+        '                values[] = {"UP","DOWN"};',
+        "                class UP",
+        "                {",
+        '                    label = "Up";',
+        "                };",
+        "                class DOWN",
+        "                {",
+        '                    label = "Down";',
+        "                };",
+        "            };",
+        "        };",
+    ],
+}
+EXTRA_INFOS = {
+    "MIG_Helmets": {
+        "MIG_Galvion_Visor_UP": {"model": "MIG_GALVION_VISOR", "position": "UP"},
+        "MIG_Galvion_Visor_DOWN": {"model": "MIG_GALVION_VISOR", "position": "DOWN"},
+    },
+}
+
+
 def xtdgear(part, keep):
     """The jmfsb mirror of MIG's arsenal data for the classes in keep."""
+    # MIG NAMES SOME CLASSES IN A DIFFERENT CASE in its arsenal data than in its CfgWeapons -
+    # MIG_Galvion_BALLISTIC_BLK_CLEAN against MIG_Galvion_Ballistic_BLK_CLEAN, MIG_SFHC_BLK_PELTOR against
+    # MIG_SFHC_BLK_Peltor. Arma reads class names without case; a Python set does not, and the first run
+    # silently dropped ten helmets from the extended arsenal for it (user, 2026-10-08: "some of the helmets
+    # you customized did not have it"). Matched without case here, written in the CfgWeapons spelling so
+    # the two files agree to the eye as well.
+    keep_ci = {k.lower(): k for k in keep}
     mod_lines, info_lines = [], []
     for dp in sorted(arsenal_dirs(part)):
         body, names = models(dp)
@@ -165,12 +207,23 @@ def xtdgear(part, keep):
             body = re.sub(r"\bclass %s\b" % re.escape(n), "class GVAR(%s)" % n, body, count=1)
         mod_lines += [body.replace("\t", "    ").rstrip()]
         for cls, attrs in sorted(infos(dp).items()):
-            if cls not in keep:
+            name = keep_ci.get(cls.lower())
+            if name is None:
                 continue
-            info_lines += ["        class GVAR(%s) {" % cls]
+            info_lines += ["        class GVAR(%s) {" % name]
             for k, v in attrs.items():
                 info_lines += ["            %s = %s;" % (k, "QGVAR(%s)" % v if k == "model" else '"%s"' % v)]
             info_lines += ["        };"]
+    if part in EXTRA_MODELS:
+        mod_lines += [""] + EXTRA_MODELS[part]
+    for cls, attrs in sorted(EXTRA_INFOS.get(part, {}).items()):
+        name = keep_ci.get(cls.lower())
+        if name is None:
+            continue
+        info_lines += ["        class GVAR(%s) {" % name]
+        for k, v in attrs.items():
+            info_lines += ["            %s = %s;" % (k, "QGVAR(%s)" % v if k == "model" else '"%s"' % v)]
+        info_lines += ["        };"]
     return [GEN, "// MIG's own ACE Arsenal Extended data, its model classes renamed into jmfsb's namespace.",
             "", "class XtdGearModels {", "    class CfgWeapons {"] + mod_lines + ["    };", "};", "",
             "class XtdGearInfos {", "    class CfgWeapons {"] + info_lines + ["    };", "};"]

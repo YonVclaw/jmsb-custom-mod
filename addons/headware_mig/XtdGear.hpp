@@ -422,6 +422,26 @@ class XtdGearModels {
                 };
             };
         };
+
+        class GVAR(MIG_GALVION_VISOR)
+        {
+            label = "Caiman Visor";
+            author = "Galvion";
+            options[] = {"position"};
+            class position
+            {
+                label = "Position";
+                values[] = {"UP","DOWN"};
+                class UP
+                {
+                    label = "Up";
+                };
+                class DOWN
+                {
+                    label = "Down";
+                };
+            };
+        };
     };
 };
 
@@ -597,6 +617,54 @@ class XtdGearInfos {
             camo = "TAN";
             kit = "PLATATAC";
         };
+        class GVAR(MIG_Galvion_Ballistic_BLK_CLEAN) {
+            model = QGVAR(MIG_GALVION_H);
+            type = "BALLISTIC";
+            camo = "BLK";
+            kit = "CLEAN";
+        };
+        class GVAR(MIG_Galvion_Ballistic_BLK_Full) {
+            model = QGVAR(MIG_GALVION_H);
+            type = "BALLISTIC";
+            camo = "BLK";
+            kit = "FULL";
+        };
+        class GVAR(MIG_Galvion_Ballistic_OCP_CLEAN) {
+            model = QGVAR(MIG_GALVION_H);
+            type = "BALLISTIC";
+            camo = "OCP";
+            kit = "CLEAN";
+        };
+        class GVAR(MIG_Galvion_Ballistic_OCP_Full) {
+            model = QGVAR(MIG_GALVION_H);
+            type = "BALLISTIC";
+            camo = "OCP";
+            kit = "FULL";
+        };
+        class GVAR(MIG_Galvion_Ballistic_OD_CLEAN) {
+            model = QGVAR(MIG_GALVION_H);
+            type = "BALLISTIC";
+            camo = "OD";
+            kit = "CLEAN";
+        };
+        class GVAR(MIG_Galvion_Ballistic_OD_Full) {
+            model = QGVAR(MIG_GALVION_H);
+            type = "BALLISTIC";
+            camo = "OD";
+            kit = "FULL";
+        };
+        class GVAR(MIG_Galvion_Ballistic_TAN_CLEAN) {
+            model = QGVAR(MIG_GALVION_H);
+            type = "BALLISTIC";
+            camo = "TAN";
+            kit = "CLEAN";
+        };
+        class GVAR(MIG_Galvion_Ballistic_TAN_Full) {
+            model = QGVAR(MIG_GALVION_H);
+            type = "BALLISTIC";
+            camo = "TAN";
+            kit = "FULL";
+        };
         class GVAR(MIG_Galvion_Bump_BLK_CLEAN) {
             model = QGVAR(MIG_GALVION_H);
             type = "BUMP";
@@ -731,6 +799,11 @@ class XtdGearInfos {
             camo = "BLK";
             kit = "FULL";
         };
+        class GVAR(MIG_SFHC_BLK_Peltor) {
+            model = QGVAR(MIG_SFHC);
+            camo = "BLK";
+            kit = "PELTOR";
+        };
         class GVAR(MIG_SFHC_TAN_CLEAN) {
             model = QGVAR(MIG_SFHC);
             camo = "TAN";
@@ -740,6 +813,19 @@ class XtdGearInfos {
             model = QGVAR(MIG_SFHC);
             camo = "TAN";
             kit = "FULL";
+        };
+        class GVAR(MIG_SFHC_TAN_Peltor) {
+            model = QGVAR(MIG_SFHC);
+            camo = "TAN";
+            kit = "PELTOR";
+        };
+        class GVAR(MIG_Galvion_Visor_DOWN) {
+            model = QGVAR(MIG_GALVION_VISOR);
+            position = "DOWN";
+        };
+        class GVAR(MIG_Galvion_Visor_UP) {
+            model = QGVAR(MIG_GALVION_VISOR);
+            position = "UP";
         };
     };
 };

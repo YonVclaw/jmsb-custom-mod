@@ -174,7 +174,7 @@ private _YMFsettings = "1st Joint Multi-Functional Strike Battalion";
     "EDITBOX",
     ["Factions","Array of factions allowing system loadout and pylon changes"],
     [_YMFsettings, "Vehicle"],
-    '["BLU_CTRG_F","BLU_W_F","BLU_T_F","BLU_NATO_lxWS","BLU_F","USAF","tweed_UA_21","jmfsb_EUDF","jmfsb_EUDF_arc","jmfsb_EUDF_des","jmfsb_EUDF_tna","jmfsb_EUDF_wdl","jmfsb_GEN","jmfsb_HIMF","jmfsb_Marine_des","jmfsb_Marine_wdl","jmfsb_MFRC_mtp","jmfsb_MFRC_ocp","jmfsb_MFRC_tna","jmfsb_MFRC_wdl","jmfsb_US_JTF_des","jmfsb_US_JTF_ocp","jmfsb_US_JTF_tna","jmfsb_US_JTF_wdl"]',
+    '["BLU_CTRG_F","BLU_W_F","BLU_T_F","BLU_NATO_lxWS","BLU_F","USAF","tweed_UA_21","jmfsb_EUDF","jmfsb_EUDF_arc","jmfsb_EUDF_des","jmfsb_EUDF_tna","jmfsb_EUDF_wdl","jmfsb_GEN","jmfsb_HIMF","jmfsb_Marine_des","jmfsb_Marine_wdl","jmfsb_faction_jmsb_ocp","jmfsb_US_JTF_des","jmfsb_US_JTF_ocp","jmfsb_US_JTF_tna","jmfsb_US_JTF_wdl"]',
     true,
     {},
     true

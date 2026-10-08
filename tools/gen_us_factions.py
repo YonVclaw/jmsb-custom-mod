@@ -1,6 +1,6 @@
 """Build the faction addons as NEW classes beside the originals.
 
-NEW CLASSES, NOT OVERRIDES - the faction_mfrc pattern. BLU_F and the rest are
+NEW CLASSES, NOT OVERRIDES - the faction_jmsb pattern. BLU_F and the rest are
 left exactly as their mods ship them; this declares `jmfsb_US` and friends
 alongside, each fielding its own `jmfsb_US_*` units built by inheritance from
 the original. Nothing anybody else depends on changes, and a load order without
@@ -117,7 +117,7 @@ PACK_SWAP = load_pack_swap()
 
 # addon dir, COMPONENT_BEAUTIFIED, new faction class, 3DEN name, source faction
 #
-# ONLY THE US, HIMF, SYNDIKAT (AND THE MARINES / MFRC) REMAIN (user, 2026-08-29,
+# ONLY THE US, HIMF, SYNDIKAT (AND THE MARINES / 1st JMSB) REMAIN (user, 2026-08-29,
 # late: "all 2040 factions except the US need to be backed up and removed",
 # then "do not remove himf", "keep faction_syndikat"). The other nine (the Gendarmerie came back 2026-08-30) -
 # both CSATs, Insurgents, AAF, LDF, both FIAs, both PLAs - are

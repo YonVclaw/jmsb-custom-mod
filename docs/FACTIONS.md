@@ -63,7 +63,7 @@ now); an older dump builds without suppressors and says so.
 **Removed 2026-08-29 (late), backed up under `backup/factions_removed_2026-08-29/`:**
 CSAT Iran (both), Insurgents, AAF, LDF, FIA (both), PLA (both) - the Gendarmerie
 went too and was restored from the backup on 2026-08-30 -
-the user's call: only the US (Army JTF, Marines, MFRC), HIMF, Syndikat and the
+the user's call: only the US (Army JTF, Marines, 1st JMSB), HIMF, Syndikat and the
 Gendarmerie stay. Their `TARGETS` lines in `tools/gen_us_factions.py` are commented out,
 not deleted. The Roomba mission's ALiVE OPFOR moved from `jmfsb_PLA_wdl` to
 the base game's `OPF_F`.
@@ -118,8 +118,8 @@ No addon, no config, no rename. Left exactly as shipped.
 
 | Faction class | Name | Units | Why |
 |---|---|---:|---|
-| `BLU_CTRG_F` | CTRG | 74 | left as shipped - jmfsb_MFRC is built from it, not over it |
-| `BLU_CTRG_tna_F` | CTRG (Pacific) | 36 | left as shipped - jmfsb_MFRC is built from it, not over it |
+| `BLU_CTRG_F` | CTRG | 74 | left as shipped - jmfsb_faction_jmsb is built from it, not over it |
+| `BLU_CTRG_tna_F` | CTRG (Pacific) | 36 | left as shipped - jmfsb_faction_jmsb is built from it, not over it |
 | `Marine_BLU_USMC_F` | USMC | 31 | MJTF carries the Marine role now - two Marine forces is one too many |
 | `E22_BLU_JC_D_F` | JointCom (Desert) | 4 | one sub-group only (4 units) - nothing to tier |
 | `E22_BLU_JC_U_F` | JointCom (Urban) | 4 | one sub-group only (4 units) - nothing to tier |

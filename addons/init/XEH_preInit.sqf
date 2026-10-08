@@ -37,7 +37,7 @@ EGVAR(patches,usesZen)          = isClass (configFile >> "CfgPatches" >> "zen_ma
 EGVAR(patches,usesSimplex)      = isClass (configFile >> "CfgPatches" >> "sss_main");
 // ALiVE IS DELIBERATELY NOT IN THIS LIST. EGVAR(patches,usesAlive) is set by
 // EFUNC(adapter_alive,XEH_preInit) instead, because that addon is the only one
-// allowed to know ALiVE exists - see CLAUDE.md, "The ALiVE seam". A mission
+// allowed to know ALiVE exists - see addons/adapter_alive. A mission
 // reading jmfsb_patches_usesAlive gets nil, not false, when the adapter's PBO
 // was skipped for want of ALiVE_main.
 EGVAR(patches,usesACEAX)        = isClass (configFile >> "CfgPatches" >> "aceax_main");

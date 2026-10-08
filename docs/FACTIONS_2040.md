@@ -1,7 +1,7 @@
 # The 2040 factions
 
 Everything under **2040 …** in the 3DEN and Zeus faction lists: 24 addons, 27
-factions (`faction_mfrc` declares four). State as of 2026-09-29, read from the
+factions (`faction_jmsb` declares one). State as of 2026-09-29, read from the
 shipped configs in `addons/faction_*`.
 
 Every one of them is a **new faction beside its source**, never an edit of it.
@@ -29,7 +29,7 @@ groups are CfgGroups entries.
 | 2040 EUDF (Arctic) | `faction_eudf_arc` | W | `CF_BLU_F` | 3 | 102 | 78 | 45 | EU Arctic |
 | 2040 HIMF | `faction_himf` | W | Atlas `Atlas_B_H_*` | 2 | 44 | 35 | 20 | source's own |
 | 2040 Gendarmerie | `faction_gen` | W | `BLU_GEN_F` | 2 | 10 | 13 | 4 | source's own |
-| 2040 MFRC (Tropical / Arid / Woodland / Desert) | `faction_mfrc` | W | built from `BLU_CTRG_F` | 3 | 1 each | - | 1 each | - |
+| 2040 1st JMSB | `faction_jmsb` | W | built from `BLU_CTRG_F` | 3 | 1 | - | 1 | - |
 | 2040 Russia | `faction_russia` | E | `OPF_R_F` | 3 | 67 | 76 | 60 | Russian Green |
 | 2040 Russia (Arid) | `faction_russia_ard` | E | `OPF_R_ard_F` | 3 | 68 | 76 | 60 | Russian Sand |
 | 2040 Russia (Arctic) | `faction_russia_arc` | E | `CF_OPF_R_A_F` | 3 | 62 | 70 | 60 | Russian Arctic |
@@ -44,15 +44,14 @@ groups are CfgGroups entries.
 | 2040 Syndikat | `faction_syndikat` | I | `IND_C_F` | 0 | 27 | 23 | 13 | source's own |
 
 The faction class is the addon's `ADDON` macro: `jmfsb_faction_<addon suffix>`,
-e.g. `jmfsb_faction_russia`; MFRC's four are `jmfsb_faction_mfrc_tna`,
-`_ocp` (Arid), `_wdl` and `_mtp` (Desert). Units are `jmfsb_faction_<suffix>_<source class>`.
+e.g. `jmfsb_faction_russia`; the 1st JMSB's is `jmfsb_faction_jmsb_ocp`. Units are `jmfsb_faction_<suffix>_<source class>`.
 Turkey appears twice under each name, once East and once Independent. The
 side in the editor tells them apart.
 
 ## What every generated faction has in common
 
 These apply to every faction built by `tools/gen_us_factions.py`, which is all
-of them except HIMF (`tools/gen_himf.py`) and MFRC (hand-written).
+of them except HIMF (`tools/gen_himf.py`) and the 1st JMSB (hand-written).
 
 - **The source's order of battle.** Men, vehicles and groups follow the source
   faction's own roster. A source that ships no groups gets a template:
@@ -157,17 +156,17 @@ so all four motorised patrols are ours (`EXTRA_GROUPS`). They ride Offroads
 Gyras, an Otokar ARMA, a Combat Boat, a RHIB and an H225 Super Puma, which sit
 outside the groups.
 
-### MFRC: Tropical, Arid, Woodland, Desert
+### 1st JMSB
 
-The players' own company, one faction per theatre. It is deliberately one man
-(a Recon Scout) and one group per theatre: a player's loadout, gear and
-vehicle are set by the mission, so a config roster would be classes nobody
-spawns. The four differ only in uniform (`jmfsb_uniform_sof` short-sleeve SF
-fatigues in tna, ocp, wdl and mcam). Vest and booniehat are the same on all
-four. The scout carries only a pistol by design; the mission gives him the
-rest. His kit comes from a loadout array applied on spawn, and the class keeps
-CBA's extended event handlers. `CfgVehicles.hpp` and `CfgFactionClasses.hpp`
-explain why.
+The players' own company, one faction, in OCP whatever the map (user,
+2026-10-08: "only one camo ocp"). It is deliberately one man (a Recon Scout)
+and one sixty-four-slot group: a player's loadout, gear and vehicle are set
+by the mission, so a config roster would be classes nobody spawns. The scout
+carries only a pistol by design; the mission gives him the rest. His default
+kit is the user's own arsenal export - SF fatigues in OCP, a MIG Ferro Bison
+carrier with a PRC-152, the OCP boonie, an SPS VP9 - applied as a loadout
+array on spawn, and the class keeps CBA's extended event handlers.
+`CfgVehicles.hpp` and `CfgFactionClasses.hpp` explain why.
 
 ## East
 

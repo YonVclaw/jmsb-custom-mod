@@ -1,5 +1,5 @@
-#define COMPONENT faction_mfrc
-#define COMPONENT_BEAUTIFIED MFRC
+#define COMPONENT faction_jmsb
+#define COMPONENT_BEAUTIFIED 1st JMSB
 #include "\z\jmfsb\addons\main\script_mod.hpp"
 
 // #define DEBUG_MODE_FULL

@@ -23,16 +23,6 @@ releases/*
 # machine ran the tool - drive letters, home directories, download folders - so
 # they are personal even when they look like config, and they conflict on every
 # pull when two people work the same repo.
-#
-# .claude/settings.json was tracked until now and carried O:\GIT\jmfsb paths; it
-# has been removed from the index (the file is still on disk).
-
-# Anthropic - Claude Code
-# .claude/
-# .claude.json
-# CLAUDE.local.md
-# CLAUDE.md
-# **/CLAUDE.md
 
 # Agent instruction files, kept out of the repo by choice - they are working
 # notes for whoever is driving the tool, not project source.

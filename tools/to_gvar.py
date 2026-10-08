@@ -49,7 +49,7 @@ def faction_classes(addon):
 
 
 def common_prefix(facs):
-    """The root the addon's faction classes share: jmfsb_MFRC_ from jmfsb_MFRC_tna and jmfsb_MFRC_ocp."""
+    """The root the addon's faction classes share: jmfsb_faction_jmsb_ from jmfsb_faction_jmsb_tna and jmfsb_faction_jmsb_ocp."""
     if not facs:
         return None
     if len(facs) == 1:

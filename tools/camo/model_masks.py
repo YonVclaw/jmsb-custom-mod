@@ -23,7 +23,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 # Everything this script caches or renders - the class table, the camo pool, the wheel masks, scratch PNGs.
 # Outside the repo on purpose: it runs to hundreds of MB and none of it belongs in git. Override with
-# JMFSB_CAMO_CACHE. It used to be a Claude session scratchpad under %TEMP%, which would have taken the
+# JMFSB_CAMO_CACHE. It used to be a session scratchpad under %TEMP%, which would have taken the
 # generator with it when that was cleaned.
 SP = os.environ.get("JMFSB_CAMO_CACHE", r"D:\work\camo_cache")
 os.makedirs(SP, exist_ok=True)

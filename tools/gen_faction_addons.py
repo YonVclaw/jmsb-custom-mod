@@ -55,11 +55,11 @@ JMFSB_PREFIX = "2040 "
 # reason. Stubs are added to this automatically; these are the deliberate ones.
 NEVER = {
     "Marine_BLU_USMC_F": "MJTF carries the Marine role now - two Marine forces is one too many",
-    # CTRG stays as its mod ships it. jmfsb_MFRC is built FROM it in
-    # addons/faction_mfrc rather than over the top of it, so both exist and
+    # CTRG stays as its mod ships it. jmfsb_faction_jmsb is built FROM it in
+    # addons/faction_jmsb rather than over the top of it, so both exist and
     # the original is never touched.
-    "BLU_CTRG_F": "left as shipped - jmfsb_MFRC is built from it, not over it",
-    "BLU_CTRG_tna_F": "left as shipped - jmfsb_MFRC is built from it, not over it",
+    "BLU_CTRG_F": "left as shipped - jmfsb_faction_jmsb is built from it, not over it",
+    "BLU_CTRG_tna_F": "left as shipped - jmfsb_faction_jmsb is built from it, not over it",
 }
 
 # cls: (tier, strength, shape, flavor, rename or None, why)
@@ -72,9 +72,9 @@ NEVER = {
 # hunt through forty addons.
 PLAN = {
     # --- peer+ -----------------------------------------------------------
-    # NOTHING HERE. The only blue peer+ is jmfsb_MFRC, which is not in this
+    # NOTHING HERE. The only blue peer+ is jmfsb_faction_jmsb, which is not in this
     # table because it is not an existing faction being modified - it is four
-    # new factions built from CTRG in addons/faction_mfrc. Everything blue in
+    # new factions built from CTRG in addons/faction_jmsb. Everything blue in
     # this table tops out at tier 3.
 
     # --- peer ------------------------------------------------------------
