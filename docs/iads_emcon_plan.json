@@ -1,0 +1,176 @@
+{
+  "project": "GFA IADS / EMCON",
+  "family": "JMFSBFA Modern Warfare Expansion",
+  "summary": "Discover all air-search radars on a side, blink them on/off (EMCON) with a duty-cycle floor, enforce datalink sharing, and expose the sensor picture to other addons (alive-drones, ew-zones, ATAK suite, ALiVE rewrite).",
+  "status": "planning",
+  "phases": [
+    {
+      "id": 0,
+      "name": "Engine validation",
+      "goal": "Resolve engine unknowns before trusting any design. Each item is a ~10 minute editor experiment.",
+      "items": [
+        {
+          "id": "P0-1",
+          "test": "setVehicleRadar enum values for forced-on / forced-off",
+          "method": "BIKI check + editor test",
+          "status": "unverified"
+        },
+        {
+          "id": "P0-2",
+          "test": "Element format returned by listRemoteTargets",
+          "method": "diag_log the array in a live mission",
+          "status": "unverified"
+        },
+        {
+          "id": "P0-3",
+          "test": "Will a radarless launcher FIRE on a datalink-only track (not just display it)?",
+          "method": "Encore S-750 radar/launcher pair vs target drone; if no fire, try confirmSensorTarget; if that fails, rework Phase 3",
+          "status": "unverified",
+          "gates": ["Phase 3"]
+        },
+        {
+          "id": "P0-4",
+          "test": "Do passive sensors (IR/visual) keep working while radar is forced off?",
+          "method": "Force radar off, fly IR-hot target past, watch sensor display",
+          "status": "unverified",
+          "gates": ["dark-but-watching design decision"],
+          "note": "Decides whether a dark SAM is blind or just silent — shapes the whole system feel. Test first."
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "name": "Core EMCON",
+      "goal": "Radar discovery + blink scheduler + duty-cycle floor.",
+      "decisions": [
+        {
+          "id": "P1-D1",
+          "question": "What counts as a managed radar?",
+          "options": ["all active-radar vehicles", "ground vehicles + statics only (exclude anything that flies)"],
+          "recommendation": "Ground + statics only; aircraft manage their own emissions and the blink loop should not fight the AI pilot",
+          "status": "open"
+        },
+        {
+          "id": "P1-D2",
+          "question": "Rescan cadence for radars spawned mid-mission (e.g. by ALiVE)",
+          "options": ["periodic rescan every few minutes", "spawn-event hook (CBA/ALiVE coupling)"],
+          "recommendation": "Periodic rescan — fits keep-it-simple rule",
+          "status": "open"
+        },
+        {
+          "id": "P1-D3",
+          "question": "Duty-cycle floor scope",
+          "options": ["global minimum emitters", "per-cluster/sector floors"],
+          "recommendation": "Global for launch; per-cluster deferred to Phase 5 refinement",
+          "status": "open"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Datalink layer",
+      "goal": "Enforce reportRemoteTargets / receiveRemoteTargets / reportOwnPosition on the right vehicles.",
+      "decisions": [
+        {
+          "id": "P2-D1",
+          "question": "Datalink enforcement scope",
+          "options": ["discovered radars only (conservative)", "every vehicle on the side (full 2040 picture, touches vehicles other mods may manage)"],
+          "recommendation": "Radars-only default; side-wide as a module toggle",
+          "status": "open"
+        },
+        {
+          "id": "P2-D2",
+          "question": "How to identify radarless launchers that should receive the picture",
+          "options": ["second config sweep: air-target missiles present but no ActiveRadarSensorComponent", "manual classlist module variable"],
+          "recommendation": "Config sweep, with classlist variable as override — matches module-variables-everything rule",
+          "status": "open"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Pop-up ambush mode",
+      "goal": "Launcher dark -> datalink track enters envelope -> radar on -> engage -> dark after shot or timeout.",
+      "depends_on": ["P0-3"],
+      "decisions": [
+        {
+          "id": "P3-D1",
+          "question": "Where does the engagement envelope number come from?",
+          "options": ["read missile range from config (accurate, more work)", "module variable per controller (simple, tunable)"],
+          "recommendation": "Module variable with sane default — doubles as a difficulty knob",
+          "status": "open"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Reveal bridge + integration",
+      "goal": "IADS becomes the sensor backbone of the Modern Warfare family.",
+      "integrations": [
+        {
+          "target": "alive-drones",
+          "use": "AA-drone dispatch consumes IADS tracks instead of running its own detection loop — one detection economy, two responders (mirrors recon-feeds-EW-dispatch unification)"
+        },
+        {
+          "target": "atak-suite",
+          "use": "reportOwnPosition feed becomes the BFT layer"
+        },
+        {
+          "target": "alive-rewrite",
+          "use": "OPCOM replacement gets a real air picture to reason about"
+        },
+        {
+          "target": "ew-zones",
+          "use": "Shared detection economy / dispatch patterns"
+        }
+      ],
+      "decisions": [
+        {
+          "id": "P4-D1",
+          "question": "Who receives reveals (perf policy)?",
+          "options": ["everything on the side", "registered consumer groups (AA units, drone controllers, OPCOM)"],
+          "recommendation": "Registered consumers — requires a small subscribe hook in the other addons",
+          "status": "open"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Refinements (deferred)",
+      "items": ["Per-cluster/sector duty-cycle floors", "Counter-DE / hardening flavor if ever wanted"]
+    }
+  ],
+  "modules": [
+    {
+      "name": "IADS Controller",
+      "placement": "one per side",
+      "variables": [
+        { "name": "side", "type": "side" },
+        { "name": "blinkIntervalMin", "type": "number", "unit": "seconds", "default": 20 },
+        { "name": "blinkIntervalMax", "type": "number", "unit": "seconds", "default": 40, "note": "each radar re-rolls its own jittered timer; no learnable metronome" },
+        { "name": "minimumEmitters", "type": "number", "default": 1, "note": "0 = pure random blinking" },
+        { "name": "exemptClasslist", "type": "string (comma-separated classnames)", "note": "pinned always-on; same pattern as ew-zones radio exempt list" },
+        { "name": "excludeAircraft", "type": "boolean", "default": true, "depends_on": "P1-D1" },
+        { "name": "rescanInterval", "type": "number", "unit": "minutes", "depends_on": "P1-D2" },
+        { "name": "ambushMode", "type": "boolean", "default": false, "note": "Phase 3 toggle, lives on the controller rather than its own module" },
+        { "name": "ambushEnvelope", "type": "number", "unit": "meters", "depends_on": "P3-D1" },
+        { "name": "debugMarkers", "type": "boolean", "default": false, "note": "marker per radar, green = emitting, grey = dark, tracks vehicle, cleans up on death — alive-drones convention" }
+      ]
+    },
+    {
+      "name": "Reveal Bridge",
+      "placement": "separate module (useful without EMCON; other addons consume it independently)",
+      "variables": [
+        { "name": "side", "type": "side" },
+        { "name": "interval", "type": "number", "unit": "seconds", "default": 10 },
+        { "name": "consumerPolicy", "type": "enum", "depends_on": "P4-D1" }
+      ]
+    }
+  ],
+  "first_decision": {
+    "id": "dark-but-watching",
+    "question": "Should a blinked-off radar still contribute passive detections to the datalink (dark-but-watching) or be fully blind (dark-and-blind)?",
+    "note": "If passive sensors survive force-off natively (P0-4), dark-but-watching comes free; if not, do NOT fake it",
+    "status": "open — test P0-4 first"
+  }
+}

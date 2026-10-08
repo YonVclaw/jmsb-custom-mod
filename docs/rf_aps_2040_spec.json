@@ -1,0 +1,275 @@
+{
+  "spec_version": "0.1-draft",
+  "name": "RF Burst Active Protection System (2040)",
+  "addon_prefix": "jmfsbfa_rfaps",
+  "prefix_status": "PLACEHOLDER - naming not decided",
+  "family": "JmfsbFA Modern Warfare Expansion",
+  "related_addons": ["alive_drones", "ew_zones", "iads_emcon", "atak_suite", "nextgen_ammo_2040"],
+
+  "premise": {
+    "summary": "Vehicle-mounted high-power microwave emitter. Omnidirectional soft-kill burst that disables electronics on incoming drones and guided munitions. Fires automatically on threat detection, then goes cold for a fixed cooldown. Every burst also jams radios and datalink in a smaller radius, friend and foe alike.",
+    "relationship_to_daps": "LAYER ON TOP, DO NOT FORK. Drongo's APS (DAPS) keeps hard-kill duty against unguided rockets, tank rounds and anything without electronics. This addon adds an independent second effector. Both may be present on the same vehicle and must not interfere. Precedent for extending rather than forking: HBAOplus DAPS expansion.",
+    "hard_dependency_on_daps": false,
+    "notes": "Addon must function standalone if DAPS is absent."
+  },
+
+  "decisions_locked": [
+    "No aiming. Omnidirectional sphere, not a cone. No facing checks, no turret slaving, no dwell-on-target, no aiming UI.",
+    "Fully automatic. Crew does not trigger it. No fire button in first cut.",
+    "Cooldown is the ONLY resource. No charges, no power budget, no thermal model.",
+    "Soft-kill only. Nothing is destroyed by the burst itself; targets are made inert.",
+    "Unguided threats are immune by omission - they are simply not in the ammo filter. This is physically correct and requires no code.",
+    "Every burst jams radios in a smaller radius. This is the sole cost of the system.",
+    "Jam affects EVERYONE in radius, friendly and hostile. No IFF check.",
+    "No radio exempt list. The ew_zones RF-7800S-TR exemption does NOT carry over - LPI resists direction-finding, not brute-force near-field power.",
+    "Jam state must be reference-counted, not a boolean. See shared_emcon_library.",
+    "Jam onset and recovery require an audible cue. Non-negotiable: nothing in this system is player-triggered, so a silent comms failure reads as a bug.",
+    "Emitter degrades and fails with vehicle damage."
+  ],
+
+  "detection": {
+    "projectile_path": {
+      "hook": "ProjectileCreated mission event handler",
+      "rationale": "Projectiles self-register on creation. No polling.",
+      "locality_warning": "Fires only on the machine that created the projectile. Requires remoteExec to the authoritative machine.",
+      "filter": "Ammo class must inherit from a guided base class AND be within engagement_radius_m of a protected vehicle."
+    },
+    "entity_path": {
+      "hook": "nearTargets or targetsQuery on the protected vehicle",
+      "rationale": "Engine-native sensor framework. Gates detection to what the host vehicle's own sensors can legitimately see - gives the HAVOC detect/track/engage chain for free.",
+      "filter": "Hostile side, air class, within engagement_radius_m."
+    },
+    "polling": {
+      "method": "Timed loop on protected vehicles only",
+      "interval_s": "TUNE",
+      "note": "Do NOT use nearestObjects sweeps at high frequency. Entity path only needs to run on vehicles that have an emitter fitted."
+    }
+  },
+
+  "trigger": {
+    "status": "OPEN - flavour not confirmed by design owner",
+    "recommended": "threat_plus_floor",
+    "options": {
+      "proximity": "Fires when anything susceptible crosses engagement_radius_m. Simplest. Risk: burns the cooldown on harmless transiting recon drones immediately before a real attack.",
+      "threat_only": "Fires only when a contact is actually incoming - guided projectile tracking this vehicle, or air contact with closing velocity above threshold. Filters transit traffic. Costs one closing-velocity check per contact.",
+      "threat_plus_floor": "threat_only, PLUS always fire if anything susceptible enters close_floor_m regardless of apparent intent. Two thresholds, both single numbers."
+    },
+    "closing_velocity_check": "dot product of contact velocity against vector to vehicle; positive above threshold = closing",
+    "no_target_no_fire": true
+  },
+
+  "effects": {
+    "susceptibility_table": [
+      {
+        "threat": "COTS quadcopter / FPV",
+        "result": "disabled",
+        "probability": "TUNE (recommend 1.0)",
+        "effect_path": "entity_disable"
+      },
+      {
+        "threat": "Loitering munition",
+        "result": "disabled",
+        "probability": "TUNE (recommend high, reduced for hardened variants)",
+        "effect_path": "entity_disable OR projectile_deguide depending on how the source mod represents it - SEE BLOCKERS"
+      },
+      {
+        "threat": "ATGM / guided missile with modern seeker",
+        "result": "guidance stripped, continues ballistically",
+        "probability": "TUNE (recommend moderate - hardened seekers resist)",
+        "effect_path": "projectile_deguide"
+      },
+      {
+        "threat": "IR or laser guided munition",
+        "result": "seeker upset",
+        "probability": "TUNE",
+        "effect_path": "projectile_deguide",
+        "note": "Absorbs the role of the DAPS dazzler. Strictly better - dazzler only makes the projectile veer, deguide removes tracking entirely."
+      },
+      {
+        "threat": "Unguided rocket, tank round, APFSDS, autocannon, small arms",
+        "result": "IMMUNE",
+        "probability": 0.0,
+        "effect_path": "none",
+        "note": "No electronics to disrupt. Not in the ammo filter. This is what stops the system being an I-win button - the enemy counter is to shoot dumb."
+      }
+    ],
+
+    "effect_path_definitions": {
+      "projectile_deguide": {
+        "primary_command": "setMissileTarget objNull",
+        "confidence": "HIGH - supported command, known behaviour",
+        "result": "Missile loses tracking and continues on ballistic path. Visually flies past the hull rather than vanishing.",
+        "optional": "small velocity perturbation for visible wobble"
+      },
+      "entity_disable": {
+        "confidence": "LOW - SEE BLOCKERS",
+        "preferred_method": "kill engine hitpoint + zero fuel + disableAI so the AI cannot recover; airframe falls dead-stick",
+        "fallback_1": "delete AI crew - reliable, blunt",
+        "fallback_2": "setDamage 1 - guaranteed to work, wrong feel, explodes instead of falling",
+        "instruction_to_implementer": "Do not pick a method from this list without testing. Behaviour differs by airframe simulation type."
+      }
+    },
+
+    "collateral": {
+      "friendly_drones": {
+        "affected": true,
+        "note": "Own alive_drones patrol UAVs and DDT operator-launched quads in radius are disabled by the same burst. No IFF."
+      },
+      "radio_jam": {
+        "shape": "sphere",
+        "radius_m": "TUNE - MUST be smaller than engagement_radius_m. Represents near-field leakage off the emitter.",
+        "mechanism": "tf_unable_to_use_radio set true per affected player, client locality",
+        "prior_art": "ew_zones already proves this lever. Reuse, do not reinvent.",
+        "affects": "all players in radius regardless of side",
+        "exempt_radios": "NONE - see decisions_locked",
+        "crew_handling": {
+          "rule": "Occupants of the emitting vehicle are shielded by the hull",
+          "implementation": "either fully exempt or a much shorter duration - PICK ONE, recommend shorter duration",
+          "duration_s": "TUNE (recommend ~2)"
+        },
+        "dismount_duration_s": "TUNE (recommend ~5, expect to tune down)",
+        "ai_effect": "none - TFAR only meaningfully affects human players. This is a player-experience mechanic, not AI balance.",
+        "gradation_rule": "If gradation is wanted, vary DURATION by radio class, never immunity."
+      },
+      "sensor_blackout": {
+        "command": "enableVehicleSensor",
+        "effect": "named sensor components toggled off on affected vehicles for the jam duration, then restored"
+      },
+      "datalink_blackout": {
+        "commands": ["reportRemoteTargets", "receiveRemoteTargets"],
+        "effect": "affected vehicles drop off the shared target picture for the jam duration"
+      },
+      "atak_bft_blackout": {
+        "effect": "tablet BFT and ALiVE reporting blank and repopulate over the jam duration",
+        "integration": "rides on the same event and the same source registry as the radio jam"
+      }
+    },
+
+    "feedback": {
+      "requirement": "MANDATORY",
+      "rationale": "Nothing here is player-triggered. Without cues, players experience unexplained comms failure and report it as a bug.",
+      "on_jam_start": ["squelch burst or rising hiss on radio channel", "brief screen artefact - postprocess: chromatic aberration / radial blur / static overlay"],
+      "on_jam_end": ["audible recovery cue so players know they are back"],
+      "crew_cue": "the emitter's own firing sound serves as the crew's cue",
+      "emitter_fx": "visual burst effect on the vehicle - TBD"
+    }
+  },
+
+  "resource_model": {
+    "type": "cooldown_only",
+    "cooldown_s": "TUNE",
+    "balance_note": "Every other knob was removed, so this single value carries the entire balance of the system. A long cooldown means a second attacker inside the window gets a free shot. This IS the counterplay - the enemy answer to the emitter is to stagger attacks rather than mass them. Tune deliberately toward that.",
+    "no_charges": true,
+    "no_ammo_consumption": true,
+    "no_rearm_required": true
+  },
+
+  "degradation": {
+    "engine_destroyed": "emitter dead",
+    "vehicle_damage_threshold": "TUNE - DAPS DIRCM precedent is 30% damage",
+    "above_threshold": "emitter dead",
+    "engine_off": "emitter dead"
+  },
+
+  "shared_emcon_library": {
+    "status": "REQUIRED - build before either this addon or ew_zones ships",
+    "problem": "Both ew_zones and this addon write the same tf_unable_to_use_radio boolean on the same player. A player standing inside an ew_zones Type 1 jamming zone who is also caught by an APS burst will be UN-JAMMED when the burst's short timer expires, despite still being inside the zone.",
+    "solution": "Reference-counted jam sources. Maintain a per-player list of active jam sources with expiry times. The TFAR variable is true whenever the list is non-empty; set false only when the list empties.",
+    "scope": "Any future EW source registers through the same registry.",
+    "also_houses": ["enableVehicleSensor toggling", "reportRemoteTargets / receiveRemoteTargets toggling", "shared with iads_emcon which uses the identical commands on a different trigger"]
+  },
+
+  "multiplayer": {
+    "model": "server-authoritative",
+    "requirement": "A single authoritative machine decides which contacts a given burst affected, then broadcasts results.",
+    "failure_mode_if_ignored": "Projectiles, drones and players all have different locality. Without a single arbiter, one client sees a drone drop while another sees it strike.",
+    "notes": "ProjectileCreated fires client-side; jam state is client-local; drone entities may be server-owned or client-owned."
+  },
+
+  "configuration": {
+    "model": "CBA settings + Eden module, following DAPS and alive_drones convention",
+    "nothing_hardcoded": true,
+    "fields": [
+      {"key": "engagement_radius_m", "type": "number", "value": "TUNE"},
+      {"key": "close_floor_m", "type": "number", "value": "TUNE", "used_by": "threat_plus_floor trigger"},
+      {"key": "closing_velocity_threshold", "type": "number", "value": "TUNE"},
+      {"key": "cooldown_s", "type": "number", "value": "TUNE"},
+      {"key": "jam_radius_m", "type": "number", "value": "TUNE"},
+      {"key": "jam_duration_dismount_s", "type": "number", "value": "TUNE"},
+      {"key": "jam_duration_crew_s", "type": "number", "value": "TUNE"},
+      {"key": "damage_threshold", "type": "number", "value": "TUNE"},
+      {"key": "susceptibility_probabilities", "type": "per-class table", "value": "TUNE"},
+      {"key": "guided_ammo_base_classes", "type": "comma-separated list", "note": "follows alive_drones list convention"},
+      {"key": "equipped_vehicle_classes", "type": "comma-separated list", "note": "which vehicles carry an emitter; module can also assign at runtime"},
+      {"key": "debug_markers", "type": "boolean", "default": false, "note": "follows alive_drones debug convention - visualise burst radius and affected contacts, zero cost when off"}
+    ]
+  },
+
+  "blockers": [
+    {
+      "id": "B1",
+      "severity": "HIGH - blocks entity_disable spec",
+      "issue": "Unknown how quadcopter-type UAV airframes behave when the engine hitpoint is killed and AI disabled. Depending on whether a given class runs Helicopter or Plane simulation it may glide, autorotate, or drop like a brick.",
+      "action": "Test per airframe class before implementing. Do not spec a method until tested.",
+      "affects": ["alive_drones patrol UAVs", "DDT operator-launched small drones", "loitering munitions"]
+    },
+    {
+      "id": "B2",
+      "severity": "HIGH - blocks trigger selection for FPV threats",
+      "issue": "Unknown whether DDT represents its kamikaze drones as vehicle entities or as projectiles at the point of terminal dive. This determines which effect path fires most often in practice.",
+      "action": "Inspect DDT before finalising. Both paths must exist regardless; this determines which is the hot path."
+    },
+    {
+      "id": "B3",
+      "severity": "MEDIUM",
+      "issue": "No verified command to force-disconnect a player from a terminal-linked UAV. The 'your screen goes black and you lose the bird' effect is unconfirmed.",
+      "action": "Verify against Biki before promising. DEFERRED out of first cut."
+    },
+    {
+      "id": "B4",
+      "severity": "LOW",
+      "issue": "Engine has no partial-electronics-damage concept. A seeker is either guiding or it is not.",
+      "action": "Graduated degradation must be faked via probability roll or timed wobble. Accepted limitation."
+    }
+  ],
+
+  "engine_limitations_accepted": [
+    "No native RF or EMP concept - all of this is scripted approximation over hitpoints, AI toggles and sensor flags.",
+    "AI does not model a control link. 'Cutting the link' is only real for player-flown UAVs; for AI drones it is always faked via engine/AI kill.",
+    "Sensors are config-defined. Existing sensor components can be toggled at runtime, but new ones cannot be invented.",
+    "No engine model of beam power over range. Falloff, if wanted, is pure script - which means it can be tuned purely for play feel."
+  ],
+
+  "first_cut_scope": {
+    "in": [
+      "ProjectileCreated -> guided ammo filter -> in radius -> setMissileTarget objNull",
+      "nearTargets sweep -> hostile air entities -> entity_disable (method pending B1)",
+      "cooldown timer",
+      "radio jam via reference-counted registry",
+      "sensor + datalink blackout",
+      "audio and screen cues on jam start/end",
+      "damage degradation",
+      "debug markers"
+    ],
+    "out": [
+      "player-UAV force disconnect (B3)",
+      "graduated seeker degradation (B4)",
+      "aiming, cones, dwell time",
+      "crew fire control / manual trigger",
+      "power or thermal budget",
+      "static or dismounted emitter variant",
+      "RF-hardness attribute on ammo and drone classes - belongs in nextgen_ammo_2040 config space, but both addons must agree on the variable name before either implements it"
+    ],
+    "risk_note": "Steps with zero engine risk: cooldown, radio jam, blackouts, cues, degradation. The only genuine unknown in the first cut is B1."
+  },
+
+  "open_questions": [
+    "Trigger flavour - confirm threat_plus_floor",
+    "All TUNE values",
+    "Should jam radius scale with anything, now that burst power is not modelled? (Previously proposed scaling with power; power no longer exists as a concept.)",
+    "Jam stacking on repeat bursts - refresh timer or extend it? Refresh is kinder; extend punishes rapid re-fire. Note the cooldown already limits re-fire rate, which weakens the case for extend.",
+    "Crew: fully exempt or shorter duration",
+    "Addon naming and class prefix",
+    "Overlap with iads_emcon on sensor and cueing logic - resolve before both addons grow separate implementations"
+  ]
+}

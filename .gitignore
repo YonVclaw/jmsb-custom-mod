@@ -1,0 +1,103 @@
+release/*
+*.cache
+texHeaders.bin
+*.swp
+*.swo
+*.biprivatekey
+*.dll
+!ghostd_pacdb_x64.dll
+Thumbs.db
+
+*.pbo
+.hemttout
+.hemttprivatekey
+hemtt
+hemtt.exe
+*.biprivatekey
+releases/*
+*.zip
+
+
+# --- AI coding assistants ----------------------------------------------------
+# Local tool state, not project source. These hold absolute paths to whoever's
+# machine ran the tool - drive letters, home directories, download folders - so
+# they are personal even when they look like config, and they conflict on every
+# pull when two people work the same repo.
+#
+# .claude/settings.json was tracked until now and carried O:\GIT\jmfsb paths; it
+# has been removed from the index (the file is still on disk).
+
+# Anthropic - Claude Code
+# .claude/
+# .claude.json
+# CLAUDE.local.md
+# CLAUDE.md
+# **/CLAUDE.md
+
+# Agent instruction files, kept out of the repo by choice - they are working
+# notes for whoever is driving the tool, not project source.
+# AGENTS.md
+**/AGENTS.md
+# GEMINI.md
+# **/GEMINI.md
+
+# Model Context Protocol server definitions (often carry tokens/paths)
+.mcp.json
+
+# Cursor
+# .cursor/
+# .cursorrules
+# .cursorignore
+# .cursorindexingignore
+
+# # GitHub Copilot (workspace-local state)
+# .copilot/
+
+# Aider
+.aider*
+
+# Windsurf / Codeium
+.windsurf/
+.windsurfrules
+.codeium/
+
+# Continue
+.continue/
+
+# Cline / Roo Code
+.clinerules
+.roo/
+.roomodes
+
+# Google Gemini CLI
+.gemini/
+
+# OpenAI Codex CLI
+.codex/
+
+# JetBrains Junie
+.junie/
+
+# Zed AI
+.zed/
+
+# Sourcegraph Cody
+.cody/
+
+# Tabnine
+.tabnine/
+
+# Goose
+.goose/
+
+# OpenCode
+.opencode/
+
+# Amp
+.amp/
+
+# Kiro
+.kiro/
+
+# SpecStory chat exports
+.specstory/

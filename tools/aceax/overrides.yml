@@ -1,0 +1,188 @@
+# Hand-written half of the config generation. gen_aceax.py derives everything else
+# from the display names of the attachments the 2040 mission arsenal lists; this
+# file supplies the judgement calls, so re-running the generator after a dump
+# never destroys them.
+#
+# Vocabulary per docs/OPTIONS.md of the Attachments extension: camo, mount,
+# magnifier, display, condition, beam, variant. Value names are config class
+# names (letters first, no spaces).
+
+# A caliber is not a dropdown: a 5.56 can and a 7.62 can are different items
+# that fit different weapons, so each caliber becomes its own arsenal entry
+# ("Sound Suppressor (5.56 mm)") with the colours underneath. The base game
+# writes some of these with a no-break space, hence the doubled lines.
+splitters:
+  "5.56 mm":      "5.56 mm"
+  "5.56 mm": "5.56 mm"
+  "6.5 mm":       "6.5 mm"
+  "6.5 mm":  "6.5 mm"
+  "7.62 mm":      "7.62 mm"
+  "7.62 mm": "7.62 mm"
+  "9 mm":         "9 mm"
+  "9 mm":    "9 mm"
+  ".45 ACP":      ".45 ACP"
+  ".300 BLK":     ".300 BLK"
+  ".338":         ".338"
+  "12 Gauge":     "12 Gauge"
+  "6.5mm":        "6.5 mm"
+  # ACE's flat (non-PiP) scope and the XM157's NF build are different items,
+  # not a display setting on the PiP one - they get their own rows
+  "2D":           "2D"
+
+# displayName token -> [axis, value].
+tokens:
+  # -- colours: ACEAX's palette where it has the swatch, ours where not -----
+  Black:      [camo, BLK]
+  Olive:      [camo, OLI]
+  Khaki:      [camo, KHK]
+  Green:      [camo, GRN]
+  Tan:        [camo, TAN]
+  MTP:        [camo, MTP]
+  Sand:       [camo, SND]
+  Arid:       [camo, ARID]
+  Lush:       [camo, LUSH]
+  Coyote:     [camo, CBR]           # EF's coyote brown
+  Snake:      [camo, SNAKE]         # Western Sahara's snakeskin
+  Stripes:    [camo, STRIPES]
+  # -- how it is mounted / built -------------------------------------------
+  High:           [mount, HIGH]     # the R1 micro on a high mount
+  Low:            [mount, LOW]
+  "Pistol Mount": [mount, PISTOL]
+  Remote:         [variant, REMOTE] # EF's MBS with the remote display
+  "ASP-1 Kir":    [variant, KIR]
+  Red:            [beam, RED]
+  # -- what is bolted on / how it is built ----------------------------------
+  Magnifier:  [magnifier, MAG]        # JCA IHO / MROS with the flip magnifier
+  Old:        [condition, WORN]       # the weathered DMS
+  FCS:        [variant, FCS]          # Vortex M157 with the fire-control build
+  M250:       [mount, M250]           # Vortex M157 on its M250 mount
+  Forward:    [mount, FORWARD]        # JCA M115A3 bipod position
+  Rearward:   [mount, REARWARD]
+  # -- the SD antennas (three different entries; the band is their marker) --
+  "78-89 MHz":   [variant, MIL]
+  "390-500 MHz": [variant, EXP]
+  "433 MHz":     [variant, JAM]
+  # -- ACE's laser pointers, once the game resolves their names -------------
+  red:        [beam, RED]
+  green:      [beam, GRN]
+
+positional_axes: []
+
+# Which arsenal entry a parsed base name belongs to, and the option values
+# that place it there.
+bases:
+  # the base game writes the side AFTER the colour marker, so the marker is
+  # never parsed - the whole name is the base
+  "Bipod (Black) [NATO]": {as: "Bipod [NATO]", camo: BLK}
+  "Bipod (Khaki) [NATO]": {as: "Bipod [NATO]", camo: KHK}
+  "Bipod (MTP) [NATO]":   {as: "Bipod [NATO]", camo: MTP}
+  "Bipod (Sand) [NATO]":  {as: "Bipod [NATO]", camo: SND}
+  "Bipod (Black) [CSAT]": {as: "Bipod [CSAT]", camo: BLK}
+  "Bipod (Tan) [CSAT]":   {as: "Bipod [CSAT]", camo: TAN}
+  # NOT merged, deliberately: "ARCO AK", "Mk17 Holosight SMG" and "DMS Kir" are
+  # the same glass on another rail, but their colour sets do not line up with
+  # the parent's, and an axis that only exists for some colours is exactly the
+  # weak-match trap OPTIONS.md warns about. They keep their own rows.
+  #
+  # ACE's flat (non-PiP) scopes and its pointers, keyed on the unresolved
+  # stringtable keys the offline dump sees; the game resolves them to
+  # "ARCO (2D)" / "Laser Pointer (red)", which the splitter and tokens above
+  # handle by themselves.
+  "$STR_ace_optics_arco":       {as: "ARCO (2D)"}
+  "$STR_ace_optics_hamr":       {as: "RCO (2D)"}
+  "$STR_ace_optics_mrco":       {as: "MRCO (2D)"}
+  "$STR_ace_laserpointer_red":  {as: "Laser Pointer", beam: RED}
+  "$STR_ace_laserpointer_green": {as: "Laser Pointer", beam: GRN}
+
+class_prefixes: {}
+# Two-tone finishes: "(Black/Sand)" splits into two camo tokens and the last
+# one wins, which quietly makes the item a duplicate of its single-colour
+# sibling. The class name is unambiguous where the display name is not.
+class_suffixes:
+  "_high_black_sand_lxWS": [camo, BLKSND]
+
+# Per-item corrections, applied last, keyed by class name. JCA ships its laser
+# module twice with identical names - the rifle one and the Mk23 pistol one.
+weapons:
+  JCA_acc_LaserModule_Mk23_black_Pointer: {mount: PISTOL}
+  JCA_acc_LaserModule_Mk23_olive_Pointer: {mount: PISTOL}
+  JCA_acc_LaserModule_Mk23_sand_Pointer:  {mount: PISTOL}
+
+# Every axis used above. `camo` is conventional and inherits CamoBase.
+options:
+  camo:      {default: STD}
+  variant:   {default: STD,   base: mxa_variant}
+  mount:     {default: STD,   base: mxa_mount}
+  magnifier: {default: NONE,  base: mxa_magnifier}
+  condition: {default: CLEAN, base: mxa_condition}
+  beam:      {default: STD,   base: mxa_beam}
+
+# Dropdown order, most defining first.
+option_order: [variant, mount, magnifier, condition, beam, camo]
+
+# Shared option classes emitted into XtdGearModels_Common.hpp. The mxa_ prefix
+# keeps them apart from every other compat's.
+option_bases:
+  variant:
+    class: mxa_variant
+    label: "Variant"
+    values:
+      STD: {label: "Standard"}
+      FCS: {label: "Fire control"}
+      REMOTE: {label: "Remote display"}
+      KIR: {label: "ASP-1 Kir"}
+      MIL: {label: "78-89 MHz"}
+      EXP: {label: "390-500 MHz"}
+      JAM: {label: "433 MHz"}
+  mount:
+    class: mxa_mount
+    label: "Mount"
+    values:
+      STD:      {label: "Rifle rail"}
+      HIGH:     {label: "High mount"}
+      LOW:      {label: "Low mount"}
+      AK:       {label: "AK rail"}
+      SMG:      {label: "SMG rail"}
+      PISTOL:   {label: "Pistol (Mk23)"}
+      M250:     {label: "M250 mount"}
+      FORWARD:  {label: "Forward"}
+      REARWARD: {label: "Rearward"}
+  magnifier:
+    class: mxa_magnifier
+    label: "Magnifier"
+    values:
+      NONE: {label: "None"}
+      MAG:  {label: "Flip magnifier"}
+  condition:
+    class: mxa_condition
+    label: "Condition"
+    values:
+      CLEAN: {label: "Clean"}
+      WORN:  {label: "Worn"}
+  beam:
+    class: mxa_beam
+    label: "Beam"
+    values:
+      STD: {label: "IR"}
+      RED: {label: "Red"}
+      GRN: {label: "Green"}
+
+# Camo values aceax_gearinfo already defines. Read from the installed ACEAX by
+# init_overrides.py -- refresh with `--refresh-camo` after an ACEAX update.
+camo_values_from_aceax: [
+  6CDP, AAF, ALP, AOR1, AOR2, ATT, BLK, BLU, CBR, CTRG_ARID, CTRG_TROP, CTRG_URB, CYT,
+  DCP, DPM, EAF, EMR_DES, EMR_SUM, ERDL_H, ERDL_L, FDE, FLCK, FLRA, GHEX, GRN, GRY, HEX,
+  KHK, M81, MC, MCB, MCD, MCT, MCW, MRPT_D, MRPT_WD, MTP, NAV, OCP, OD, OEF_CP, OLI, ONU,
+  RGR, TAN, TSD, TSW, Tropic, UCP, UHEX, VSR, WHT
+]
+
+# Camo values needed on top of that shared palette. STD is the "no marker"
+# default; the other three are the base game's own attachment finishes.
+camo_values:
+  STD:  {label: "Standard"}
+  SND:  {label: "Sand"}
+  SNAKE: {label: "Snakeskin"}
+  BLKSND: {label: "Black / Sand"}
+  STRIPES: {label: "Stripes"}
+  ARID: {label: "Arid"}
+  LUSH: {label: "Lush"}

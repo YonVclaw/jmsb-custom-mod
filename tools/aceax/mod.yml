@@ -1,0 +1,24 @@
+# The "mod" this compat covers is not one Workshop item: it is every attachment
+# the 2040 mission arsenal lists (config/arsenal/common/items_optics.hpp,
+# items_muzzles.hpp, items_pointers_lights.hpp, items_bipods.hpp) - base game,
+# JCA, ACE, the XM157 mod, the 2040 mod's own optics and the CDLCs (Western
+# Sahara, Reaction Forces, Expeditionary Forces).
+#
+# So dump_configs.py is NOT used here. tools/dump_arsenal.py writes the one pack
+# below, _dump/arsenal.json, from the in-game item dump (2040's
+# tools/dump_orbat.sqf logs an ITEM line per attachment) - or, for authoring
+# before a game run, from derapified PBOs. Everything downstream (report,
+# init_overrides, gen_aceax, verify) reads that pack like any other.
+name: "2040 mission arsenal"
+prefix: aceaxjmfsb
+model_prefix: mxa
+author: YonV
+version: 1.0.0
+kinds: [attachment]
+
+sources:
+  - name: "2040 mission arsenal"
+    workshop_id: ""
+    path: 'D:\Git\2040'
+    packs:
+      arsenal: arsenal

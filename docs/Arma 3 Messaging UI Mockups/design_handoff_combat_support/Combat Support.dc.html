@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="ds/styles.css">
+<style>
+body{margin:0;background:var(--color-neutral-200)}
+a{color:var(--color-accent);text-decoration:none}a:hover{color:var(--color-accent-600)}
+.dv-turn{padding:44px 48px 36px;border-bottom:2px solid var(--color-divider)}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 24px}
+.dv-tid{font:800 11px/1 var(--font-heading);padding:4px 8px;background:var(--color-text);color:var(--color-bg)}
+.dv-tname{font:800 13px/1.2 var(--font-heading);letter-spacing:.1em;text-transform:uppercase}
+.dv-opts{display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:800 11px/1 var(--font-heading);padding:4px 8px;background:var(--color-neutral-300);color:var(--color-text)}
+.dv-olabel{display:flex;align-items:baseline;gap:10px;font:400 12px/1.35 var(--font-body);max-width:760px;color:color-mix(in srgb,var(--color-text) 62%,transparent)}
+.dv-opt:target .dv-oid{background:var(--color-accent);color:var(--color-bg)}
+.k{font:800 9.5px/1 var(--font-heading);letter-spacing:.16em;text-transform:uppercase}
+.num{font-variant-numeric:tabular-nums}
+.pad{display:flex;background:var(--color-bg);border:2px solid var(--color-text)}
+.col{display:flex;flex-direction:column;min-width:0}
+.hd{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:2px solid var(--color-text)}
+.ttl{font:800 15px/1 var(--font-heading);letter-spacing:.12em}
+.glab{display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--color-neutral-200);border-top:2px solid var(--color-divider);border-bottom:1px solid var(--color-divider)}
+.hint{margin-left:auto;font:400 11.5px/1.3 var(--font-body);color:var(--color-neutral-700);text-align:right;max-width:330px}
+.row{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--color-divider);font:600 13px/1.2 var(--font-body);cursor:pointer;background:var(--color-bg)}
+.row:hover{background:var(--color-neutral-100)}
+.row:active{background:var(--color-accent-600);color:var(--color-bg)}
+.row.on{background:var(--color-text);color:var(--color-bg)}
+.row.acc{background:var(--color-accent);color:var(--color-bg)}
+.row.dis{color:var(--color-neutral-600);cursor:default}
+.act{display:flex;align-items:center;gap:10px;padding:12px 14px;border:2px solid var(--color-text);background:var(--color-bg);font:800 11.5px/1 var(--font-heading);letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
+.act:hover{background:var(--color-neutral-100)}
+.act:active{background:var(--color-text);color:var(--color-bg)}
+.act.pri{background:var(--color-accent);border-color:var(--color-accent);color:var(--color-bg)}
+.act.pri:hover{background:var(--color-accent-600);border-color:var(--color-accent-600)}
+.act.off{border-color:var(--color-divider);color:var(--color-neutral-600);cursor:default}
+.map{position:relative;overflow:hidden;background:var(--color-neutral-300)}
+.mapg{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 63px,color-mix(in srgb,var(--color-text) 13%,transparent) 63px 65px),repeating-linear-gradient(90deg,transparent 0 63px,color-mix(in srgb,var(--color-text) 13%,transparent) 63px 65px)}
+.inp{padding:11px 12px;border:2px solid var(--color-text);background:var(--color-bg);font:600 14px/1.35 var(--font-body)}
+.stepper{display:flex;align-items:stretch;border:2px solid var(--color-text);height:38px}
+.stepbtn{width:34px;display:flex;align-items:center;justify-content:center;font:800 13px/1 var(--font-heading);background:var(--color-neutral-200);cursor:pointer;user-select:none}
+.stepbtn:hover{background:var(--color-accent);color:var(--color-bg)}
+.bar{flex:1;display:flex;align-items:center;padding:0 10px;border-left:2px solid var(--color-text);border-right:2px solid var(--color-text);font:800 12px/1 var(--font-heading);letter-spacing:.1em}
+.scr{scrollbar-width:auto;scrollbar-color:var(--color-text) var(--color-neutral-300)}
+.scr::-webkit-scrollbar{width:10px}
+.scr::-webkit-scrollbar-track{background:var(--color-neutral-300)}
+.scr::-webkit-scrollbar-thumb{background:var(--color-text);border:2px solid var(--color-neutral-300)}
+</style></helmet>
+
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#f3f2f2"/><rect x="30" y="30" width="18" height="40" fill="#201e1d"/><rect x="52" y="30" width="18" height="40" fill="#ec3013"/></svg></template>
+
+<section class="dv-turn" id="t2">
+<div class="dv-thd"><span class="dv-tid">2</span><span class="dv-tname">TAC//MSG — tacpad request screens (ALiVE format)</span></div>
+<div class="dv-opts">
+
+<!-- 2a CAS -->
+<div class="dv-opt" id="2a">
+<div class="dv-olabel"><span class="dv-oid">2a</span><span><strong>Combat support — CAS</strong> — the tacpad layout rebuilt on the system: stacked labelled pick-lists down the left, map right, action stack docked bottom-right. Selection is a solid ink fill, the destructive action is the only red. Guidance text sits flush right of its group label, never inside the list.</span></div>
+
+<div class="pad" style="width:1480px;height:900px">
+  <div class="col" style="width:720px;border-right:2px solid var(--color-text)">
+    <div class="hd">
+      <span class="ttl">COMBAT SUPPORT</span>
+      <span class="k" style="margin-left:auto;color:var(--color-neutral-700)">AVAILABLE · 2</span>
+      <span class="act" style="padding:8px 11px">SITREP</span>
+    </div>
+
+    <div class="glab"><span class="k">Asset</span><span class="hint">Select one</span></div>
+    <div class="row">TRANSPORT<span class="k num" style="margin-left:auto;color:var(--color-neutral-600)">2 AIRFRAMES</span></div>
+    <div class="row on">CAS<span class="k num" style="margin-left:auto">1 AIRFRAME</span></div>
+
+    <div class="glab"><span class="k">Unit</span><span class="hint">Unit is available and waiting for task</span></div>
+    <div class="row on">EAGLE ONE<span class="k num" style="margin-left:auto">A-164 · 2× GBU</span></div>
+
+    <div class="glab"><span class="k">Task</span><span class="hint">Unit will move to location, provide close air support and engage all painted targets</span></div>
+    <div class="row acc">SAD<span class="k" style="margin-left:auto">SEEK &amp; DESTROY</span></div>
+    <div class="row">LOITER</div>
+    <div class="row">ATTACK RUN</div>
+
+    <div class="glab"><span class="k">Parameters</span></div>
+    <div style="display:flex;gap:22px;padding:16px 14px;border-bottom:1px solid var(--color-divider)">
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+        <span class="k" style="color:var(--color-neutral-700)">CAS Radius</span>
+        <div class="stepper"><div class="stepbtn">−</div><div class="bar"><span style="flex:1">500 M</span><span style="width:52%;height:8px;background:var(--color-text)"></span></div><div class="stepbtn">+</div></div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+        <span class="k" style="color:var(--color-neutral-700)">Altitude</span>
+        <div class="stepper"><div class="stepbtn">−</div><div class="bar"><span style="flex:1">MED</span><span style="width:34%;height:8px;background:var(--color-text)"></span></div><div class="stepbtn">+</div></div>
+      </div>
+    </div>
+
+    <div class="glab"><span class="k">Rules of engagement</span></div>
+    <div class="scr" style="flex:1;min-height:0;overflow-y:auto">
+      <div class="row">Hold fire — defend</div>
+      <div class="row">Hold fire, engage at will</div>
+      <div class="row">Fire at will</div>
+      <div class="row on">Fire at will, engage at will</div>
+      <div class="row">Never fire</div>
+    </div>
+  </div>
+
+  <div class="col" style="flex:1">
+    <div class="map" style="flex:1;border-bottom:2px solid var(--color-text)">
+      <div class="mapg"></div>
+      <div style="position:absolute;left:0;right:0;top:180px;height:26px;background:color-mix(in srgb,var(--color-text) 10%,transparent);transform:rotate(-4deg)"></div>
+      <div style="position:absolute;left:400px;top:0;bottom:0;width:220px;background:color-mix(in srgb,var(--color-text) 7%,transparent)"></div>
+      <div class="k" style="position:absolute;left:120px;top:120px;color:var(--color-neutral-800)">PALIAKKO</div>
+      <div class="k" style="position:absolute;left:300px;top:420px;color:var(--color-neutral-800)">KATALAKI</div>
+      <div style="position:absolute;left:238px;top:296px;width:18px;height:18px;background:var(--color-accent);box-shadow:0 0 0 7px color-mix(in srgb,var(--color-accent) 22%,transparent)"></div>
+      <div style="position:absolute;left:190px;top:248px;width:114px;height:114px;border:2px solid var(--color-accent)"></div>
+      <div class="k" style="position:absolute;left:190px;top:224px;color:var(--color-accent-700)">SAD · 500 M</div>
+      <div style="position:absolute;left:16px;bottom:16px;padding:7px 10px;background:var(--color-bg);border:2px solid var(--color-text)" class="k num">GRID 0432 5591</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;padding:16px">
+      <div class="act off">ORDER UNIT RTB</div>
+      <div class="act">CONFIRM TASKING</div>
+      <div class="act pri">CLOSE</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- 2b TRANSPORT -->
+<div class="dv-opt" id="2b">
+<div class="dv-olabel"><span class="dv-oid">2b</span><span><strong>Combat support — transport</strong> — same skeleton, different asset. Behaviour steppers replace the CAS parameters, and the unit is already on a mission so the guidance line and the RTB action switch to their live state.</span></div>
+
+<div class="pad" style="width:1480px;height:900px">
+  <div class="col" style="width:720px;border-right:2px solid var(--color-text)">
+    <div class="hd">
+      <span class="ttl">COMBAT SUPPORT</span>
+      <span class="k" style="margin-left:auto;color:var(--color-neutral-700)">AVAILABLE · 2</span>
+      <span class="act" style="padding:8px 11px">SITREP</span>
+    </div>
+
+    <div class="glab"><span class="k">Asset</span><span class="hint">Select one</span></div>
+    <div class="row on">TRANSPORT<span class="k num" style="margin-left:auto">2 AIRFRAMES</span></div>
+    <div class="row">CAS<span class="k num" style="margin-left:auto;color:var(--color-neutral-600)">1 AIRFRAME</span></div>
+
+    <div class="glab"><span class="k">Unit</span><span class="hint">Unit is on a mission — you may abort or change the current task</span></div>
+    <div class="row on">RAPS ONE<span class="k num" style="margin-left:auto">UH-80 · 8 PAX</span></div>
+
+    <div class="glab"><span class="k">Task</span><span class="hint">Unit will move to coordinates and land the chopper at its discretion (DROP)</span></div>
+    <div class="scr" style="max-height:200px;overflow-y:auto">
+      <div class="row">PICKUP</div>
+      <div class="row acc">LAND</div>
+      <div class="row">LAND (ENG OFF)</div>
+      <div class="row">MOVE</div>
+      <div class="row">EXTRACT</div>
+    </div>
+
+    <div class="glab"><span class="k">Behaviour</span></div>
+    <div style="display:flex;flex-direction:column;gap:14px;padding:16px 14px;border-bottom:1px solid var(--color-divider)">
+      <div style="display:flex;gap:22px">
+        <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+          <span class="k" style="color:var(--color-neutral-700)">Height</span>
+          <div class="stepper"><div class="stepbtn">−</div><div class="bar"><span style="flex:1">MEDIUM</span><span style="width:50%;height:8px;background:var(--color-text)"></span></div><div class="stepbtn">+</div></div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+          <span class="k" style="color:var(--color-neutral-700)">Speed</span>
+          <div class="stepper"><div class="stepbtn">−</div><div class="bar"><span style="flex:1">NORMAL</span><span style="width:50%;height:8px;background:var(--color-text)"></span></div><div class="stepbtn">+</div></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span class="k" style="color:var(--color-neutral-700)">Rules of engagement</span>
+        <div class="stepper"><div class="stepbtn">−</div><div class="bar"><span style="flex:1">HOLD FIRE</span></div><div class="stepbtn">+</div></div>
+      </div>
+    </div>
+
+    <div class="glab"><span class="k">Passengers</span><span class="hint">8 of 8 seats assigned</span></div>
+    <div class="scr" style="flex:1;min-height:0;overflow-y:auto">
+      <div class="row">1 · ALPHA — Brennan, Okonkwo, Riley<span class="k num" style="margin-left:auto;color:var(--color-neutral-600)">3</span></div>
+      <div class="row">2 · BRAVO — Sandoval, Kestrel<span class="k num" style="margin-left:auto;color:var(--color-neutral-600)">2</span></div>
+      <div class="row">3 · MEDIC — Vance, Ito, Marek<span class="k num" style="margin-left:auto;color:var(--color-neutral-600)">3</span></div>
+    </div>
+  </div>
+
+  <div class="col" style="flex:1">
+    <div class="map" style="flex:1;border-bottom:2px solid var(--color-text)">
+      <div class="mapg"></div>
+      <div style="position:absolute;left:-40px;right:-40px;top:300px;height:20px;background:var(--color-bg);transform:rotate(-12deg)"></div>
+      <div style="position:absolute;left:120px;top:0;bottom:0;width:14px;background:var(--color-bg);transform:rotate(8deg)"></div>
+      <div class="k" style="position:absolute;left:44px;top:44px;color:var(--color-neutral-800)">LZ FALCON</div>
+      <div style="position:absolute;left:250px;top:330px;display:flex;flex-direction:column;align-items:center;gap:8px">
+        <span style="font:800 13px/1 var(--font-heading);letter-spacing:.14em">TRANSPORT</span>
+        <span style="width:2px;height:46px;background:var(--color-text)"></span>
+        <span style="width:26px;height:26px;background:var(--color-text)"></span>
+      </div>
+      <div style="position:absolute;left:16px;bottom:16px;padding:7px 10px;background:var(--color-bg);border:2px solid var(--color-text)" class="k num">GRID 0417 5563</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;padding:16px">
+      <div class="act">ORDER UNIT RTB</div>
+      <div class="act">CONFIRM TASKING</div>
+      <div class="act pri">CLOSE</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- 2c ADD TASK -->
+<div class="dv-opt" id="2c">
+<div class="dv-olabel"><span class="dv-oid">2c</span><span><strong>Add task</strong> — the authoring screen in the same frame: title and description fields at the top, then state, audience, current and parent as the same pick-list pattern. Four actions stack bottom-right, destructive last.</span></div>
+
+<div class="pad" style="width:1480px;height:900px">
+  <div class="col" style="width:720px;border-right:2px solid var(--color-text)">
+    <div class="hd"><span class="ttl">ADD TASK</span><span class="k" style="margin-left:auto;color:var(--color-neutral-700)">DRAFT</span></div>
+
+    <div style="display:flex;flex-direction:column;gap:8px;padding:16px 14px;border-bottom:1px solid var(--color-divider)">
+      <span class="k" style="color:var(--color-neutral-700)">Task title</span>
+      <div class="inp">HOLD RIDGE 214</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;padding:16px 14px;border-bottom:1px solid var(--color-divider)">
+      <span class="k" style="color:var(--color-neutral-700)">Task description</span>
+      <div class="inp" style="height:120px;align-items:flex-start;color:var(--color-neutral-800)">Occupy the ridge east of Paliakko and deny the road junction. Do not advance past the treeline without clearance.</div>
+    </div>
+
+    <div class="glab"><span class="k">Task state</span></div>
+    <div class="row">Created</div>
+    <div class="row on">Assigned</div>
+    <div class="row">Succeeded</div>
+    <div class="row">Failed</div>
+    <div class="row">Cancelled</div>
+
+    <div class="glab"><span class="k">Applied to</span></div>
+    <div class="row">Assigned individuals only</div>
+    <div class="row on">All current and JIP members of assigned group</div>
+    <div class="row">All players on my side</div>
+
+    <div class="glab"><span class="k">Set current</span></div>
+    <div style="display:flex;border-bottom:1px solid var(--color-divider)">
+      <div class="row on" style="flex:1;border-bottom:none;justify-content:flex-start">YES</div>
+      <div class="row" style="flex:1;border-bottom:none;border-left:1px solid var(--color-divider)">NO</div>
+    </div>
+
+    <div class="glab"><span class="k">Parent task</span></div>
+    <div class="scr" style="flex:1;min-height:0;overflow-y:auto">
+      <div class="row on">None</div>
+      <div class="row">OP GRANITE — secure Paliakko</div>
+      <div class="row">OP GRANITE — screen north road</div>
+    </div>
+  </div>
+
+  <div class="col" style="flex:1">
+    <div class="map" style="flex:1;border-bottom:2px solid var(--color-text)">
+      <div class="mapg"></div>
+      <div style="position:absolute;left:60px;top:60px;width:150px;height:190px;background:color-mix(in srgb,var(--color-text) 8%,transparent)"></div>
+      <div style="position:absolute;left:-30px;right:-30px;top:210px;height:16px;background:var(--color-bg);transform:rotate(6deg)"></div>
+      <div style="position:absolute;left:170px;top:180px;width:20px;height:20px;border:2px solid var(--color-text);background:var(--color-bg)"></div>
+      <div style="position:absolute;left:300px;top:230px;display:flex;align-items:center;gap:10px">
+        <span style="width:22px;height:22px;background:var(--color-accent)"></span>
+        <span style="font:800 20px/1 var(--font-heading);letter-spacing:.06em">DESTINATION</span>
+      </div>
+      <div class="k" style="position:absolute;left:60px;bottom:120px;color:var(--color-neutral-800)">RIDGE 214</div>
+      <div style="position:absolute;left:16px;bottom:16px;padding:7px 10px;background:var(--color-bg);border:2px solid var(--color-text)" class="k num">GRID 0451 5578</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;padding:16px">
+      <div class="act">ASSIGN PLAYERS</div>
+      <div class="act">CREATE TASK</div>
+      <div class="act">BACK</div>
+      <div class="act pri">CLOSE</div>
+    </div>
+  </div>
+</div>
+</div>
+
+</div>
+</section>
+
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,367 @@
+{
+  "$meta": {
+    "name": "GFA ATAK — Threaded Messaging & Tasking",
+    "version": "0.1-draft",
+    "prefix": "gfa_atak",
+    "description": "Data model, template schema, API and event contracts for the cTab-free threaded messaging/tasking engine. Server-authoritative store; clients hold a disposable cache.",
+    "authority": "server",
+    "requires": ["CBA_A3"]
+  },
+
+  "enums": {
+    "fieldType": {
+      "text": "free text, single line",
+      "textarea": "free text, multiline",
+      "number": "integer or float, optional min/max",
+      "bool": "checkbox; may belong to an exclusiveGroup",
+      "choice": "single select from a static list",
+      "grid": "position; rendered as picker (marker dropdown / map click / manual)",
+      "callsign": "callsign string; autofillable from role system",
+      "freq": "radio frequency string; autofillable from active TFAR radio",
+      "time": "clock time; autofillable from mission time"
+    },
+    "pickerSource": ["mapMarker", "mapClick", "ownPos", "callsignList", "manual"],
+    "autoFillSource": ["ownGrid", "ownCallsign", "activeSwRadio", "activeLrRadio", "missionTime", "none"],
+    "templateKind": ["root", "reply", "both"],
+    "priority": ["normal", "high"],
+    "senderMustBe": ["any", "issuer", "assignee", "boxMember"],
+    "threadKind": ["message", "task"],
+    "threadStatus": [
+      "OPEN",
+      "ISSUED",
+      "RECEIPT",
+      "ACCEPTED",
+      "DECLINED",
+      "IN_PROGRESS",
+      "REPORTED",
+      "ABORTED",
+      "CLOSED"
+    ],
+    "boxKind": ["personal", "group", "role", "named"],
+    "retention": ["ephemeral", "archive"],
+    "linkState": ["ONLINE", "DEGRADED", "DENIED"],
+    "addressKind": ["player", "group", "role", "box", "alive"]
+  },
+
+  "objects": {
+    "message": {
+      "description": "Immutable once submitted. Bodies live only in the server store.",
+      "fields": {
+        "id": "string, server-assigned, e.g. M0042",
+        "seq": "int, per-thread ordering counter — sort on this, never on time",
+        "threadId": "string",
+        "parentId": "string|null, message replied to; null on root",
+        "fromUid": "string, taken from the caller server-side, never from client payload",
+        "fromCallsign": "string, snapshot at send time",
+        "templateId": "string",
+        "payload": "map of fieldKey -> value",
+        "sentTime": "number, serverTime",
+        "gameTime": "array, date at send",
+        "priority": "enum priority",
+        "reportable": "bool, forwarded to ALiVE C2ISTAR",
+        "transition": "enum threadStatus|null, state this message caused",
+        "readBy": "array of uid"
+      }
+    },
+
+    "thread": {
+      "description": "A task IS a thread whose root template is a tasking template. No separate task object.",
+      "fields": {
+        "id": "string, e.g. T0007",
+        "kind": "enum threadKind",
+        "subject": "string, derived from root template subjectFormat — never typed",
+        "rootTemplateId": "string",
+        "status": "enum threadStatus",
+        "issuerUid": "string",
+        "claimedBy": "string|null, uid",
+        "participants": "array of uid, grows when addressees are added mid-thread",
+        "boxes": "array of boxId this thread is indexed under",
+        "anchor": {
+          "pos": "array [x,y,z] — authoritative, snapshotted at send",
+          "marker": "string|null — soft reference only, may be deleted",
+          "label": "string snapshot of marker text"
+        },
+        "parentThreadId": "string|null, for FRAGO -> subtask chains",
+        "lastActivity": "number, serverTime",
+        "closed": "bool",
+        "messages": "array of messageId in seq order"
+      }
+    },
+
+    "box": {
+      "description": "Everything is a mailbox. Individuals, groups and roles are boxes with derived membership.",
+      "fields": {
+        "id": "string — P:<uid> | G:<groupId> | R:<roleVar> | B:<NAME>",
+        "kind": "enum boxKind",
+        "displayName": "string",
+        "members": {
+          "roles": "array of role variable names, e.g. isJFO",
+          "uids": "array of uid, explicit membership",
+          "group": "string|null, engine group id"
+        },
+        "retention": "enum retention",
+        "forwardToAlive": "bool — reportable threads in this box go to C2ISTAR",
+        "threads": "array of threadId"
+      }
+    },
+
+    "indexEntry": {
+      "description": "What a client receives on join. Bodies are fetched per-thread on open.",
+      "fields": {
+        "threadId": "string",
+        "boxId": "string",
+        "subject": "string",
+        "status": "enum threadStatus",
+        "priority": "enum priority",
+        "claimedBy": "string|null",
+        "lastActivity": "number",
+        "unread": "int"
+      }
+    }
+  },
+
+  "templateSchema": {
+    "description": "Superset of the PLANOPS Maps export format. lines[]/fields[] structure preserved; keys added for IDs, validation, autofill, pickers and state transitions.",
+    "template": {
+      "id": "string, stable key — do NOT use the PLANOPS uid",
+      "title": "string",
+      "description": "string|null",
+      "type": "string, e.g. MedicalEvacuation",
+      "countryCode": "string",
+      "kind": "enum templateKind",
+      "priority": "enum priority",
+      "reportable": "bool",
+      "subjectFormat": "string with {fieldKey} substitutions",
+      "replyableWith": "array of templateId — drives which reply buttons the thread shows",
+      "transitionsTo": "enum threadStatus|null",
+      "allowedFrom": "array of enum threadStatus — states this reply is legal in",
+      "senderMustBe": "enum senderMustBe",
+      "composeMinDevice": "string — 'hud' if all fields autofill/empty, else 'eud'",
+      "lines": "array of line"
+    },
+    "line": {
+      "line": "string, e.g. 'Line 1' — empty fields[] means section header",
+      "label": "string, e.g. 'LOCATION'",
+      "fields": "array of field"
+    },
+    "field": {
+      "key": "string, generated at conversion from position: L3.A — stable across label edits",
+      "label": "string",
+      "type": "enum fieldType",
+      "required": "bool",
+      "source": "enum pickerSource|null, grid fields only",
+      "allowManual": "bool, default true — never leave a grid field dropdown-only",
+      "autoFill": "enum autoFillSource",
+      "exclusiveGroup": "string|null, radio behaviour across bools",
+      "choices": "array of string, choice type only",
+      "min": "number|null",
+      "max": "number|null"
+    }
+  },
+
+  "templateExamples": [
+    {
+      "id": "MEDEVAC",
+      "title": "MEDEVAC",
+      "type": "MedicalEvacuation",
+      "countryCode": "NATO",
+      "kind": "root",
+      "priority": "high",
+      "reportable": true,
+      "subjectFormat": "MEDEVAC · {L1} · {L3.A}U/{L3.B}P",
+      "replyableWith": ["ROGER", "WILCO", "CANTCO", "SITREP", "FREETEXT", "CLOSE"],
+      "transitionsTo": "ISSUED",
+      "allowedFrom": [],
+      "senderMustBe": "any",
+      "composeMinDevice": "eud",
+      "lines": [
+        { "line": "Header", "label": "MEDEVAC", "fields": [] },
+        {
+          "line": "Line 1",
+          "label": "LOCATION",
+          "fields": [
+            { "key": "L1", "label": "Grid of pickup zone", "type": "grid", "required": true, "source": "mapMarker", "allowManual": true, "autoFill": "ownGrid" }
+          ]
+        },
+        {
+          "line": "Line 2",
+          "label": "CALL SIGN & FREQ",
+          "fields": [
+            { "key": "L2.A", "label": "Call sign", "type": "callsign", "required": true, "autoFill": "ownCallsign" },
+            { "key": "L2.B", "label": "Frequency", "type": "freq", "required": true, "autoFill": "activeSwRadio" }
+          ]
+        },
+        {
+          "line": "Line 3",
+          "label": "NUMBER OF PATIENTS / PRECEDENCE",
+          "fields": [
+            { "key": "L3.A", "label": "URGENT — hospital under 90 min", "type": "number", "required": false, "min": 0, "max": 99 },
+            { "key": "L3.B", "label": "PRIORITY — hospital under 4 hours", "type": "number", "required": false, "min": 0, "max": 99 },
+            { "key": "L3.C", "label": "ROUTINE — hospital within 24 hours", "type": "number", "required": false, "min": 0, "max": 99 }
+          ]
+        },
+        {
+          "line": "Line 4",
+          "label": "SPECIAL EQUIPMENT REQUIRED",
+          "fields": [
+            { "key": "L4.A", "label": "None", "type": "bool", "exclusiveGroup": "equip" },
+            { "key": "L4.B", "label": "Hoist (winch)", "type": "bool", "exclusiveGroup": null },
+            { "key": "L4.C", "label": "Extrication", "type": "bool", "exclusiveGroup": null },
+            { "key": "L4.D", "label": "Ventilator", "type": "bool", "exclusiveGroup": null },
+            { "key": "L4.E", "label": "Other", "type": "text" }
+          ]
+        },
+        {
+          "line": "Line 6",
+          "label": "SECURITY AT PICKUP ZONE",
+          "fields": [
+            { "key": "L6.N", "label": "No enemy", "type": "bool", "required": true, "exclusiveGroup": "sec" },
+            { "key": "L6.P", "label": "Possible enemy", "type": "bool", "exclusiveGroup": "sec" },
+            { "key": "L6.E", "label": "Enemy in area", "type": "bool", "exclusiveGroup": "sec" },
+            { "key": "L6.X", "label": "Hot PZ — armed escort required", "type": "bool", "exclusiveGroup": "sec" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "WILCO",
+      "title": "WILCO",
+      "type": "Acknowledgement",
+      "kind": "reply",
+      "priority": "normal",
+      "reportable": false,
+      "subjectFormat": null,
+      "replyableWith": [],
+      "transitionsTo": "ACCEPTED",
+      "allowedFrom": ["ISSUED", "RECEIPT"],
+      "senderMustBe": "assignee",
+      "composeMinDevice": "hud",
+      "lines": []
+    },
+    {
+      "id": "CANTCO",
+      "title": "CANTCO",
+      "type": "Acknowledgement",
+      "kind": "reply",
+      "priority": "high",
+      "reportable": false,
+      "transitionsTo": "DECLINED",
+      "allowedFrom": ["ISSUED", "RECEIPT", "ACCEPTED", "IN_PROGRESS"],
+      "senderMustBe": "assignee",
+      "composeMinDevice": "eud",
+      "lines": [
+        {
+          "line": "Line 1",
+          "label": "REASON",
+          "fields": [
+            { "key": "L1", "label": "Reason unable to comply", "type": "textarea", "required": true }
+          ]
+        }
+      ]
+    }
+  ],
+
+  "mailboxConfig": {
+    "description": "Named boxes are declared per mission. Personal/group/role boxes are derived and need no declaration.",
+    "boxes": [
+      { "id": "B:FIRES", "displayName": "FIRES", "members": { "roles": ["isJFO"] }, "retention": "archive", "forwardToAlive": false },
+      { "id": "B:MEDEVAC", "displayName": "MEDEVAC", "members": { "roles": ["isMedic", "isPilot"] }, "retention": "archive", "forwardToAlive": false },
+      { "id": "B:S2", "displayName": "S2 INTEL", "members": { "roles": ["isISR"] }, "retention": "archive", "forwardToAlive": true },
+      { "id": "B:HQ", "displayName": "HQ", "members": { "roles": ["isCO", "isRTO"] }, "retention": "archive", "forwardToAlive": false }
+    ]
+  },
+
+  "api": {
+    "server": {
+      "gfa_atak_fnc_srvSubmit": {
+        "runsOn": "server",
+        "allowedTargets": 2,
+        "params": ["draftNonce", "templateId", "payload", "addressees", "threadId|null", "parentId|null"],
+        "validates": [
+          "sender is a member of every addressed box",
+          "sender is a thread participant when threadId is set",
+          "template.allowedFrom contains thread.status",
+          "template.senderMustBe satisfied",
+          "all required fields present",
+          "linkState of sender is not DENIED",
+          "draftNonce not already seen"
+        ],
+        "effects": [
+          "assign id, seq, sentTime; fromUid taken from caller",
+          "create thread on root, else append",
+          "apply template.transitionsTo to thread.status",
+          "index thread into each addressed box; merge participants",
+          "push message to online recipients; forward to ALiVE if reportable and box.forwardToAlive"
+        ]
+      },
+      "gfa_atak_fnc_srvRequestIndex": { "runsOn": "server", "params": ["uid"], "returns": "array of indexEntry — no bodies" },
+      "gfa_atak_fnc_srvRequestThread": { "runsOn": "server", "params": ["uid", "threadId"], "returns": "thread with full messages, membership-checked" },
+      "gfa_atak_fnc_srvMarkRead": { "runsOn": "server", "params": ["uid", "threadId", "messageIds"], "effects": ["update readBy; no broadcast"] },
+      "gfa_atak_fnc_srvClaim": { "runsOn": "server", "params": ["uid", "threadId"], "effects": ["set claimedBy if unclaimed; post system message"] },
+      "gfa_atak_fnc_srvSweep": { "runsOn": "server", "schedule": "60s", "effects": ["idle-close threads", "drop ephemeral threads past retention", "archive boxes untouched"] }
+    },
+    "client": {
+      "gfa_atak_fnc_cltReceive": { "runsOn": "client", "allowedTargets": 1, "params": ["message", "indexEntry"], "effects": ["update cache", "raise gfa_msgReceived", "call GFA_fnc_notify unless box muted"] },
+      "gfa_atak_fnc_cltIndex": { "runsOn": "client", "allowedTargets": 1, "params": ["indexEntries"] }
+    },
+    "services": {
+      "GFA_fnc_notify": { "description": "Single seam to the mission's existing notification system. Core never calls the notification API directly.", "params": ["kind", "title", "body", "priority", "threadId", "boxId"] },
+      "GFA_fnc_openApp": { "params": ["appId", "args"], "description": "Cross-app navigation, e.g. ['tasks',['fromThread', threadId]]. No-ops if the app is absent." }
+    }
+  },
+
+  "events": {
+    "gfa_msgReceived": ["message", "indexEntry"],
+    "gfa_threadUpdated": ["threadId", "status"],
+    "gfa_taskStateChanged": ["threadId", "oldStatus", "newStatus", "byUid"],
+    "gfa_indexRefreshed": [],
+    "gfa_linkStateChanged": ["oldState", "newState"]
+  },
+
+  "storage": {
+    "runtime": {
+      "location": "server missionNamespace",
+      "vars": ["GFA_threads", "GFA_boxes", "GFA_index", "GFA_ids"],
+      "rules": ["never publicVariable", "never store on objects", "HashMaps converted to arrays before crossing the network"]
+    },
+    "client": {
+      "location": "client missionNamespace",
+      "contents": ["index", "bodies of opened threads", "in-progress draft"],
+      "authoritative": false,
+      "recovery": "refetch from server"
+    },
+    "persistence": {
+      "location": "server profileNamespace",
+      "var": "GFA_archive",
+      "scope": "boxes with retention=archive only",
+      "schedule": ["timer", "MPEnded"],
+      "format": "nested arrays; rebuilt with createHashMapFromArray on postInit",
+      "notes": "Tied to the host machine's profile. No query layer — whole archive loads into memory. Consider iniDBI2 or ALiVE persistence if it outgrows this."
+    }
+  },
+
+  "linkStateBehaviour": {
+    "ONLINE": { "sync": "5s", "compose": true, "feeds": true, "tracks": "live" },
+    "DEGRADED": { "sync": "60s", "compose": true, "feeds": false, "tracks": "aged, timestamped" },
+    "DENIED": { "sync": "none", "compose": "queued locally, flushed on restore", "feeds": false, "tracks": "frozen, greyed, LAST SYNC shown", "exception": "low-bandwidth templates still pass on LPI-capable radios" }
+  },
+
+  "buildOrder": [
+    "1. Transport only — record, store, submit/receive, one hardcoded free-text template, hint output, no UI",
+    "2. Index + thread view UI, still free-text",
+    "3. Template engine — schema loader and form renderer; convert MEDEVAC first",
+    "4. Pickers and autofill — marker dropdown, map click, callsign, TFAR frequency",
+    "5. Mailboxes, claim/handled, archive persistence",
+    "6. Tasking — transition metadata, reply gating, permissions, filtered Tasks view",
+    "7. Priority, notify seam, HUD widget + keybind acknowledgement",
+    "8. ALiVE ingest, map anchors, EW link-state degradation"
+  ],
+
+  "openQuestions": [
+    "Does a CustomDisplayComponent attach to an infantry unit at all? Gates any info-panel surface.",
+    "Reply defaults to the box or to the sender? Recommended: box, with explicit reply-to-sender.",
+    "Do HashMaps survive remoteExec serialization intact? Spec assumes not and converts to arrays.",
+    "Exact TFAR accessor for the active radio's frequency — activeSwRadio/activeLrRadio confirmed, settings getter unverified.",
+    "Whether ACE overrides vanilla getOxygenRemaining, if the dive instrument is built."
+  ]
+}

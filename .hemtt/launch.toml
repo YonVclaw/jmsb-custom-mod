@@ -1,0 +1,32 @@
+[default]
+workshop = [
+    "450814997", # CBA_A3
+    "3499977893", # ADT
+    "1779063631", # ZEN
+]
+parameters = [
+    "-name=dev",
+    "-noPause",
+    "-window",
+]
+mission = "test.Stratis"
+
+[ace]
+extends = "default"
+workshop = [
+    "463939057", # ACE
+#    "766491311", # KKA3 ACE Extension
+]
+
+[cup]
+extends = "default"
+workshop = [
+    "583496184", # CUP Terrains - Core
+    "583544987", # CUP Terrains - Maps
+]
+
+[ww2]
+extends = "default"
+dlc = [
+    "Spearhead 1944",
+]

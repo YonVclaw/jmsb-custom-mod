@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>TAC//MSG — live tiles on the map screen (design reference)</title>
+<link rel="stylesheet" href="styles.css"><style>
+body{margin:0;background:var(--color-neutral-200)}
+a{color:var(--color-accent);text-decoration:none}a:hover{color:var(--color-accent-600)}
+.dv-turn{padding:44px 48px 36px;border-bottom:2px solid var(--color-divider)}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 24px}
+.dv-tid{font:800 11px/1 var(--font-heading);padding:4px 8px;background:var(--color-text);color:var(--color-bg)}
+.dv-tname{font:800 13px/1.2 var(--font-heading);letter-spacing:.1em;text-transform:uppercase}
+.dv-opts{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:800 11px/1 var(--font-heading);padding:4px 8px;background:var(--color-neutral-300);color:var(--color-text)}
+.dv-olabel{display:flex;align-items:baseline;gap:10px;font:400 12px/1.35 var(--font-body);max-width:700px;color:color-mix(in srgb,var(--color-text) 62%,transparent)}
+.dv-opt:target .dv-oid{background:var(--color-accent);color:var(--color-bg)}
+.dv-next{margin:26px 0 0;font:400 12.5px/1.6 var(--font-body);color:color-mix(in srgb,var(--color-text) 55%,transparent)}
+.k{font:800 9.5px/1 var(--font-heading);letter-spacing:.16em;text-transform:uppercase}
+.num{font-variant-numeric:tabular-nums}
+.scr{position:relative;overflow:hidden;background:var(--color-neutral-200);border:2px solid var(--color-text)}
+.mapbg{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 71px,color-mix(in srgb,var(--color-text) 11%,transparent) 71px 73px),repeating-linear-gradient(90deg,transparent 0 71px,color-mix(in srgb,var(--color-text) 11%,transparent) 71px 73px)}
+.tile{width:176px;flex:none;background:var(--color-bg);border:2px solid var(--color-text);padding:9px 11px;display:flex;flex-direction:column;gap:7px;cursor:pointer}
+.tile:hover{background:var(--color-neutral-100);box-shadow:var(--shadow-md)}
+.tile:active{background:var(--color-text);color:var(--color-bg)}
+.tval{font:800 26px/1 var(--font-heading);letter-spacing:-.02em}
+.tsub{font:800 9.5px/1.35 var(--font-heading);letter-spacing:.14em;text-transform:uppercase;color:var(--color-neutral-700)}
+.slist{scrollbar-width:auto;scrollbar-color:var(--color-text) var(--color-neutral-300)}
+.slist::-webkit-scrollbar{width:10px}
+.slist::-webkit-scrollbar-track{background:var(--color-neutral-300);border-left:1px solid var(--color-divider)}
+.slist::-webkit-scrollbar-thumb{background:var(--color-text);border:2px solid var(--color-neutral-300)}
+.slist::-webkit-scrollbar-thumb:hover{background:var(--color-accent)}
+.locked{background:color-mix(in srgb,var(--color-text) 12%,transparent);border:1px dashed var(--color-divider)}
+</style></head>
+<body>
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><span class="dv-tid">1</span><span class="dv-tname">TAC//MSG — live tiles on the map screen</span></div>
+<div class="dv-opts">
+
+<!-- 1a MAP SCREEN -->
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><span class="dv-oid">1a</span><span><strong>Map screen with docked tile strips</strong> — tiles live only in the two bands the game leaves free (top and bottom-centre) and never cover the vanilla menu, map tools, scale bar or contour legend. The right zone stays the threaded message reader. Clicking any tile opens that app full size (see <a href="#1c">1c</a>).</span></div>
+<div class="scr" style="width:1600px;height:900px">
+  <div class="mapbg"></div>
+  <div style="position:absolute;left:150px;top:120px;right:520px;height:34px;background:color-mix(in srgb,var(--color-text) 12%,transparent);transform:rotate(-3deg)"></div>
+  <div style="position:absolute;left:300px;top:420px;width:26px;bottom:120px;background:color-mix(in srgb,var(--color-text) 9%,transparent);transform:rotate(6deg)"></div>
+  <div style="position:absolute;left:0;right:0;bottom:0;height:210px;background:color-mix(in srgb,var(--color-text) 6%,transparent)"></div>
+  <div class="k" style="position:absolute;left:250px;top:250px;color:var(--color-neutral-800)">TUVANAKA</div>
+  <div class="k" style="position:absolute;left:640px;top:520px;color:var(--color-neutral-800)">BELFORT</div>
+  <div class="k" style="position:absolute;left:980px;bottom:330px;color:var(--color-neutral-800)">GEORGETOWN</div>
+  <div style="position:absolute;left:742px;top:398px;width:16px;height:16px;background:var(--color-accent);box-shadow:0 0 0 6px color-mix(in srgb,var(--color-accent) 22%,transparent)"></div>
+
+  <div class="locked" style="position:absolute;left:18px;top:18px;width:176px;height:120px;display:flex;flex-direction:column;justify-content:flex-end;padding:8px">
+    <div class="k" style="color:var(--color-neutral-800)">GAME MENU · LOCKED</div>
+  </div>
+
+  <div style="position:absolute;left:18px;top:150px;width:176px;bottom:198px;background:var(--color-bg);border:2px solid var(--color-text);display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:2px solid var(--color-divider)">
+      <span class="k">SQUAD</span><span class="k num" style="margin-left:auto;color:var(--color-neutral-700)">13 / 16</span>
+    </div>
+    <div class="slist" style="flex:1;min-height:0;overflow-y:scroll">
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--color-divider)">
+        <span style="width:9px;height:9px;flex:none;background:oklch(0.55 0.13 145)"></span><span style="flex:1;font-size:12.5px;font-weight:600">Brennan</span><span class="k num" style="color:var(--color-neutral-700)">78</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--color-divider)">
+        <span style="width:9px;height:9px;flex:none;background:oklch(0.75 0.13 85)"></span><span style="flex:1;font-size:12.5px;font-weight:600">Okonkwo</span><span class="k num" style="color:var(--color-neutral-700)">54</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--color-divider)">
+        <span style="width:9px;height:9px;flex:none;background:oklch(0.55 0.13 145)"></span><span style="flex:1;font-size:12.5px">Riley</span><span class="k num" style="color:var(--color-neutral-700)">91</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--color-divider)">
+        <span style="width:9px;height:9px;flex:none;background:var(--color-neutral-500)"></span><span style="flex:1;font-size:12.5px;font-weight:600">Sandoval</span><span class="k num" style="color:var(--color-neutral-700)">—</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--color-divider)">
+        <span style="width:9px;height:9px;flex:none;background:oklch(0.75 0.13 85)"></span><span style="flex:1;font-size:12.5px">Vaughn</span><span class="k num" style="color:var(--color-neutral-700)">33</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--color-divider)">
+        <span style="width:9px;height:9px;flex:none;background:oklch(0.55 0.13 145)"></span><span style="flex:1;font-size:12.5px">Idris</span><span class="k num" style="color:var(--color-neutral-700)">64</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--color-divider)">
+        <span style="width:9px;height:9px;flex:none;background:oklch(0.55 0.13 145)"></span><span style="flex:1;font-size:12.5px">Kessler</span><span class="k num" style="color:var(--color-neutral-700)">70</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--color-divider)">
+        <span style="width:9px;height:9px;flex:none;background:oklch(0.55 0.13 145)"></span><span style="flex:1;font-size:12.5px">Moreau</span><span class="k num" style="color:var(--color-neutral-700)">58</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--color-divider)">
+        <span style="width:9px;height:9px;flex:none;background:var(--color-text)"></span><span style="flex:1;font-size:12.5px">Lang</span><span class="k num" style="color:var(--color-neutral-700)">—</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--color-divider)">
+        <span style="width:9px;height:9px;flex:none;background:oklch(0.55 0.13 145)"></span><span style="flex:1;font-size:12.5px">Nowak</span><span class="k num" style="color:var(--color-neutral-700)">82</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--color-divider)">
+        <span style="width:9px;height:9px;flex:none;background:oklch(0.75 0.13 85)"></span><span style="flex:1;font-size:12.5px">Petrov</span><span class="k num" style="color:var(--color-neutral-700)">47</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--color-divider)">
+        <span style="width:9px;height:9px;flex:none;background:oklch(0.55 0.13 145)"></span><span style="flex:1;font-size:12.5px">Diaz</span><span class="k num" style="color:var(--color-neutral-700)">66</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--color-divider)">
+        <span style="width:9px;height:9px;flex:none;background:oklch(0.55 0.13 145)"></span><span style="flex:1;font-size:12.5px">Ferrand</span><span class="k num" style="color:var(--color-neutral-700)">75</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--color-divider)">
+        <span style="width:9px;height:9px;flex:none;background:oklch(0.55 0.13 145)"></span><span style="flex:1;font-size:12.5px">Ito</span><span class="k num" style="color:var(--color-neutral-700)">61</span>
+      </div>
+    </div>
+    <div style="border-top:2px solid var(--color-divider);padding:8px 10px;display:flex;flex-direction:column;gap:6px">
+      <div class="k" style="height:28px;border:2px solid var(--color-text);display:flex;align-items:center;padding:0 7px">OPEN FULL LIST</div>
+      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:oklch(0.55 0.13 145)"></span><span class="k" style="color:var(--color-neutral-700)">OK</span></span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:oklch(0.75 0.13 85)"></span><span class="k" style="color:var(--color-neutral-700)">WIA</span></span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:var(--color-neutral-500)"></span><span class="k" style="color:var(--color-neutral-700)">UNCON</span></span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:var(--color-text)"></span><span class="k" style="color:var(--color-neutral-700)">KIA</span></span>
+      </div>
+    </div>
+  </div>
+  <div class="locked" style="position:absolute;left:0;bottom:0;width:576px;height:180px;display:flex;flex-direction:column;justify-content:flex-end;padding:10px">
+    <div class="k" style="color:var(--color-neutral-800)">CHAT OVERLAY · 8 GRID × 2.5 GRID · NEVER COVER</div>
+  </div>
+  <div class="locked" style="position:absolute;right:18px;bottom:18px;width:230px;height:64px;display:flex;align-items:flex-end;padding:8px">
+    <div class="k" style="color:var(--color-neutral-800)">SCALE + CONTOUR · NEVER COVER</div>
+  </div>
+
+  <div style="position:absolute;left:206px;top:18px;right:452px;display:flex;flex-direction:column;gap:7px">
+    <div class="k" style="color:var(--color-neutral-700)">LIVE TILES · TAP TO OPEN FULL SIZE</div>
+    <div style="display:flex;gap:10px">
+      <div class="tile" style="background:var(--color-accent);border-color:var(--color-accent);color:var(--color-bg)">
+        <div class="k" style="display:flex;align-items:center;gap:6px">DRONES<span style="margin-left:auto">DETECT</span></div>
+        <div class="tval num">2</div>
+        <div class="tsub" style="color:var(--color-bg)">BRG 118 · 1.4 KM · CLOSING</div>
+      </div>
+      <div class="tile">
+        <div class="k" style="display:flex;align-items:center;gap:6px">JAM<span style="margin-left:auto;color:var(--color-neutral-700)">RF</span></div>
+        <div class="tval num">38<span style="font-size:16px">%</span></div>
+        <div class="tsub">DEGRADED · CMD NET</div>
+      </div>
+      <div class="tile">
+        <div class="k" style="display:flex;align-items:center;gap:6px">WEATHER<span style="margin-left:auto;color:var(--color-neutral-700)">1200</span></div>
+        <div class="tval">OVC</div>
+        <div class="tsub">034 AT 1 M/S · VIS 4 KM</div>
+      </div>
+      <div class="tile">
+        <div class="k" style="display:flex;align-items:center;gap:6px">RADIO<span style="margin-left:auto;color:var(--color-neutral-700)">AN/PRC</span></div>
+        <div class="tval num">42.500</div>
+        <div class="tsub">CMD · ENCRYPT ON · SIG 4/5</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="position:absolute;left:600px;bottom:18px;width:552px;background:var(--color-bg);border:2px solid var(--color-text);display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:2px solid var(--color-divider)">
+      <span class="k">MAP TOOLS</span><span class="k" style="margin-left:auto;color:var(--color-neutral-700)">DRAG TO REPOSITION</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px 12px">
+      <div class="k" style="height:34px;border:2px solid var(--color-text);display:flex;align-items:center;padding:0 9px;background:var(--color-text);color:var(--color-bg)">COMPASS</div>
+      <div class="k" style="height:34px;border:2px solid var(--color-text);display:flex;align-items:center;padding:0 9px">DISTANCE</div>
+      <div class="k" style="height:34px;border:2px solid var(--color-text);display:flex;align-items:center;padding:0 9px">PROFILE</div>
+      <div class="k" style="height:34px;border:2px solid var(--color-text);display:flex;align-items:center;padding:0 9px">SIGHT</div>
+      <div class="k" style="height:34px;border:2px solid var(--color-text);display:flex;align-items:center;padding:0 9px">BUILDINGS</div>
+      <div class="k" style="height:34px;border:2px solid var(--color-text);display:flex;align-items:center;padding:0 9px">GRID</div>
+      <div class="k" style="height:34px;border:2px solid var(--color-text);display:flex;align-items:center;padding:0 9px">FIND FLAT</div>
+      <div class="k" style="height:34px;border:2px solid var(--color-accent);color:var(--color-accent-700);display:flex;align-items:center;padding:0 9px">OFF</div>
+    </div>
+  </div>
+
+  <div style="position:absolute;right:18px;top:18px;width:400px;bottom:230px;background:var(--color-bg);border:2px solid var(--color-text);display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--color-text);color:var(--color-bg)">
+      <span class="k">TAC//MSG · READER</span><span class="k" style="margin-left:auto;opacity:.75">3 NETS MONITORED</span>
+    </div>
+    <div style="display:flex;border-bottom:2px solid var(--color-divider)">
+      <span class="k" style="flex:1;padding:9px 0;text-align:center;background:var(--color-accent);color:var(--color-bg)">CMD<span class="num"> 3</span></span>
+      <span class="k" style="flex:1;padding:9px 0;text-align:center;border-left:1px solid var(--color-divider);color:var(--color-neutral-700)">PLT</span>
+      <span class="k" style="flex:1;padding:9px 0;text-align:center;border-left:1px solid var(--color-divider);color:var(--color-neutral-700)">MED<span class="num" style="color:var(--color-accent-700)"> 1</span></span>
+      <span class="k" style="flex:1;padding:9px 0;text-align:center;border-left:1px solid var(--color-divider);color:var(--color-neutral-700)">FSC</span>
+      <span class="k" style="flex:1;padding:9px 0;text-align:center;border-left:1px solid var(--color-divider);color:var(--color-neutral-700)">ALL</span>
+    </div>
+    <div style="padding:11px 12px;border-bottom:1px solid var(--color-divider);background:var(--color-accent-100);border-left:4px solid var(--color-accent)">
+      <div style="display:flex;align-items:center;gap:7px"><span class="k" style="background:var(--color-accent);color:var(--color-bg);padding:3px 6px">FLASH</span><span class="k" style="color:var(--color-accent-800)">9-LINE</span><span class="k num" style="margin-left:auto;color:var(--color-neutral-700)">04:12</span></div>
+      <div style="font:800 15px/1.15 var(--font-heading);margin-top:7px">MEDEVAC — GRID <span class="num">043 118</span></div>
+      <div style="font-size:12.5px;line-height:1.4;margin-top:4px;color:var(--color-neutral-800)">1× URGENT, litter · bird 08 min</div>
+    </div>
+    <div style="padding:11px 12px;border-bottom:1px solid var(--color-divider)">
+      <div style="display:flex;align-items:center;gap:7px"><span class="k" style="border:1px solid var(--color-divider);padding:3px 6px;color:var(--color-neutral-700)">PRIORITY</span><span class="k" style="color:var(--color-neutral-700)">FRAGO</span><span class="k num" style="margin-left:auto;color:var(--color-neutral-700)">03:41</span></div>
+      <div style="font:800 15px/1.15 var(--font-heading);margin-top:7px">FRAGO 03 — SEIZE BRIDGE</div>
+      <div style="font-size:12.5px;line-height:1.4;margin-top:4px;color:var(--color-neutral-700)">Effective 0500 · 2 ack pending</div>
+    </div>
+    <div style="padding:11px 12px;border-bottom:1px solid var(--color-divider)">
+      <div style="display:flex;align-items:center;gap:7px"><span class="k" style="border:1px solid var(--color-divider);padding:3px 6px;color:var(--color-neutral-700)">ROUTINE</span><span class="k" style="color:var(--color-neutral-700)">SITREP</span><span class="k num" style="margin-left:auto;color:var(--color-neutral-700)">04:00</span></div>
+      <div style="font:800 15px/1.15 var(--font-heading);margin-top:7px">SITREP 0400 — 2 PLT</div>
+      <div style="font-size:12.5px;line-height:1.4;margin-top:4px;color:var(--color-neutral-700)">Holding OBJ CEDAR · ammo amber</div>
+    </div>
+    <div style="margin-top:auto;border-top:2px solid var(--color-divider);padding:10px 12px;display:flex;align-items:flex-end;gap:10px">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-primary" style="padding:6px 11px">OPEN FULL</button>
+        <button class="btn btn-secondary" style="padding:6px 11px">NEW</button>
+      </div>
+      <div style="margin-left:auto;text-align:right">
+        <div class="k" style="color:var(--color-accent-700)">3 UNREAD · 1 FLASH</div>
+        <div class="k" style="margin-top:6px;color:var(--color-neutral-700)">2 ACK DUE</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="position:absolute;right:18px;bottom:194px;width:400px;display:flex;align-items:center;gap:8px;border:2px solid var(--color-text);background:var(--color-bg);padding:8px 12px;cursor:pointer">
+    <span style="display:inline-flex;width:16px;height:16px;flex:none;cursor:pointer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter" width="16" height="16"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6h.09A1.65 1.65 0 0 0 10 3.09V3a2 2 0 1 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></span><span class="k">SETTINGS</span><span class="k" style="margin-left:auto;color:var(--color-neutral-700)">DISPLAY · COLOUR SCHEME</span>
+  </div>
+
+  <div style="position:absolute;left:206px;top:0;right:452px;height:14px;border-left:2px solid var(--color-accent);border-right:2px solid var(--color-accent)"></div>
+</div>
+</div>
+
+<!-- 1b TILE ANATOMY -->
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><span class="dv-oid">1b</span><span><strong>Tile anatomy and states</strong> — one 176×98 module: kicker + qualifier, one big live value, one detail line. Alert inverts to accent, stale drops to 50%, no-data keeps the frame so the band never reflows.</span></div>
+<div style="width:1000px;background:var(--color-bg);border:2px solid var(--color-text);padding:26px;display:flex;flex-direction:column;gap:22px">
+  <div>
+    <div class="k" style="color:var(--color-neutral-700);margin-bottom:11px">STATES</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:7px"><span class="k" style="color:var(--color-neutral-600)">REST</span>
+        <div class="tile"><div class="k" style="display:flex;gap:6px">WEATHER<span style="margin-left:auto;color:var(--color-neutral-700)">1200</span></div><div class="tval">OVC</div><div class="tsub">034 AT 1 M/S · VIS 4 KM</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px"><span class="k" style="color:var(--color-neutral-600)">ALERT</span>
+        <div class="tile" style="background:var(--color-accent);border-color:var(--color-accent);color:var(--color-bg)"><div class="k" style="display:flex;gap:6px">DRONES<span style="margin-left:auto">DETECT</span></div><div class="tval num">2</div><div class="tsub" style="color:var(--color-bg)">BRG 118 · 1.4 KM</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px"><span class="k" style="color:var(--color-neutral-600)">WARN</span>
+        <div class="tile" style="border-color:var(--color-accent)"><div class="k" style="display:flex;gap:6px;color:var(--color-accent-700)">JAM<span style="margin-left:auto">RF</span></div><div class="tval num" style="color:var(--color-accent-700)">38<span style="font-size:16px">%</span></div><div class="tsub">DEGRADED · CMD NET</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px"><span class="k" style="color:var(--color-neutral-600)">STALE</span>
+        <div class="tile" style="opacity:.5"><div class="k" style="display:flex;gap:6px">INT<span style="margin-left:auto">STALE 14 M</span></div><div class="tval num">0</div><div class="tsub">NO FEED · LAST 1146</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px"><span class="k" style="color:var(--color-neutral-600)">PRESSED</span>
+        <div class="tile" style="background:var(--color-text);color:var(--color-bg)"><div class="k" style="display:flex;gap:6px">SQUAD<span style="margin-left:auto">2 PLT</span></div><div class="tval num">7<span style="font-size:16px"> / 9</span></div><div class="tsub" style="color:var(--color-bg)">OPENING…</div></div>
+      </div>
+    </div>
+  </div>
+  <div style="height:2px;background:var(--color-divider)"></div>
+  <div>
+    <div class="k" style="color:var(--color-neutral-700);margin-bottom:11px">ANATOMY</div>
+    <div style="display:flex;gap:22px;align-items:flex-start">
+      <div class="tile" style="width:240px;height:auto"><div class="k" style="display:flex;gap:6px">SQUAD<span style="margin-left:auto;color:var(--color-neutral-700)">2 PLT</span></div><div class="tval num">7<span style="font-size:16px;color:var(--color-neutral-700)"> / 9</span></div><div class="tsub">1 WIA · 1 UNRESPONSIVE</div></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:9px;font-size:13px;line-height:1.5">
+        <div><span class="k" style="color:var(--color-accent-700)">KICKER</span> — app name, uppercase 9.5px/800 at 0.16em tracking, plus a right-aligned qualifier (net, unit, timestamp) in neutral-700.</div>
+        <div><span class="k" style="color:var(--color-accent-700)">VALUE</span> — the one number or word worth a glance: Archivo 800 26px, tabular. Never two competing values.</div>
+        <div><span class="k" style="color:var(--color-accent-700)">DETAIL</span> — one line at 1.35 leading, max two clauses separated by ·. Truncate rather than wrap to three lines.</div>
+        <div><span class="k" style="color:var(--color-accent-700)">FRAME</span> — 176×98, 2px ink border, ground fill, zero radius, 9px/11px padding, 7px internal gap. Hover lifts one shadow step; press inverts to ink.</div>
+        <div><span class="k" style="color:var(--color-accent-700)">POLL</span> — value refresh must not resize the tile: reserve the widest plausible value at build time.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- 1c FULL SIZE APP -->
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><span class="dv-oid">1c</span><span><strong>Tile → full-size app</strong> — tapping SQUAD opens over the map at full screen. The originating tile stays in place at the top-left of the header as the way back, and the reader zone on the right is preserved so comms never disappear.</span></div>
+<div class="scr" style="width:1600px;height:900px;background:var(--color-bg)">
+  <div style="position:absolute;inset:0;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;border-bottom:2px solid var(--color-text)">
+      <div class="tile" style="width:auto;padding:6px 10px;gap:4px;background:var(--color-text);border-color:var(--color-text);color:var(--color-bg)">
+        <div class="k">SQUAD</div><div class="num" style="font:800 15px/1 var(--font-heading)">7 / 9</div>
+      </div>
+      <span style="font:800 22px/1 var(--font-heading);letter-spacing:-.02em">SQUAD STATUS</span>
+      <span class="k" style="color:var(--color-neutral-700)">2 PLT · CMD NET · POLL 1 HZ</span>
+      <span class="k num" style="margin-left:auto;color:var(--color-neutral-700)">12:00:53</span>
+      
+      <button class="btn btn-secondary">BACK TO MAP · ESC</button>
+    </div>
+
+    <div style="flex:1;display:flex;min-height:0">
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;border-right:2px solid var(--color-divider)">
+        <div style="display:grid;grid-template-columns:150px 76px 1fr 150px 132px 84px 88px 80px;border-bottom:2px solid var(--color-divider);background:var(--color-neutral-200)">
+          <div class="k" style="padding:8px 10px;color:var(--color-neutral-700)">CALLSIGN</div>
+          <div class="k" style="padding:8px 10px;color:var(--color-neutral-700)">ROLE</div>
+          <div class="k" style="padding:8px 10px;color:var(--color-neutral-700)">STATUS</div>
+          <div class="k" style="padding:8px 10px;color:var(--color-neutral-700)">ACE</div>
+          <div class="k" style="padding:8px 10px;color:var(--color-neutral-700)">GRID · 10 DIGIT</div>
+          <div class="k" style="padding:8px 10px;color:var(--color-neutral-700)">AMMO</div>
+          <div class="k" style="padding:8px 10px;color:var(--color-neutral-700)">RADIO</div>
+          <div class="k" style="padding:8px 10px;color:var(--color-neutral-700)">PING</div>
+        </div>
+        <div style="display:grid;grid-template-columns:150px 76px 1fr 150px 132px 84px 88px 80px;border-bottom:1px solid var(--color-divider);font-size:13px;align-items:center">
+          <div style="padding:9px 10px;font-weight:600">SGT Brennan</div><div class="k" style="padding:9px 10px;color:var(--color-neutral-700)">SL</div>
+          <div style="padding:9px 10px">Effective</div>
+          <div style="padding:9px 10px;display:flex;gap:5px">
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:oklch(0.55 0.13 145)"></span><span class="k">A</span></span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:oklch(0.55 0.13 145)"></span><span class="k">C</span></span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:oklch(0.55 0.13 145)"></span><span class="k">E</span></span>
+          </div>
+          <div class="num" style="padding:9px 10px">04312 11847</div><div class="num" style="padding:9px 10px">78%</div><div class="k" style="padding:9px 10px">GOOD</div><div class="k num" style="padding:9px 10px">02 S</div>
+        </div>
+        <div style="display:grid;grid-template-columns:150px 76px 1fr 150px 132px 84px 88px 80px;border-bottom:1px solid var(--color-divider);font-size:13px;align-items:center;background:var(--color-accent-100)">
+          <div style="padding:9px 10px;font-weight:600">CPL Okonkwo</div><div class="k" style="padding:9px 10px;color:var(--color-neutral-700)">RTO</div>
+          <div style="padding:9px 10px;font-weight:600;color:var(--color-accent-700)">WIA — leg, treated</div>
+          <div style="padding:9px 10px;display:flex;gap:5px">
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:oklch(0.75 0.13 85)"></span><span class="k">A</span></span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:oklch(0.75 0.13 85)"></span><span class="k">C</span></span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:oklch(0.55 0.13 145)"></span><span class="k">E</span></span>
+          </div>
+          <div class="num" style="padding:9px 10px">04298 11726</div><div class="num" style="padding:9px 10px">54%</div><div class="k" style="padding:9px 10px">GOOD</div><div class="k num" style="padding:9px 10px">03 S</div>
+        </div>
+        <div style="display:grid;grid-template-columns:150px 76px 1fr 150px 132px 84px 88px 80px;border-bottom:1px solid var(--color-divider);font-size:13px;align-items:center">
+          <div style="padding:9px 10px;font-weight:600">Doc Riley</div><div class="k" style="padding:9px 10px;color:var(--color-neutral-700)">MED</div>
+          <div style="padding:9px 10px">Effective · treating</div>
+          <div style="padding:9px 10px;display:flex;gap:5px">
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:oklch(0.55 0.13 145)"></span><span class="k">A</span></span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:oklch(0.75 0.13 85)"></span><span class="k">C</span></span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:oklch(0.55 0.13 145)"></span><span class="k">E</span></span>
+          </div>
+          <div class="num" style="padding:9px 10px">04301 11719</div><div class="num" style="padding:9px 10px">91%</div><div class="k" style="padding:9px 10px">GOOD</div><div class="k num" style="padding:9px 10px">01 S</div>
+        </div>
+        <div style="display:grid;grid-template-columns:150px 76px 1fr 150px 132px 84px 88px 80px;border-bottom:1px solid var(--color-divider);font-size:13px;align-items:center;background:var(--color-accent);color:var(--color-bg)">
+          <div style="padding:9px 10px;font-weight:600">PVT Sandoval</div><div class="k" style="padding:9px 10px;color:inherit">AR</div>
+          <div style="padding:9px 10px;font-weight:600">UNRESPONSIVE — no vitals</div>
+          <div style="padding:9px 10px;display:flex;gap:5px">
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--color-text)"></span><span class="k">A</span></span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--color-accent)"></span><span class="k">C</span></span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:oklch(0.75 0.13 85)"></span><span class="k">E</span></span>
+          </div>
+          <div class="num" style="padding:9px 10px">04117 12104</div><div class="num" style="padding:9px 10px">—</div><div class="k" style="padding:9px 10px">DEAD</div><div class="k num" style="padding:9px 10px">2 M 40</div>
+        </div>
+        <div style="display:grid;grid-template-columns:150px 76px 1fr 150px 132px 84px 88px 80px;border-bottom:1px solid var(--color-divider);font-size:13px;align-items:center">
+          <div style="padding:9px 10px;font-weight:600">SPC Vaughn</div><div class="k" style="padding:9px 10px;color:var(--color-neutral-700)">GRN</div>
+          <div style="padding:9px 10px">Effective</div>
+          <div style="padding:9px 10px;display:flex;gap:5px">
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:oklch(0.75 0.13 85)"></span><span class="k">A</span></span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:oklch(0.55 0.13 145)"></span><span class="k">C</span></span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:oklch(0.75 0.13 85)"></span><span class="k">E</span></span>
+          </div>
+          <div class="num" style="padding:9px 10px">04437 11908</div><div class="num" style="padding:9px 10px">33%</div><div class="k" style="padding:9px 10px;color:var(--color-accent-700)">DEGRADED</div><div class="k num" style="padding:9px 10px">11 S</div>
+        </div>
+        <div style="display:grid;grid-template-columns:150px 76px 1fr 150px 132px 84px 88px 80px;border-bottom:1px solid var(--color-divider);font-size:13px;align-items:center">
+          <div style="padding:9px 10px;font-weight:600">PFC Idris</div><div class="k" style="padding:9px 10px;color:var(--color-neutral-700)">RFL</div>
+          <div style="padding:9px 10px">Effective</div>
+          <div style="padding:9px 10px;display:flex;gap:5px">
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:oklch(0.55 0.13 145)"></span><span class="k">A</span></span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:oklch(0.55 0.13 145)"></span><span class="k">C</span></span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:oklch(0.55 0.13 145)"></span><span class="k">E</span></span>
+          </div>
+          <div class="num" style="padding:9px 10px">04441 11912</div><div class="num" style="padding:9px 10px">64%</div><div class="k" style="padding:9px 10px">GOOD</div><div class="k num" style="padding:9px 10px">04 S</div>
+        </div>
+        <div style="display:grid;grid-template-columns:150px 76px 1fr 150px 132px 84px 88px 80px;border-bottom:1px solid var(--color-divider);font-size:13px;align-items:center;opacity:.55">
+          <div style="padding:9px 10px;font-weight:600">PVT Lang</div><div class="k" style="padding:9px 10px;color:inherit">RFL</div>
+          <div style="padding:9px 10px">Out of net — last 1146</div>
+          <div style="padding:9px 10px;display:flex;gap:5px">
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--color-text)"></span><span class="k">A</span></span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--color-text)"></span><span class="k">C</span></span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--color-text)"></span><span class="k">E</span></span>
+          </div>
+          <div class="num" style="padding:9px 10px">03952 12437</div><div class="num" style="padding:9px 10px">—</div><div class="k" style="padding:9px 10px">NO LINK</div><div class="k num" style="padding:9px 10px">14 M</div>
+        </div>
+        <div style="margin-top:auto;border-top:2px solid var(--color-divider);padding:12px 14px;display:flex;gap:9px;align-items:center">
+          <button class="btn btn-primary">FILE CASEVAC FOR SANDOVAL</button>
+          <span class="k" style="margin-left:auto;color:var(--color-neutral-700)">TAP A ROW TO CENTRE THE MAP ON THAT PLAYER</span>
+        </div>
+      </div>
+
+      <div style="width:400px;flex:none;display:flex;flex-direction:column;background:var(--color-surface)">
+        <div style="padding:10px 14px;border-bottom:2px solid var(--color-divider);display:flex;align-items:center">
+          <span class="k">STRENGTH</span><span class="k num" style="margin-left:auto;color:var(--color-neutral-700)">7 EFFECTIVE / 9 ASSIGNED</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:2px solid var(--color-divider)">
+          <div style="padding:12px 14px;border-right:1px solid var(--color-divider)"><div class="k" style="color:var(--color-neutral-700)">WIA</div><div class="num" style="font:800 24px/1 var(--font-heading);margin-top:7px;color:var(--color-accent-700)">1</div></div>
+          <div style="padding:12px 14px"><div class="k" style="color:var(--color-neutral-700)">UNRESPONSIVE</div><div class="num" style="font:800 24px/1 var(--font-heading);margin-top:7px;color:var(--color-accent-700)">1</div></div>
+          <div style="padding:12px 14px;border-right:1px solid var(--color-divider);border-top:1px solid var(--color-divider)"><div class="k" style="color:var(--color-neutral-700)">AMMO AVG</div><div class="num" style="font:800 24px/1 var(--font-heading);margin-top:7px">64%</div></div>
+          <div style="padding:12px 14px;border-top:1px solid var(--color-divider)"><div class="k" style="color:var(--color-neutral-700)">NO LINK</div><div class="num" style="font:800 24px/1 var(--font-heading);margin-top:7px">1</div></div>
+        </div>
+        <div style="padding:12px 14px;border-bottom:2px solid var(--color-divider)">
+          <div class="k" style="color:var(--color-neutral-700)">DISPERSION</div>
+          <div style="font-size:13px;line-height:1.5;margin-top:7px">Widest spread <span class="num" style="font-weight:600">640 M</span> — Lang is <span class="num" style="font-weight:600">520 M</span> beyond the next nearest man.</div>
+        </div>
+        <div style="flex:1;padding:12px 14px;display:flex;flex-direction:column;gap:11px;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="k">MY ACE REPORT</span><span class="k" style="margin-left:auto;color:var(--color-neutral-700)">SGT BRENNAN · SL</span>
+          </div>
+          <div class="field"><label>A · AMMUNITION</label>
+            <div style="display:flex;gap:0;border:2px solid var(--color-text)">
+              <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 4px;cursor:pointer;background:var(--color-text);color:var(--color-bg)"><span style="width:10px;height:10px;background:oklch(0.55 0.13 145)"></span><span class="k">GRN</span></label>
+              <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 4px;cursor:pointer;border-left:1px solid var(--color-divider)"><span style="width:10px;height:10px;background:oklch(0.75 0.13 85)"></span><span class="k">AMB</span></label>
+              <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 4px;cursor:pointer;border-left:1px solid var(--color-divider)"><span style="width:10px;height:10px;background:var(--color-accent)"></span><span class="k">RED</span></label>
+              <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 4px;cursor:pointer;border-left:1px solid var(--color-divider)"><span style="width:10px;height:10px;background:var(--color-text)"></span><span class="k">BLK</span></label>
+            </div>
+          </div>
+          <div class="field"><label>C · CASUALTIES</label>
+            <div style="display:flex;gap:0;border:2px solid var(--color-text)">
+              <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 4px;cursor:pointer;background:var(--color-text);color:var(--color-bg)"><span style="width:10px;height:10px;background:oklch(0.55 0.13 145)"></span><span class="k">NONE</span></label>
+              <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 4px;cursor:pointer;border-left:1px solid var(--color-divider)"><span style="width:10px;height:10px;background:oklch(0.75 0.13 85)"></span><span class="k">WIA</span></label>
+              <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 4px;cursor:pointer;border-left:1px solid var(--color-divider)"><span style="width:10px;height:10px;background:var(--color-accent)"></span><span class="k">URGENT</span></label>
+              <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 4px;cursor:pointer;border-left:1px solid var(--color-divider)"><span style="width:10px;height:10px;background:var(--color-text)"></span><span class="k">KIA</span></label>
+            </div>
+          </div>
+          <div class="field"><label>E · EQUIPMENT</label>
+            <div style="display:flex;gap:0;border:2px solid var(--color-text)">
+              <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 4px;cursor:pointer"><span style="width:10px;height:10px;background:oklch(0.55 0.13 145)"></span><span class="k">OK</span></label>
+              <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 4px;cursor:pointer;border-left:1px solid var(--color-divider);background:var(--color-text);color:var(--color-bg)"><span style="width:10px;height:10px;background:oklch(0.75 0.13 85)"></span><span class="k">DEGR</span></label>
+              <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 4px;cursor:pointer;border-left:1px solid var(--color-divider)"><span style="width:10px;height:10px;background:var(--color-accent)"></span><span class="k">LOST</span></label>
+              <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 4px;cursor:pointer;border-left:1px solid var(--color-divider)"><span style="width:10px;height:10px;background:var(--color-text)"></span><span class="k">NMC</span></label>
+            </div>
+          </div>
+          <div class="field"><label>REMARKS — OPTIONAL</label><input class="input" value="Optic damaged, iron sights only"></div>
+          <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+            <span class="k" style="color:var(--color-neutral-700);line-height:1.5">SENDS TO 2 PLT NET AND UPDATES YOUR ACE COLUMN FOR EVERYONE</span>
+            <button class="btn btn-primary btn-block">SEND ACE REPORT</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- 1d SETTINGS -->
+<div class="dv-opt" id="1d">
+<div class="dv-olabel"><span class="dv-oid">1d</span><span><strong>Settings — colour scheme</strong> — reached from the gear on any panel header or tile band. Three tokens do all the work (ground, ink, accent), so a scheme is three swatches; presets first, custom below, and every panel repaints live behind the sheet.</span></div>
+<div class="scr" style="width:900px;height:660px;background:var(--color-bg);flex-direction:column;display:flex">
+  <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:2px solid var(--color-text)">
+    <span style="font:800 20px/1 var(--font-heading);letter-spacing:-.02em">SETTINGS</span>
+    <span class="k" style="color:var(--color-neutral-700)">DISPLAY · COLOUR SCHEME</span>
+    <button class="btn btn-secondary" style="margin-left:auto;padding:6px 11px">CLOSE</button>
+  </div>
+  <div style="flex:1;display:flex;min-height:0">
+    <div style="width:180px;flex:none;border-right:2px solid var(--color-divider);background:var(--color-surface);display:flex;flex-direction:column">
+      <div class="k" style="padding:10px 14px;background:var(--color-accent);color:var(--color-bg)">COLOUR SCHEME</div>
+      <div class="k" style="padding:10px 14px;border-top:1px solid var(--color-divider);color:var(--color-neutral-700)">LIVE TILES</div>
+      <div class="k" style="padding:10px 14px;border-top:1px solid var(--color-divider);color:var(--color-neutral-700)">NETS &amp; ALERTS</div>
+      <div class="k" style="padding:10px 14px;border-top:1px solid var(--color-divider);color:var(--color-neutral-700)">MAP TOOLS</div>
+      <div class="k" style="padding:10px 14px;border-top:1px solid var(--color-divider);border-bottom:1px solid var(--color-divider);color:var(--color-neutral-700)">TEXT SIZE</div>
+    </div>
+    <div style="flex:1;min-width:0;padding:16px;display:flex;flex-direction:column;gap:16px;overflow:hidden">
+      <div>
+        <div class="k" style="color:var(--color-neutral-700);margin-bottom:10px">PRESETS</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+      <div style="border:2px solid var(--color-accent);display:flex;flex-direction:column">
+        <div style="display:flex;height:56px">
+          <div style="flex:2;background:#f3f2f2"></div><div style="flex:1;background:#201e1d"></div><div style="flex:1;background:#ec3013"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:7px;padding:8px 10px;border-top:2px solid var(--color-accent)">
+          <span class="k">FIELD GREY</span><span class="k" style="margin-left:auto;color:var(--color-accent-700)">ACTIVE</span>
+        </div>
+      </div>
+      <div style="border:2px solid var(--color-text);display:flex;flex-direction:column">
+        <div style="display:flex;height:56px">
+          <div style="flex:2;background:#e8e6e0"></div><div style="flex:1;background:#12211a"></div><div style="flex:1;background:#c8d64a"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:7px;padding:8px 10px;border-top:2px solid var(--color-text)">
+          <span class="k">OLIVE</span>
+        </div>
+      </div>
+      <div style="border:2px solid var(--color-text);display:flex;flex-direction:column">
+        <div style="display:flex;height:56px">
+          <div style="flex:2;background:#eceae2"></div><div style="flex:1;background:#241f16"></div><div style="flex:1;background:#e0a12a"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:7px;padding:8px 10px;border-top:2px solid var(--color-text)">
+          <span class="k">SAND</span>
+        </div>
+      </div>
+      <div style="border:2px solid var(--color-text);display:flex;flex-direction:column">
+        <div style="display:flex;height:56px">
+          <div style="flex:2;background:#141514"></div><div style="flex:1;background:#e6e5e2"></div><div style="flex:1;background:#ff563c"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:7px;padding:8px 10px;border-top:2px solid var(--color-text)">
+          <span class="k">NIGHT / NVG</span>
+        </div>
+      </div>
+        </div>
+      </div>
+      <div style="height:2px;background:var(--color-divider)"></div>
+      <div>
+        <div class="k" style="color:var(--color-neutral-700);margin-bottom:10px">CUSTOM · THREE TOKENS</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+          <div class="field"><label>GROUND</label><div style="display:flex;gap:6px"><span style="width:34px;height:34px;flex:none;background:#f3f2f2;border:2px solid var(--color-text)"></span><input class="input num" value="#F3F2F2"></div></div>
+          <div class="field"><label>INK</label><div style="display:flex;gap:6px"><span style="width:34px;height:34px;flex:none;background:#201e1d;border:2px solid var(--color-text)"></span><input class="input num" value="#201E1D"></div></div>
+          <div class="field"><label>ACCENT</label><div style="display:flex;gap:6px"><span style="width:34px;height:34px;flex:none;background:#ec3013;border:2px solid var(--color-text)"></span><input class="input num" value="#EC3013"></div></div>
+        </div>
+        <div class="k" style="color:var(--color-neutral-700);margin-top:10px;line-height:1.5">DIVIDERS, TINTS AND PRESSED STATES DERIVE FROM THESE THREE — NOTHING ELSE IS SET BY HAND</div>
+      </div>
+      <div style="height:2px;background:var(--color-divider)"></div>
+      <div>
+        <div class="k" style="color:var(--color-neutral-700);margin-bottom:10px">FIXED · STATUS COLOURS ARE NEVER THEMED</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap">
+          <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;background:oklch(0.55 0.13 145)"></span><span class="k">OK</span></span>
+          <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;background:oklch(0.75 0.13 85)"></span><span class="k">WIA</span></span>
+          <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;background:var(--color-neutral-500)"></span><span class="k">UNCON</span></span>
+          <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;background:var(--color-text)"></span><span class="k">KIA / NO LINK</span></span>
+          <span class="k" style="margin-left:auto;color:var(--color-neutral-700)">CONTRAST CHECK PASSES 3:1</span>
+        </div>
+      </div>
+      <div style="margin-top:auto;display:flex;gap:9px;align-items:center;border-top:2px solid var(--color-divider);padding-top:12px">
+        <button class="btn btn-primary">APPLY TO ALL PANELS</button>
+        <button class="btn btn-secondary">RESET TO FIELD GREY</button>
+        <span class="k" style="margin-left:auto;color:var(--color-neutral-700)">SAVED PER PLAYER PROFILE</span>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: “design the drone-detection and jamming apps full size” · “show the tile band on a 21:9 screen” · “make the tiles collapse to a single strip when the map is zoomed in” · “add a tile edit mode”</p>
+</section>
+</body></html>

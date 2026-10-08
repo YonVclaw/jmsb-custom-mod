@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<title>TAC//ADMIN — admin console (design reference)</title>
+<link rel="stylesheet" href="../designs/ds/styles.css">
+<style>
+body{margin:0;background:var(--color-neutral-200);padding:40px;display:flex;justify-content:center}
+.pad{background:var(--color-neutral-900);padding:16px 16px 22px;box-shadow:var(--shadow-lg)}
+.padlabel{display:flex;align-items:center;gap:8px;padding:0 2px 10px;font:800 9px/1 var(--font-heading);letter-spacing:.18em;text-transform:uppercase;color:var(--color-neutral-500)}
+.scr{background:var(--color-bg);color:var(--color-text);overflow:hidden;display:flex}
+.k{font:800 9.5px/1 var(--font-heading);letter-spacing:.16em;text-transform:uppercase}
+.num{font-variant-numeric:tabular-nums}
+.sec{padding:10px 14px;border-bottom:2px solid var(--color-divider);color:var(--color-neutral-700)}
+.cell{border:2px solid var(--color-text);height:34px;display:flex;align-items:center;padding:0 11px;font:800 12.5px var(--font-heading);cursor:pointer}
+.cell:hover{background:color-mix(in srgb,var(--color-text) 7%,transparent)}
+.cell:active{background:var(--color-text);color:var(--color-bg)}
+.rowv{display:grid;grid-template-columns:104px 1fr;gap:0;font-size:13px;border-bottom:1px solid var(--color-divider)}
+.rowv>span:first-child{font:800 9.5px/1 var(--font-heading);letter-spacing:.16em;text-transform:uppercase;color:var(--color-neutral-700);padding:9px 0 9px 14px}
+.rowv>span:last-child{padding:7px 14px 7px 0}
+.plist{scrollbar-width:auto;scrollbar-color:var(--color-text) var(--color-neutral-300)}
+.plist::-webkit-scrollbar{width:12px}
+.plist::-webkit-scrollbar-track{background:var(--color-neutral-300);border-left:1px solid var(--color-divider)}
+.plist::-webkit-scrollbar-thumb{background:var(--color-text);border:2px solid var(--color-neutral-300)}
+.plist::-webkit-scrollbar-thumb:hover{background:var(--color-accent)}
+</style></head>
+<body>
+<div class="pad">
+<div class="padlabel"><span>TAC//MSG&nbsp;SUITE</span><span style="width:6px;height:6px;background:var(--color-accent)"></span><span>ADMIN CONSOLE 2.4</span><span style="margin-left:auto">SERVER: GOB-01 · TICK 50 · ADMIN SESSION 00:14:07</span></div>
+<div class="scr" style="width:1440px;height:1000px;flex-direction:column">
+
+  <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;border-bottom:2px solid var(--color-text)">
+    <span style="font:800 20px/1 var(--font-heading);letter-spacing:-.02em">TAC//ADMIN</span>
+    <span class="k" style="color:var(--color-neutral-700)">1ST JOINT MULTI-FUNCTIONAL STRIKE BATTALION · ADMIN PANEL</span>
+    <span class="k" style="margin-left:auto;color:var(--color-neutral-700)">SFPS <span class="num" style="color:var(--color-text)">78</span></span>
+    <span class="k" style="color:var(--color-neutral-700)">AI <span class="num" style="color:var(--color-text)">0</span></span>
+    <span class="k" style="color:var(--color-neutral-700)">PLAYERS <span class="num" style="color:var(--color-text)">2</span></span>
+    <span class="k" style="background:var(--color-accent);color:var(--color-bg);padding:4px 7px">ADMIN · YONV</span>
+  </div>
+
+  <div style="flex:1;display:flex;min-height:0">
+
+    <div style="width:268px;flex:none;border-right:2px solid var(--color-divider);background:var(--color-surface);display:flex;flex-direction:column">
+      <div class="k sec" style="display:flex;align-items:center;gap:8px">PLAYER LIST<span class="num" style="margin-left:auto;color:var(--color-text)">10</span></div>
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;border-bottom:2px solid var(--color-divider)">
+        <div style="padding:9px 14px;border-bottom:1px solid var(--color-divider)">
+          <input class="input" placeholder="Filter players" style="min-height:30px;font-size:13px;background:var(--color-bg)">
+        </div>
+        <div class="plist" style="flex:1;min-height:0;overflow-y:scroll;display:flex;flex-direction:column">
+          <div style="display:flex;align-items:center;gap:9px;padding:9px 14px;background:var(--color-accent);color:var(--color-bg)">
+            <span style="width:7px;height:7px;background:var(--color-bg)"></span>
+            <span style="flex:1;font-size:13.5px;font-weight:600">YonV</span>
+            <span class="k">WEST · SL</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:9px;padding:9px 14px;border-top:1px solid var(--color-divider)">
+            <span style="width:7px;height:7px;background:var(--color-text)"></span>
+            <span style="flex:1;font-size:13.5px">SGT Wobba</span>
+            <span class="k" style="color:var(--color-neutral-700)">WEST · MED</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:9px;padding:9px 14px;border-top:1px solid var(--color-divider)">
+            <span style="width:7px;height:7px;background:var(--color-text)"></span>
+            <span style="flex:1;font-size:13.5px">CPT Hale</span>
+            <span class="k" style="color:var(--color-neutral-700)">WEST · CO</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:9px;padding:9px 14px;border-top:1px solid var(--color-divider)">
+            <span style="width:7px;height:7px;background:var(--color-text)"></span>
+            <span style="flex:1;font-size:13.5px">Doc Riley</span>
+            <span class="k" style="color:var(--color-neutral-700)">WEST · MED</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:9px;padding:9px 14px;border-top:1px solid var(--color-divider)">
+            <span style="width:7px;height:7px;background:var(--color-text)"></span>
+            <span style="flex:1;font-size:13.5px">CPL Okonkwo</span>
+            <span class="k" style="color:var(--color-neutral-700)">WEST · RTO</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:9px;padding:9px 14px;border-top:1px solid var(--color-divider)">
+            <span style="width:7px;height:7px;background:var(--color-text)"></span>
+            <span style="flex:1;font-size:13.5px">SGT Brennan</span>
+            <span class="k" style="color:var(--color-neutral-700)">WEST · SL</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:9px;padding:9px 14px;border-top:1px solid var(--color-divider)">
+            <span style="width:7px;height:7px;background:var(--color-text)"></span>
+            <span style="flex:1;font-size:13.5px">ROTARY 1-1</span>
+            <span class="k" style="color:var(--color-neutral-700)">WEST · AIR</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:9px;padding:9px 14px;border-top:1px solid var(--color-divider)">
+            <span style="width:7px;height:7px;background:var(--color-text)"></span>
+            <span style="flex:1;font-size:13.5px">GUNSLINGER</span>
+            <span class="k" style="color:var(--color-neutral-700)">WEST · FSC</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:9px;padding:9px 14px;border-top:1px solid var(--color-divider)">
+            <span style="width:7px;height:7px;background:var(--color-text)"></span>
+            <span style="flex:1;font-size:13.5px">LT Adams</span>
+            <span class="k" style="color:var(--color-neutral-700)">WEST · LOG</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:9px;padding:9px 14px;border-top:1px solid var(--color-divider);opacity:.45">
+            <span style="width:7px;height:7px;border:1px solid var(--color-text)"></span>
+            <span style="flex:1;font-size:13.5px">PVT Sandoval</span>
+            <span class="k">LOADING</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="k sec">UTILITIES</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 14px;border-bottom:2px solid var(--color-divider)">
+        <div class="cell">GODMODE</div>
+        <div class="cell">INF AMMO</div>
+        <div class="cell">JMFSB</div>
+        <div class="cell">ARSENAL</div>
+      </div>
+
+      <div class="k sec">ADMIN ACTIONS</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 14px;border-bottom:2px solid var(--color-divider)">
+        <div class="cell">SPECTATE</div>
+        <div class="cell">ZEUS</div>
+        <div class="cell">KICK</div>
+        <div class="cell" style="background:var(--color-accent);border-color:var(--color-accent);color:var(--color-bg)">BAN</div>
+        <div class="cell" style="grid-column:span 2">LOCK SERVER<span class="k" style="margin-left:auto;color:var(--color-neutral-700)">OPEN</span></div>
+      </div>
+
+      <div class="k sec">MISSION</div>
+      <div style="padding:10px 14px;display:flex;flex-direction:column;gap:8px">
+        <div class="field"><label>LOADED MISSION</label>
+          <select class="input"><option>CPEndTotalVictory</option><option>CPEndAssault</option></select>
+        </div>
+        <div class="cell" style="border-color:var(--color-accent);color:var(--color-accent-700)">END MISSION<span class="k" style="margin-left:auto">CONFIRM ×2</span></div>
+      </div>
+
+      <div style="margin-top:auto;border-top:2px solid var(--color-divider);padding:10px 14px;display:flex;flex-direction:column;gap:8px">
+        <div class="cell">ADMIN MESSAGE</div>
+        <div class="cell" style="background:var(--color-text);border-color:var(--color-text);color:var(--color-bg)">REVOKE ADMIN</div>
+      </div>
+    </div>
+
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;border-right:2px solid var(--color-divider)">
+      <div style="display:flex;align-items:center;gap:12px;padding:9px 14px;border-bottom:2px solid var(--color-divider)">
+        <span class="k">MAP · ALTIS 1:50K</span>
+        <span class="k" style="color:var(--color-neutral-700)">TELEPORT: HOLD ALT + CLICK · SHIFT = BRING SELECTION</span>
+        <span class="k num" style="margin-left:auto;color:var(--color-neutral-700)">CURSOR 151 173</span>
+      </div>
+
+      <div style="flex:1;position:relative;min-height:0;background:var(--color-neutral-200)">
+        <div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 63px,color-mix(in srgb,var(--color-text) 12%,transparent) 63px 65px),repeating-linear-gradient(90deg,transparent 0 63px,color-mix(in srgb,var(--color-text) 12%,transparent) 63px 65px)"></div>
+        <div style="position:absolute;left:96px;top:96px;right:180px;height:30px;background:color-mix(in srgb,var(--color-text) 13%,transparent);transform:rotate(-4deg)"></div>
+        <div style="position:absolute;left:200px;top:300px;width:26px;bottom:60px;background:color-mix(in srgb,var(--color-text) 9%,transparent);transform:rotate(8deg)"></div>
+        <div style="position:absolute;left:0;right:0;bottom:0;height:150px;background:color-mix(in srgb,var(--color-text) 7%,transparent)"></div>
+        <div class="k" style="position:absolute;left:24px;bottom:120px;color:var(--color-neutral-700)">GULF OF ANTHRAKIA</div>
+        <div class="k" style="position:absolute;left:150px;top:60px;color:var(--color-neutral-800)">ATHIRA</div>
+        <div class="k" style="position:absolute;left:96px;top:330px;color:var(--color-neutral-800)">GRAVIA</div>
+        <div class="k" style="position:absolute;right:110px;top:436px;color:var(--color-neutral-800)">TELOS</div>
+        <div class="k" style="position:absolute;left:270px;top:470px;color:var(--color-neutral-800)">AIRFIELD</div>
+
+        <div style="position:absolute;left:352px;top:352px;width:18px;height:18px;background:var(--color-accent);box-shadow:0 0 0 7px color-mix(in srgb,var(--color-accent) 22%,transparent)"></div>
+        <div style="position:absolute;left:382px;top:344px;background:var(--color-bg);border:2px solid var(--color-text);padding:7px 10px">
+          <div class="k" style="color:var(--color-accent)">YONV · SELECTED</div>
+          <div class="num" style="font:800 14px/1 var(--font-heading);margin-top:6px">151 173</div>
+        </div>
+        <div style="position:absolute;left:520px;top:214px;width:12px;height:12px;border:3px solid var(--color-text)"></div>
+        <div class="k" style="position:absolute;left:540px;top:216px;color:var(--color-neutral-800)">SGT WOBBA</div>
+
+        <div style="position:absolute;left:14px;top:14px;background:var(--color-bg);border:2px solid var(--color-text);display:flex">
+          <span class="k" style="padding:8px 10px;background:var(--color-text);color:var(--color-bg)">PLAYERS</span>
+          <span class="k" style="padding:8px 10px;border-left:1px solid var(--color-divider);color:var(--color-neutral-700)">VEHICLES</span>
+          <span class="k" style="padding:8px 10px;border-left:1px solid var(--color-divider);color:var(--color-neutral-700)">AI</span>
+          <span class="k" style="padding:8px 10px;border-left:1px solid var(--color-divider);color:var(--color-neutral-700)">MARKERS</span>
+        </div>
+      </div>
+
+      <div style="border-top:2px solid var(--color-divider);display:flex;flex-direction:column;height:214px;flex:none">
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--color-divider)">
+          <span class="k">EXECUTE</span>
+          <div style="display:flex;border:1px solid var(--color-divider)">
+            <span class="k" style="padding:6px 10px;background:var(--color-text);color:var(--color-bg)">SERVER</span>
+            <span class="k" style="padding:6px 10px;border-left:1px solid var(--color-divider);color:var(--color-neutral-700)">LOCAL</span>
+            <span class="k" style="padding:6px 10px;border-left:1px solid var(--color-divider);color:var(--color-neutral-700)">REMOTE · YONV</span>
+          </div>
+          <span class="k" style="margin-left:auto;color:var(--color-neutral-700)">HISTORY <span style="color:var(--color-text)">&lt; &gt;</span></span>
+        </div>
+        <div style="flex:1;display:flex;min-height:0">
+          <div style="flex:1;min-width:0;padding:11px 14px;border-right:1px solid var(--color-divider);display:flex;flex-direction:column;gap:9px">
+            <textarea class="input num" style="flex:1;min-height:0;font-size:13px;line-height:1.5;resize:none">hint str (getPos player);</textarea>
+            <div style="display:flex;gap:9px">
+              <button class="btn btn-primary">RUN</button>
+              <button class="btn btn-secondary">CLEAR</button>
+              <span class="k" style="margin-left:auto;align-self:center;color:var(--color-neutral-700)">CTRL + ENTER</span>
+            </div>
+          </div>
+          <div style="width:392px;flex:none;padding:11px 14px;overflow:hidden">
+            <div class="k" style="color:var(--color-neutral-700)">RETURN</div>
+            <div class="num" style="font-size:12.5px;line-height:1.6;margin-top:7px">
+              <div>&gt; [15117.3,17342.9,0.00143]</div>
+              <div style="color:var(--color-neutral-700)">&gt; server exec ok · 0.4 ms</div>
+              <div>&gt; setSkill applied — 2 units</div>
+              <div style="color:var(--color-accent-700)">! remote exec denied — no admin on target</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="width:432px;flex:none;display:flex;flex-direction:column;background:var(--color-surface)">
+      <div class="k sec" style="display:flex;align-items:center;gap:8px;background:var(--color-bg)">PLAYER VIEW<span class="k" style="margin-left:auto;color:var(--color-neutral-700)">3RD PERSON</span></div>
+      <div style="height:168px;flex:none;border-bottom:2px solid var(--color-divider);position:relative;background:repeating-linear-gradient(135deg,var(--color-neutral-300) 0 10px,var(--color-neutral-200) 10px 20px);display:grid;place-items:center">
+        <div class="k" style="background:var(--color-bg);border:1px solid var(--color-divider);padding:7px 10px;color:var(--color-neutral-800)">LIVE CAMERA FEED · YONV</div>
+        <div class="k num" style="position:absolute;left:12px;bottom:10px;color:var(--color-neutral-800)">151 173 · 12 M ASL · HDG 284</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:2px solid var(--color-divider)">
+        <div class="cell" style="border:0;border-right:1px solid var(--color-divider);height:42px">TOGGLE VIEW</div>
+        <div class="cell" style="border:0;height:42px">NVG MODE</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:2px solid var(--color-divider)">
+        <div style="border-right:2px solid var(--color-divider)">
+          <div class="k sec" style="border-bottom:1px solid var(--color-divider)">PLAYER INFO</div>
+          <div class="rowv"><span>NAME</span><span style="font-weight:600">YonV</span></div>
+          <div class="rowv"><span>SIDE</span><span>WEST</span></div>
+          <div class="rowv"><span>GRID</span><span class="num" style="font-weight:600;color:var(--color-accent-700)">151 173</span></div>
+          <div class="rowv"><span>FPS</span><span class="num">80</span></div>
+          <div class="rowv" style="border-bottom:0"><span>IN VEHICLE</span><span>No</span></div>
+        </div>
+        <div>
+          <div class="k sec" style="border-bottom:1px solid var(--color-divider);display:flex;align-items:center">PLAYER SKILLS<span class="k" style="margin-left:auto;color:var(--color-accent-700)">UNSAVED</span></div>
+          <div style="padding:10px 14px;display:flex;flex-direction:column;gap:8px">
+            <div class="field"><label>RANK</label><select class="input" style="min-height:32px"><option>Sergeant</option><option>Private</option><option>Corporal</option><option>Staff Sergeant</option><option>Lieutenant</option><option>Captain</option><option>Major</option><option>Colonel</option></select></div>
+            <div class="field"><label>MEDICAL</label><select class="input" style="min-height:32px"><option>Doctor</option><option>Medic</option><option>None</option></select></div>
+            <div class="field"><label>ENGINEERING</label><select class="input" style="min-height:32px"><option>Adv. Engineer</option><option>Engineer</option><option>None</option></select></div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px 14px">
+              <label class="radio"><input type="checkbox" checked><span class="dot" style="border-radius:0"></span>EOD</label>
+              <label class="radio"><input type="checkbox"><span class="dot" style="border-radius:0"></span>ISR</label>
+              <label class="radio"><input type="checkbox"><span class="dot" style="border-radius:0"></span>JFO</label>
+            </div>
+            <button class="btn btn-primary btn-block">APPLY SKILLS</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;flex:1;min-height:0">
+        <div style="border-right:2px solid var(--color-divider);display:flex;flex-direction:column">
+          <div class="k sec" style="border-bottom:1px solid var(--color-divider)">VEHICLE</div>
+          <div style="padding:11px 14px;display:flex;flex-direction:column;gap:9px">
+            <div class="cell" style="opacity:.45">DISMOUNT</div>
+            <div class="cell">UNSTUCK</div>
+            <div class="k" style="margin-top:3px;color:var(--color-neutral-700)">SERVICE</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px">
+              <div class="cell" style="height:36px;padding:0 8px;font-size:11.5px">REP</div>
+              <div class="cell" style="height:36px;padding:0 8px;font-size:11.5px">REF</div>
+              <div class="cell" style="height:36px;padding:0 8px;font-size:11.5px">REA</div>
+            </div>
+            <div class="k" style="color:var(--color-neutral-700);line-height:1.5">NO VEHICLE ASSIGNED — SERVICE ACTS ON NEAREST WITHIN 15 M</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column">
+          <div class="k sec" style="border-bottom:1px solid var(--color-divider)">MEDICAL</div>
+          <div class="rowv"><span>STATUS</span><span style="font-weight:600">Conscious</span></div>
+          <div class="rowv"><span>HEART RATE</span><span class="num">76</span></div>
+          <div class="rowv"><span>BLOOD PRES</span><span class="num">76 / 114</span></div>
+          <div class="rowv"><span>BLOOD VOL</span><span class="num">6.00 L</span></div>
+          <div class="rowv"><span>PAIN</span><span class="num">0.00</span></div>
+          <div style="padding:11px 14px;display:flex;flex-direction:column;gap:9px;margin-top:auto">
+            <div class="cell">WAKE UP</div>
+            <div class="cell" style="background:var(--color-accent);border-color:var(--color-accent);color:var(--color-bg)">HEAL FULL</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</body></html>

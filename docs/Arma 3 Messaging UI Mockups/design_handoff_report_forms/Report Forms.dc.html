@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="ds/styles.css">
+<style>
+body{margin:0;background:var(--color-neutral-200)}
+a{color:var(--color-accent);text-decoration:none}a:hover{color:var(--color-accent-600)}
+.dv-turn{padding:44px 48px 36px;border-bottom:2px solid var(--color-divider)}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 24px}
+.dv-tid{font:800 11px/1 var(--font-heading);padding:4px 8px;background:var(--color-text);color:var(--color-bg)}
+.dv-tname{font:800 13px/1.2 var(--font-heading);letter-spacing:.1em;text-transform:uppercase}
+.dv-opt{display:flex;flex-direction:column;gap:10px;margin:0 0 40px;scroll-margin-top:16px}
+.dv-oid{font:800 11px/1 var(--font-heading);padding:4px 8px;background:var(--color-neutral-300);color:var(--color-text)}
+.dv-olabel{display:flex;align-items:baseline;gap:10px;font:400 12px/1.35 var(--font-body);max-width:820px;color:color-mix(in srgb,var(--color-text) 62%,transparent)}
+.dv-opt:target .dv-oid{background:var(--color-accent);color:var(--color-bg)}
+.k{font:800 9.5px/1 var(--font-heading);letter-spacing:.16em;text-transform:uppercase}
+.num{font-variant-numeric:tabular-nums}
+.card{width:460px;display:inline-block;vertical-align:top;break-inside:avoid;margin:0 0 28px;background:var(--color-bg);border:2px solid var(--color-text)}
+.chd{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:2px solid var(--color-text)}
+.tagb{flex:none;font:800 10px/1 var(--font-heading);letter-spacing:.08em;padding:5px 7px;background:var(--color-text);color:var(--color-bg)}
+.tagb.pri{background:var(--color-accent)}
+.cttl{font:800 13px/1.1 var(--font-heading);letter-spacing:.06em}
+.bdg{display:flex;flex-wrap:wrap;gap:6px 12px;padding:8px 12px;background:var(--color-neutral-200)}
+.bdg .k{color:var(--color-neutral-700)}
+.ln{border-top:1px solid var(--color-divider)}
+.lhd{display:flex;align-items:center;gap:8px;padding:9px 12px 0}
+.lkey{flex:none;font:800 10px/1 var(--font-heading);padding:3px 6px;border:2px solid var(--color-text)}
+.flds{display:flex;flex-direction:column;gap:7px;padding:7px 12px 11px}
+.frow{display:flex;align-items:center;gap:8px}
+.fin{flex:1;min-width:0;display:flex;align-items:center;gap:8px;min-height:32px;padding:5px 10px;border:2px solid var(--color-text);background:var(--color-bg);font:600 12.5px/1.3 var(--font-body);cursor:text}
+.fin:hover{background:var(--color-neutral-100)}
+.phd{color:var(--color-neutral-600);font-weight:400}
+.mapc{flex:none;align-self:stretch;display:flex;align-items:center;padding:0 10px;background:var(--color-neutral-200);border:2px solid var(--color-text);border-left:none;font:800 10px/1 var(--font-heading);letter-spacing:.12em;cursor:pointer}
+.mapc:hover{background:var(--color-text);color:var(--color-bg)}
+.mapc:active{background:var(--color-accent)}
+.fpre{flex:none;font:800 10.5px/1 var(--font-heading);letter-spacing:.08em;min-width:52px}
+.meta{margin-left:auto;flex:none;font:800 9px/1 var(--font-heading);letter-spacing:.12em;color:var(--color-neutral-600)}
+.meta.req{color:var(--color-accent-700)}
+.mk{width:14px;height:14px;flex:none;border:2px solid var(--color-text);cursor:pointer}
+.mk:hover{background:var(--color-neutral-300)}
+.mk.on{background:var(--color-text)}
+.sw{width:12px;height:12px;flex:none}
+.segr{display:flex;border:2px solid var(--color-text)}
+.segc{padding:8px 10px;font:800 10px/1 var(--font-heading);letter-spacing:.1em;cursor:pointer;border-left:1px solid var(--color-divider)}
+.segc:first-child{border-left:none}
+.segc:hover{background:var(--color-neutral-100)}
+.segc:active{background:var(--color-accent-600);color:var(--color-bg)}
+.segc.on{background:var(--color-text);color:var(--color-bg)}
+.cft{display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:2px solid var(--color-text);background:var(--color-neutral-200)}
+.send{margin-left:auto;flex:none;padding:9px 16px;background:var(--color-text);color:var(--color-bg);font:800 11px/1 var(--font-heading);letter-spacing:.14em;cursor:pointer}
+.send:hover{background:var(--color-accent-600)}
+.send:active{background:var(--color-accent-700)}
+</style></helmet>
+
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#f3f2f2"/><rect x="30" y="32" width="40" height="8" fill="#ec3013"/><rect x="30" y="46" width="40" height="8" fill="#201e1d"/><rect x="30" y="60" width="40" height="8" fill="#201e1d"/></svg></template>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><span class="dv-tid">1</span><span class="dv-tname">TAC//MSG — smart-card report forms (full template registry)</span></div>
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><span class="dv-oid">1a</span><span><strong>Root report forms</strong> — every registered template rendered as its compose form, one card per template, line titles kept verbatim (they are the field keys the ALiVE forwarder reads). Red tag = high priority. Field metadata reads flush right inside the field: REQ, ranges, AUTO-fill, MARKER source. Grid fields carry attached CUR LOC (own position) and MARKER (pick a map marker) cells. GREEN / YELLOW / RED / BLACK lines are exclusive picks — swatch + square selector. The CASEVAC card is shown filled as the worked example; footer shows the thread-subject pattern and SEND.</span></div>
+<div style="columns:460px;column-gap:28px;width:1924px">
+<sc-for list="{{ forms }}" as="fm" hint-placeholder-count="6">
+<div class="card">
+  <div class="chd">
+    <sc-if value="{{ fm.pri }}" hint-placeholder-val="{{ false }}"><span class="tagb pri">{{ fm.tag }}</span></sc-if>
+    <sc-if value="{{ fm.noPri }}" hint-placeholder-val="{{ true }}"><span class="tagb">{{ fm.tag }}</span></sc-if>
+    <span class="cttl">{{ fm.title }}</span>
+  </div>
+  <div class="bdg"><sc-for list="{{ fm.badges }}" as="b" hint-placeholder-count="2"><span class="k">{{ b }}</span></sc-for></div>
+  <sc-for list="{{ fm.lines }}" as="ln" hint-placeholder-count="4">
+  <div class="ln">
+    <div class="lhd"><span class="lkey">{{ ln.key }}</span><span class="k" style="color:var(--color-neutral-800)">{{ ln.title }}</span></div>
+    <div class="flds">
+    <sc-for list="{{ ln.fields }}" as="f" hint-placeholder-count="1">
+      <sc-if value="{{ f.isGrid }}" hint-placeholder-val="{{ false }}">
+        <div class="frow" style="gap:0">
+          <div class="fin num">
+            <sc-if value="{{ f.hasVal }}"><span>{{ f.val }}</span></sc-if>
+            <sc-if value="{{ f.noVal }}"><span class="phd">{{ f.ph }}</span></sc-if>
+            <sc-if value="{{ f.req }}"><span class="meta req">{{ f.meta }}</span></sc-if>
+            <sc-if value="{{ f.noReq }}"><span class="meta">{{ f.meta }}</span></sc-if>
+          </div>
+          <sc-if value="{{ f.hasCur }}"><span class="mapc">CUR LOC</span></sc-if>
+          <span class="mapc">MARKER</span>
+        </div>
+      </sc-if>
+      <sc-if value="{{ f.isText }}" hint-placeholder-val="{{ false }}">
+        <div class="frow">
+          <sc-if value="{{ f.hasPre }}"><span class="fpre">{{ f.pre }}</span></sc-if>
+          <div class="fin">
+            <sc-if value="{{ f.hasVal }}"><span>{{ f.val }}</span></sc-if>
+            <sc-if value="{{ f.noVal }}"><span class="phd">{{ f.ph }}</span></sc-if>
+            <sc-if value="{{ f.req }}"><span class="meta req">{{ f.meta }}</span></sc-if>
+            <sc-if value="{{ f.noReq }}"><span class="meta">{{ f.meta }}</span></sc-if>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ f.isNum }}" hint-placeholder-val="{{ false }}">
+        <div class="frow">
+          <sc-if value="{{ f.hasPre }}"><span class="fpre">{{ f.pre }}</span></sc-if>
+          <div class="fin num">
+            <sc-if value="{{ f.hasVal }}"><span>{{ f.val }}</span></sc-if>
+            <sc-if value="{{ f.noVal }}"><span class="phd">{{ f.ph }}</span></sc-if>
+            <sc-if value="{{ f.req }}"><span class="meta req">{{ f.meta }}</span></sc-if>
+            <sc-if value="{{ f.noReq }}"><span class="meta">{{ f.meta }}</span></sc-if>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ f.isArea }}" hint-placeholder-val="{{ false }}">
+        <div class="fin" style="min-height:60px;align-items:flex-start;padding-top:7px">
+          <sc-if value="{{ f.hasVal }}"><span>{{ f.val }}</span></sc-if>
+          <sc-if value="{{ f.noVal }}"><span class="phd">{{ f.ph }}</span></sc-if>
+          <sc-if value="{{ f.req }}"><span class="meta req">{{ f.meta }}</span></sc-if>
+          <sc-if value="{{ f.noReq }}"><span class="meta">{{ f.meta }}</span></sc-if>
+        </div>
+      </sc-if>
+      <sc-if value="{{ f.isChoice }}" hint-placeholder-val="{{ false }}">
+        <div class="frow">
+          <sc-if value="{{ f.hasPre }}"><span class="fpre">{{ f.pre }}</span></sc-if>
+          <div class="segr">
+            <sc-for list="{{ f.ch }}" as="c" hint-placeholder-count="3">
+              <sc-if value="{{ c.on }}"><span class="segc on">{{ c.t }}</span></sc-if>
+              <sc-if value="{{ c.off }}"><span class="segc">{{ c.t }}</span></sc-if>
+            </sc-for>
+          </div>
+          <sc-if value="{{ f.req }}"><span class="meta req">{{ f.meta }}</span></sc-if>
+        </div>
+      </sc-if>
+      <sc-if value="{{ f.isBool }}" hint-placeholder-val="{{ false }}">
+        <div class="frow" style="min-height:22px">
+          <sc-if value="{{ f.on }}"><span class="mk on"></span></sc-if>
+          <sc-if value="{{ f.off }}"><span class="mk"></span></sc-if>
+          <sc-if value="{{ f.swG }}"><span class="sw" style="background:oklch(0.55 0.13 145)"></span></sc-if>
+          <sc-if value="{{ f.swY }}"><span class="sw" style="background:oklch(0.78 0.14 85)"></span></sc-if>
+          <sc-if value="{{ f.swR }}"><span class="sw" style="background:var(--color-accent)"></span></sc-if>
+          <sc-if value="{{ f.swB }}"><span class="sw" style="background:var(--color-text)"></span></sc-if>
+          <sc-if value="{{ f.hasPre }}"><span class="fpre" style="min-width:0">{{ f.pre }}</span></sc-if>
+          <span style="font:400 11.5px/1.3 var(--font-body);color:var(--color-neutral-700)">{{ f.ph }}</span>
+        </div>
+      </sc-if>
+    </sc-for>
+    </div>
+  </div>
+  </sc-for>
+  <div class="cft"><span class="k" style="color:var(--color-neutral-700)">SUBJ</span><span class="num" style="font:600 11px/1.3 var(--font-body);min-width:0">{{ fm.subject }}</span><span class="send">SEND</span></div>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><span class="dv-oid">1b</span><span><strong>Replies</strong> — the answer set every root report offers. ROGER / WILCO / ON TASK are one-tap tiles (no fields) that move the thread state; CANTCO, MESSAGE and CLOSE THREAD open the small forms below. Sender constraints and allowed source states print on each card.</span></div>
+<div style="display:flex;gap:16px;margin:0 0 20px">
+  <div class="card" style="width:300px;margin:0;display:flex;flex-direction:column">
+    <div class="chd"><span class="tagb">ROGER</span><span class="cttl">ROGER</span></div>
+    <div style="display:flex;flex-direction:column;gap:6px;padding:10px 12px">
+      <span class="k" style="color:var(--color-neutral-700)">ONE TAP · NO FIELDS</span>
+      <span class="k">ISSUED → RECEIPT</span>
+      <span class="k" style="color:var(--color-neutral-700)">ANY RECIPIENT</span>
+    </div>
+  </div>
+  <div class="card" style="width:300px;margin:0;display:flex;flex-direction:column">
+    <div class="chd"><span class="tagb">WILCO</span><span class="cttl">WILCO</span></div>
+    <div style="display:flex;flex-direction:column;gap:6px;padding:10px 12px">
+      <span class="k" style="color:var(--color-neutral-700)">ONE TAP · NO FIELDS</span>
+      <span class="k">ISSUED / RECEIPT → ACCEPTED</span>
+      <span class="k" style="color:var(--color-neutral-700)">ASSIGNEE ONLY</span>
+    </div>
+  </div>
+  <div class="card" style="width:300px;margin:0;display:flex;flex-direction:column">
+    <div class="chd"><span class="tagb">ON TASK</span><span class="cttl">ON TASK</span></div>
+    <div style="display:flex;flex-direction:column;gap:6px;padding:10px 12px">
+      <span class="k" style="color:var(--color-neutral-700)">ONE TAP · NO FIELDS</span>
+      <span class="k">ACCEPTED / RECEIPT → IN PROGRESS</span>
+      <span class="k" style="color:var(--color-neutral-700)">ASSIGNEE ONLY</span>
+    </div>
+  </div>
+</div>
+<div style="columns:460px;column-gap:28px;width:1436px">
+<sc-for list="{{ replyForms }}" as="fm" hint-placeholder-count="3">
+<div class="card">
+  <div class="chd">
+    <sc-if value="{{ fm.pri }}" hint-placeholder-val="{{ false }}"><span class="tagb pri">{{ fm.tag }}</span></sc-if>
+    <sc-if value="{{ fm.noPri }}" hint-placeholder-val="{{ true }}"><span class="tagb">{{ fm.tag }}</span></sc-if>
+    <span class="cttl">{{ fm.title }}</span>
+  </div>
+  <div class="bdg"><sc-for list="{{ fm.badges }}" as="b" hint-placeholder-count="2"><span class="k">{{ b }}</span></sc-for></div>
+  <sc-for list="{{ fm.lines }}" as="ln" hint-placeholder-count="1">
+  <div class="ln">
+    <div class="lhd"><span class="lkey">{{ ln.key }}</span><span class="k" style="color:var(--color-neutral-800)">{{ ln.title }}</span></div>
+    <div class="flds">
+    <sc-for list="{{ ln.fields }}" as="f" hint-placeholder-count="1">
+      <sc-if value="{{ f.isText }}" hint-placeholder-val="{{ false }}">
+        <div class="fin"><span class="phd">{{ f.ph }}</span>
+          <sc-if value="{{ f.req }}"><span class="meta req">{{ f.meta }}</span></sc-if>
+          <sc-if value="{{ f.noReq }}"><span class="meta">{{ f.meta }}</span></sc-if>
+        </div>
+      </sc-if>
+      <sc-if value="{{ f.isArea }}" hint-placeholder-val="{{ false }}">
+        <div class="fin" style="min-height:60px;align-items:flex-start;padding-top:7px"><span class="phd">{{ f.ph }}</span>
+          <sc-if value="{{ f.req }}"><span class="meta req">{{ f.meta }}</span></sc-if>
+          <sc-if value="{{ f.noReq }}"><span class="meta">{{ f.meta }}</span></sc-if>
+        </div>
+      </sc-if>
+    </sc-for>
+    </div>
+  </div>
+  </sc-for>
+  <div class="cft"><span class="k" style="color:var(--color-neutral-700)">SUBJ</span><span class="num" style="font:600 11px/1.3 var(--font-body);min-width:0">{{ fm.subject }}</span><span class="send">SEND</span></div>
+</div>
+</sc-for>
+</div>
+</div>
+
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const F = (pre, ph, t, o) => {
+      o = o || {};
+      const P = (pre || '').trim();
+      const f = {
+        pre: pre || '', hasPre: !!(pre && pre.trim()), ph, val: o.v || '', hasVal: !!o.v, noVal: !o.v,
+        req: !!o.r, noReq: !o.r, on: !!o.on, off: !o.on,
+        isText: t === 'text' || t === 'callsign' || t === 'freq' || t === 'time',
+        isArea: t === 'textarea', isNum: t === 'number', isGrid: t === 'grid',
+        isChoice: t === 'choice', isBool: t === 'bool',
+        hasCur: t === 'grid' && !o.noCur,
+        swG: P === 'GREEN', swY: P === 'YELLOW', swR: P === 'RED', swB: P === 'BLACK'
+      };
+      const m = [];
+      if (o.r) m.push('REQ');
+      if (o.min != null) m.push(o.min + '\u2013' + o.max);
+      if (o.a) m.push('AUTO');
+      if (o.mk) m.push('MARKER');
+      f.meta = m.join(' \u00b7 ');
+      if (t === 'choice') f.ch = (o.ch || []).map(c => ({ t: c, on: c === o.sel, off: c !== o.sel }));
+      return f;
+    };
+    const L = (key, title, fields) => ({ key, title, fields });
+    const T = (tag, title, pri, badges, subject, lines) => ({ tag, title, pri, noPri: !pri, badges, subject, lines });
+    const GYRB = (g, y, r, b, on) => [
+      F('GREEN', g, 'bool', { on: on === 'G' }), F('YELLOW', y, 'bool', { on: on === 'Y' }),
+      F('RED', r, 'bool', { on: on === 'R' }), F('BLACK', b, 'bool', { on: on === 'B' })
+    ];
+    const GARB = ['GREEN', 'AMBER', 'RED', 'BLACK'];
+    const forms = [
+      T('CASEVAC', '6-LINE CASEVAC', true,
+        ['OPENS TASK \u2192 ISSUED', 'MAP ANCHOR \u00b7 LINE 1', 'SHOWN FILLED'],
+        'CASEVAC {Line2.A} pax \u2014 {Line1.A}', [
+        L('Line 1', 'PICK-UP SITE LOCATION', [F('', 'Grid / map position of the pick-up site', 'grid', { r: 1, v: '0432 5591' })]),
+        L('Line 2', 'NUMBER OF PATIENTS', [F('', 'Number of patients', 'number', { r: 1, min: 1, max: 99, v: '4' })]),
+        L('Line 3', 'PRIORITY OF PATIENTS', [
+          F('URGENT', 'Urgent', 'number', { min: 0, max: 99, v: '1' }),
+          F('PRIORITY', 'Priority', 'number', { min: 0, max: 99, v: '2' }),
+          F('ROUTINE', 'Routine', 'number', { min: 0, max: 99, v: '1' })]),
+        L('Line 4', 'LZ SECURITY', [
+          F('GREEN', 'LZ secure, no threat', 'bool'),
+          F('YELLOW', 'LZ secure but threatened', 'bool', { on: 1 }),
+          F('RED', 'LZ under fire', 'bool')]),
+        L('Line 5', 'MARKING METHOD', [
+          F('', 'How the LZ is marked', 'choice', { ch: ['SMOKE', 'IR STROBE', 'PANEL', 'CHEM-LIGHT', 'OTHER'], sel: 'SMOKE' }),
+          F('', 'Colour / code / location from the LZ', 'text', { v: 'GREEN SMOKE 50 M WEST' })]),
+        L('Remarks', 'REMARKS', [F('', 'Remarks', 'textarea')])
+      ]),
+      T('MIST', 'MIST', false, ['PAIRS WITH A CASEVAC'], 'MIST \u2014 {M.A}', [
+        L('M', 'MECHANISM OF INJURY & TIME', [F('', 'What caused it and when', 'text', { r: 1 })]),
+        L('I', 'INJURIES SUSTAINED', [F('', 'Injuries sustained', 'textarea')]),
+        L('S', 'SYMPTOMS AND VITALS', [F('', 'A-Airway B-Breathing C-Pulse D-Responsive E-Everything else', 'textarea')]),
+        L('T', 'TREATMENT GIVEN', [F('', 'Treatment given', 'textarea')]),
+        L('Remarks', 'REMARKS', [F('', 'Remarks', 'textarea')])
+      ]),
+      T('TIC', 'CONTACT REPORT (TIC)', true,
+        ['BROADCAST \u00b7 TIC', 'MAP ANCHOR \u00b7 LOCATION'],
+        'TIC {Location.A} \u2014 {Enemy.A}', [
+        L('Location', 'LOCATION', [F('', 'Grid / map position of the contact', 'grid', { r: 1 })]),
+        L('Enemy', 'ENEMY', [F('', 'What is shooting at you', 'text', { r: 1 })]),
+        L('Casualties', 'FRIENDLY CASUALTIES', [F('', 'Friendly casualties', 'text')]),
+        L('Intentions', 'INTENTIONS', [F('', 'What you intend to do', 'text')]),
+        L('Assistance', 'ASSISTANCE REQUIRED', [F('', 'Any assistance required', 'text')]),
+        L('Remarks', 'REMARKS', [F('', 'Remarks', 'textarea')])
+      ]),
+      T('CONTACT', 'CONTACTREP', false,
+        ['ALIVE FWD \u00b7 SPOTREP', 'MAP ANCHOR \u00b7 L'],
+        'CONTACT {S.A} {U.A} \u2014 {L.A}', [
+        L('S', 'SIZE', [F('', 'Size of the element', 'text', { r: 1 })]),
+        L('A', 'ACTIVITY', [F('', 'Activity the element is performing', 'text')]),
+        L('L', 'LOCATION', [F('', 'Grid of contact', 'grid', { r: 1 })]),
+        L('U', 'UNIT', [F('', 'Type of unit you believe the element to be', 'text')]),
+        L('T', 'TIME', [F('', 'Time the unit was at this location', 'time', { a: 1, v: '14:32' })]),
+        L('E', 'EQUIPMENT', [F('', 'Equipment the unit has', 'textarea')]),
+        L('R', 'REMARKS', [F('', 'Remarks', 'textarea')])
+      ]),
+      T('SITREP', 'SITREP', false,
+        ['ROOT + REPLY', 'ALIVE FWD \u00b7 SITREP', 'MAP ANCHOR \u00b7 LOCATION'],
+        'SITREP {Callsign.A} \u2014 {Location.A}', [
+        L('Callsign', 'CALL SIGN', [F('', 'Call sign', 'callsign', { a: 1, v: 'JMFSB 1-1' })]),
+        L('Location', 'LOCATION', [F('', 'Grid', 'grid')]),
+        L('Enemy', 'ENEMY SITUATION', [
+          F('', 'Enemy strength / activity', 'text'),
+          F('EKIA', 'Enemy KIA', 'number', { min: 0, max: 999 })]),
+        L('Friendly', 'FRIENDLY SITUATION', [
+          F('', 'Friendly forces / posture', 'text'),
+          F('FKIA', 'Friendly KIA', 'number', { min: 0, max: 999 }),
+          F('FWIA', 'Friendly WIA', 'number', { min: 0, max: 999 })]),
+        L('Civ', 'CIVILIAN SITUATION', [F('', 'Civilian presence / casualties', 'text')]),
+        L('Status', 'STATUS (GREEN/AMBER/RED/BLACK)', [
+          F('AMMO', 'Ammo state', 'choice', { ch: GARB }),
+          F('CAS', 'Medical / casevac state', 'choice', { ch: GARB }),
+          F('VEH', 'Vehicle state', 'choice', { ch: GARB }),
+          F('CE', 'Combat effectiveness', 'choice', { ch: GARB })]),
+        L('Remarks', 'REMARKS', [F('', 'Remarks', 'textarea')])
+      ]),
+      T('CFF', 'CALL FOR FIRE', true,
+        ['OPENS TASK \u2192 ISSUED', 'MAP ANCHOR \u00b7 WARNO 3A'],
+        'CFF {Warno3A.A} \u2014 {Description.A}', [
+        L('Observer', 'OBSERVER ID/CALL SIGN', [F('', 'Observer call sign', 'callsign', { r: 1, a: 1, v: 'JMFSB 1-1' })]),
+        L('Warno 1', 'TYPE OF MISSION', [
+          F('A', 'Adjust fire', 'bool'), F('B', 'Fire for effect', 'bool'),
+          F('C', 'Suppress', 'bool'), F('D', 'Immediate suppression', 'bool')]),
+        L('Warno 2', 'SIZE OF ELEMENT TO FIRE', [F('', 'Size of element', 'text')]),
+        L('Warno 3A', 'TARGET LOCATION: GRID', [F('', 'Target grid (6-digit) or map position', 'grid')]),
+        L('Warno 3B', 'TARGET LOCATION: POLAR', [F('POLAR', 'Tick if using polar \u2014 fill Target 2', 'bool')]),
+        L('Warno 3C', 'TARGET LOCATION: SHIFT', [F('SHIFT', 'Tick if shifting \u2014 fill Target 3', 'bool')]),
+        L('Target 2', 'POLAR (FROM OBSERVER)', [
+          F('', 'Direction to TGT (deg)', 'number', { min: 0, max: 360 }),
+          F('', 'Distance to TGT (m)', 'number', { min: 0, max: 30000 })]),
+        L('Target 3', 'SHIFT FROM A KNOWN POINT', [
+          F('A', 'Lateral shift', 'text'), F('B', 'Range shift', 'text'), F('C', 'Vertical shift', 'text')]),
+        L('Description', 'TARGET DESCRIPTION', [F('', 'Target description', 'textarea', { r: 1 })]),
+        L('Engagement', 'METHOD OF ENGAGEMENT', [
+          F('A', 'HE', 'bool'), F('B', 'Smoke', 'bool'), F('C', 'Illumination', 'bool'),
+          F('D', 'Cluster', 'bool'), F('E', 'Laser-guided', 'bool'), F('F', 'Airburst', 'bool'),
+          F('', 'Number of rounds', 'number', { min: 1, max: 200 })]),
+        L('Danger Close', 'DANGER CLOSE', [
+          F('DC', 'Danger close', 'bool'),
+          F('', 'Distance to friendlies (m)', 'number', { min: 0, max: 5000 })]),
+        L('Control', 'METHOD OF FIRE CONTROL', [
+          F('A', 'Fire when ready', 'bool'), F('B', 'At my command', 'bool'), F('C', 'Time on target', 'bool'),
+          F('D', 'Cannot observe', 'bool'), F('E', 'Check fire', 'bool'), F('F', 'Fire again', 'bool')]),
+        L('TOT', 'TIME ON TARGET (IF C)', [F('', 'TOT', 'time')]),
+        L('Remarks', 'REMARKS', [F('', 'Remarks', 'textarea')])
+      ]),
+      T('CAS', 'CAS REQUEST', true,
+        ['OPENS TASK \u2192 ISSUED', 'MAP ANCHOR \u00b7 LINE 1'],
+        'CAS {Line1.A} \u2014 {Line5.A}', [
+        L('Line 1', 'GRID REFERENCE', [F('', 'Target grid / map position', 'grid', { r: 1 })]),
+        L('Line 2', 'MAP REFERENCE', [F('', 'Map marker / reference point', 'text')]),
+        L('Line 3', 'INGRESS LOCATION', [F('', 'Ingress point / run-in start', 'grid', { noCur: 1 })]),
+        L('Line 4', 'EGRESS LOCATION', [F('', 'Egress point / off-target turn', 'grid', { noCur: 1 })]),
+        L('Line 5', 'TARGET DESCRIPTION', [F('', 'Target description', 'textarea', { r: 1 })]),
+        L('Line 6', 'RANGE FROM FRIENDLIES', [
+          F('', 'Meters \u2014 under 300 m is DANGER CLOSE!', 'number', { min: 0, max: 10000 }),
+          F('DANGER CLOSE', 'Under 300 m', 'bool')]),
+        L('Line 7', 'MARKED BY', [
+          F('', 'How the target is marked', 'choice', { ch: ['SMOKE', 'LASER', 'IR', 'TRACER', 'NONE'] }),
+          F('', 'Colour / code', 'text')]),
+        L('Optional', 'PREFERRED MUNITIONS', [F('', 'Preferred munitions', 'text')]),
+        L('Remarks', 'REMARKS', [F('', 'Remarks', 'textarea')])
+      ]),
+      T('CHECK-IN', 'AIRFRAME CHECK-IN', false,
+        ['INFORMATIONAL \u2014 OPENS NO TASK', 'MAP ANCHOR \u00b7 LINE 3'],
+        'CHECK-IN {Line1.A} \u2014 {Line2.A}', [
+        L('Line 1', 'AIRFRAME CALL SIGN', [F('', 'Call sign', 'callsign', { r: 1, a: 1, v: 'ROTARY 1-1' })]),
+        L('Line 2', 'NUMBER AND TYPE OF AIRCRAFT', [F('', 'e.g. 2x AH-99', 'text')]),
+        L('Line 3', 'POSITION AND ALTITUDE', [
+          F('', 'Grid / marker / battle position', 'grid'),
+          F('ALT', 'Altitude (m)', 'number', { min: 0, max: 20000 })]),
+        L('Line 4', 'ORDNANCE', [F('', 'Quantity of each munition', 'textarea')]),
+        L('Line 5', 'TIME ON STATION', [F('', 'Time available for tasking', 'text')]),
+        L('Line 6', 'ABORT CODE', [F('', 'Provided by flight lead', 'text')]),
+        L('Line 7', 'REMARKS', [F('', 'Optional', 'text')])
+      ]),
+      T('HLZ', 'HLZ BRIEF', false,
+        ['OPENS TASK \u2192 ISSUED', 'MAP ANCHOR \u00b7 LINE 1'],
+        'HLZ {Line2.A} \u2014 {Line1.A}', [
+        L('Line 1', 'HLZ LOCATION', [F('', 'Grid / map position', 'grid', { r: 1 })]),
+        L('Line 2', 'LZ/DZ NAME / MAP MARKING', [F('', 'Name, or a marker already on the map', 'text', { mk: 1 })]),
+        L('Line 3', 'EXTRACT CONTENTS', [F('', 'Who / what is being extracted', 'text')]),
+        L('Line 4', 'SECURITY', [
+          F('GREEN', 'Secure, no threat', 'bool'),
+          F('YELLOW', 'Secure but threatened', 'bool'),
+          F('RED', 'Under fire', 'bool')]),
+        L('Line 5', 'MARKING METHOD', [
+          F('', 'How the HLZ is marked', 'choice', { ch: ['SMOKE', 'IR STROBE', 'PANEL', 'CHEM-LIGHT', 'OTHER'] }),
+          F('', 'Colour / code / location from the HLZ', 'text')]),
+        L('Line 6', 'INGRESS LOCATION', [F('', 'Ingress point / approach start', 'grid', { noCur: 1 })]),
+        L('Line 7', 'EGRESS LOCATION', [F('', 'Egress point / departure turn', 'grid', { noCur: 1 })]),
+        L('Remarks', 'REMARKS', [F('', 'Remarks', 'textarea')])
+      ]),
+      T('AIRDROP', 'AIRDROP BRIEF', false,
+        ['OPENS TASK \u2192 ISSUED', 'MAP ANCHOR \u00b7 LINE 1'],
+        'AIRDROP {Line1.A}', [
+        L('Line 1', 'POINT OF IMPACT LOCATION', [F('', 'Grid / map position', 'grid', { r: 1 })]),
+        L('Line 2', 'POINT OF IMPACT ALTITUDE', [F('', 'Altitude (m)', 'number', { min: 0, max: 5000 })]),
+        L('Line 3', 'DZ DESCRIPTION / MARK', [F('', 'Description, or a marker already on the map', 'text', { mk: 1 })]),
+        L('Line 4', 'FRIENDLIES LOCATION / MARK', [F('', 'Where the friendlies are, or a marker', 'text', { mk: 1 })]),
+        L('Line 5', 'SURFACE WINDS', [F('', 'Surface winds', 'text')]),
+        L('Line 6', 'INGRESS LOCATION', [F('', 'Ingress point / run-in start', 'grid', { noCur: 1 })]),
+        L('Line 7', 'EGRESS LOCATION', [F('', 'Egress point / off-target turn', 'grid', { noCur: 1 })]),
+        L('Remarks', 'REMARKS', [F('', 'Remarks', 'textarea')])
+      ]),
+      T('DEFREP', 'VEHICLE REPORT (DEFREP)', false,
+        ['ROUTING \u00b7 CMD TICK', 'ONE COLOUR PER LINE'],
+        'DEFREP {Vehicle.A}', [
+        L('Vehicle', 'VEHICLE', [F('', 'Vehicle callsign / type', 'text', { r: 1 })]),
+        L('Line 1', 'DAMAGE', GYRB('No damage', 'Slight damage, still combat effective', 'Not combat effective', 'Destroyed')),
+        L('Line 2', 'EQUIPMENT', GYRB('No damage', 'Slight damage, can carry on with mission', 'Major damage to equipment', 'No longer mission capable')),
+        L('Line 3', 'FUEL', GYRB('More than 1/2', 'Less than 1/2', 'Less than 1/4', 'EMPTY!')),
+        L('Remarks', 'REMARKS', [F('', 'Remarks', 'textarea')]),
+        L('Command', 'ROUTING', [F('CMD', 'Also send to the command group', 'bool')])
+      ]),
+      T('QRF', 'REACT/QRF LINK-UP', false,
+        ['OPENS TASK \u2192 ISSUED', 'MAP ANCHOR \u00b7 LINE 2'],
+        'QRF LINK-UP {Line2.A} \u2014 {Line1.A}', [
+        L('Line 1', 'WHO LINKS WITH WHO', [F('', 'Elements linking up', 'text', { r: 1 })]),
+        L('Line 2', 'LINK-UP LOCATION', [F('', 'Grid or map marker', 'grid', { r: 1 })]),
+        L('Line 3', 'SUGGESTED ROUTE', [F('', 'Route to the link-up site', 'text')]),
+        L('Line 4', 'SPECIAL ATTACHMENTS NEEDED', [F('', 'Any special attachments needed', 'text')]),
+        L('Line 5', 'ACTION ON ARRIVAL', [F('', 'Cordon area, block route, set up CCP, etc.', 'text')]),
+        L('Remarks', 'REMARKS', [F('', 'Remarks', 'textarea')])
+      ])
+    ];
+    const replyForms = [
+      T('CANTCO', 'CANTCO', true,
+        ['REPLY \u2192 DECLINED', 'ASSIGNEE ONLY', 'FROM ISSUED / RECEIPT / ACCEPTED / IN PROGRESS'],
+        'CANTCO \u2014 {Reason.A}', [
+        L('Reason', 'REASON UNABLE TO COMPLY', [F('', 'Why not', 'textarea', { r: 1 })])
+      ]),
+      T('MSG', 'MESSAGE', false,
+        ['ROOT + REPLY'],
+        '{Text.A}', [
+        L('Text', 'MESSAGE', [F('', 'Anything the templates do not cover', 'textarea', { r: 1 })])
+      ]),
+      T('CLOSE', 'CLOSE THREAD', false,
+        ['REPLY \u2192 CLOSED', 'ISSUER ONLY'],
+        'THREAD OUTCOME', [
+        L('Outcome', 'OUTCOME', [F('', 'How it ended', 'text')])
+      ])
+    ];
+    return { forms, replyForms };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,2806 @@
+"""Build the faction addons as NEW classes beside the originals.
+
+NEW CLASSES, NOT OVERRIDES - the faction_mfrc pattern. BLU_F and the rest are
+left exactly as their mods ship them; this declares `jmfsb_US` and friends
+alongside, each fielding its own `jmfsb_US_*` units built by inheritance from
+the original. Nothing anybody else depends on changes, and a load order without
+the source mod gets inert classes rather than a config that refuses to build.
+
+    addon                new faction      from
+    (the base-game US rows - faction_us, _tna, _wdl, _des - were replaced by the
+    JTF on 2026-08-27 and their addons deleted)
+    faction_marine_des   jmfsb_Marine_des EF_B_MJTF_Des
+    faction_marine_wdl   jmfsb_Marine_wdl EF_B_MJTF_Wdl
+    faction_csat         jmfsb_CSAT       OPF_F
+    faction_csat_tna     jmfsb_CSAT_tna   OPF_T_F
+    faction_insurgents   jmfsb_Insurgents OPF_IND_I_F
+    faction_syndikat     jmfsb_Syndikat   IND_C_F
+    faction_aaf          jmfsb_AAF        IND_F
+    faction_ldf          jmfsb_LDF        IND_E_F
+    faction_fia          jmfsb_FIA        BLU_G_F
+    faction_fia_ind      jmfsb_FIA_ind    IND_G_F
+
+MODS THAT LEFT THE LOAD ORDER ARE FILTERED OUT - see DROP_MODS. The dump is
+taken with everything loaded, so a source faction's roster holds whatever
+each mod bolted onto it; a class from a dropped mod is not built, not put in
+a group, and not named as a crew. faction_himf, built from Atlas_BLU_H_F,
+had nothing left once Atlas went and is now built by tools/gen_himf.py from
+base-game parents instead.
+
+THE ROSTER IS SCOPE 2 PLUS WHATEVER THE GROUPS FIELD. B_soldier_AR_F is scope 1
+- unplaceable in the editor - but BLU_F's squads are built out of it, so a
+scope-2-only roster leaves half of every squad pointing at classes this faction
+does not own. Any class a group names gets built too, at its original scope.
+
+Source data is the in-game dump in the RPT: run tools/dump_orbat.sqf in the
+debug console, then this. See tools/gen_orbat_from_rpt.py, whose reader this
+shares. While no dump is on disk, tools/strip_faction_mods.py (removals) and
+tools/apply_faction_extras.py (additions) apply the same rules to what was
+last generated.
+
+    python tools/gen_us_factions.py --rpt <file>
+"""
+import os, io, re, sys, argparse, collections
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gen_orbat_from_rpt as R
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ADDONS = os.path.join(ROOT, "addons")
+
+# THE PLA MOD'S VEHICLES, FROM ITS CONFIGS. The dump on hand was taken without
+# the mod loaded; tools/gen_pla_index.py reads D:\work\pla instead and the
+# records are merged into the dump's tables at read time (see main), so
+# ROSTER_ADD, crews, camo and CfgPatches treat them like anything dumped.
+PLA_INDEX_PATH = os.path.join(ROOT, "work", "pla_vehicles.json")
+
+
+def load_pla_index():
+    if not os.path.exists(PLA_INDEX_PATH):
+        return {}
+    import json as _json
+    return _json.load(io.open(PLA_INDEX_PATH, encoding="utf-8"))
+
+
+PLA_INDEX = load_pla_index()
+PLA_CLASSES = set(k.lower() for k in PLA_INDEX)
+PLA_FACTIONS = ("jmfsb_PLA_ard", "jmfsb_PLA_wdl")
+
+# THE PLA'S PACKS. tools/gen_pla_kit.py re-declares every loaded pack OPF_F's
+# men carry as a child of itself in the Xingkong skin (contents and all) and
+# lists them in work/pla_packs.json; the man is pointed at the child. A pack
+# not in the list (drone bags, weapon bags, parachutes) stays as issued.
+def load_pack_swap():
+    p = os.path.join(ROOT, "work", "pla_packs.json")
+    if not os.path.exists(p):
+        return {}
+    import json as _json
+    packs = _json.load(io.open(p, encoding="utf-8"))
+    return {"jmfsb_PLA_ard": dict((o, v["A"]) for o, v in packs.items() if "A" in v),
+            "jmfsb_PLA_wdl": dict((o, v["W"]) for o, v in packs.items() if "W" in v)}
+
+
+PACK_SWAP = load_pack_swap()
+
+# addon dir, COMPONENT_BEAUTIFIED, new faction class, 3DEN name, source faction
+TARGETS = [
+    # THE US ARMY IS E22's JOINT TASK FORCE (2026-08-27): the BLU-side JTF
+    # in its three theatres. E22 also declares an Alpine JTF (E22_BLU_JTF_W_F)
+    # but ships no units under it - nothing to build. The base-game BLU_F
+    # rosters this replaced (faction_us*) were deleted on 2026-08-27.
+    ("faction_us_jtf_wdl", "US Army JTF (Woodland)", "jmfsb_US_JTF_wdl", "2040 US Army JTF (Woodland)", "e22_blu_jtf_f"),
+    ("faction_us_jtf_des", "US Army JTF (Desert)",   "jmfsb_US_JTF_des", "2040 US Army JTF (Desert)",   "e22_blu_jtf_d_f"),
+    # Two more theatres of the same JTF (2026-08-27): the woodland roster in
+    # the base game's NATO Pacific kit, the desert roster in the repo's OCP
+    # retextures - see KIT_SWAP. Same armour, drones and groups as their
+    # sources; only the men's kit differs.
+    ("faction_us_jtf_tna", "US Army JTF (Tropical)", "jmfsb_US_JTF_tna", "2040 US Army JTF (Tropical)", "e22_blu_jtf_f"),
+    ("faction_us_jtf_ocp", "US Army JTF (OCP)",      "jmfsb_US_JTF_ocp", "2040 US Army JTF (OCP)",      "e22_blu_jtf_d_f"),
+    ("faction_marine_des", "Marine (Desert)", "jmfsb_Marine_des", "2040 Marine (Desert)", "ef_b_mjtf_des"),
+    ("faction_marine_wdl", "Marine (Wdl)",    "jmfsb_Marine_wdl", "2040 Marine (Woodland)", "ef_b_mjtf_wdl"),
+    # 2040 EUDF (user, 2026-08-27): the EUDF35 mod's west factions, all three
+    # theatres, at tier 3 under the US drone rules (NOT_FIELDED), plus the
+    # AH-99 Blackfoot that the JTF does not get (ROSTER_ADD). Groups are
+    # EUDF35's own 56 (its SmallTeam_UAV goes with the Darter).
+    ("faction_eudf",     "EUDF",          "jmfsb_EUDF",     "2040 EUDF",          "blu_eudf35_f"),
+    ("faction_eudf_arc", "EUDF (Arctic)", "jmfsb_EUDF_arc", "2040 EUDF (Arctic)", "blu_eudf35_a_f"),
+    ("faction_eudf_ard", "EUDF (Arid)",   "jmfsb_EUDF_ard", "2040 EUDF (Arid)",   "blu_eudf35_d_f"),
+    # faction_himf is built by tools/gen_himf.py - base-game bodies, Atlas's
+    # HIMF textures - not from a dump.
+    # TWO CSATs (2026-08-27): the base game's own pair, each in the SOF
+    # hex or green-hex set - see KIT_SWAP. Both peer+ (TIER).
+    ("faction_csat",       "CSAT Iran",       "jmfsb_CSAT",       "2040 CSAT Iran",       "opf_f"),
+    ("faction_csat_tna",   "CSAT Iran (Pacific)", "jmfsb_CSAT_tna", "2040 CSAT Iran (Pacific)", "opf_t_f"),
+    # INSURGENTS ON THE BASE GAME (2026-08-27): the Opf mod that was their
+    # source left the load order, so they are the FIA's independent roster
+    # (IND_G_F) at tier 1 with the insurgents' own kit on top - SwitchBlade,
+    # IED Pelican, the RKSL IND package (EXTRA_UNITS). Same roster as
+    # faction_fia_ind, different faction, different reach.
+    ("faction_insurgents", "Insurgents",      "jmfsb_Insurgents", "2040 Insurgents",      "ind_g_f"),
+    ("faction_syndikat",   "Syndikat",        "jmfsb_Syndikat",   "2040 Syndikat",        "ind_c_f"),
+    # THE INDEPENDENTS (2026-08-27): AAF and LDF near-peer at t2, the FIA
+    # pair at t1 - the base game's own rosters, from the dump.
+    ("faction_aaf",        "AAF",             "jmfsb_AAF",        "2040 AAF",             "ind_f"),
+    ("faction_ldf",        "LDF",             "jmfsb_LDF",        "2040 LDF",             "ind_e_f"),
+    ("faction_fia",        "FIA",             "jmfsb_FIA",        "2040 FIA",             "blu_g_f"),
+    ("faction_fia_ind",    "FIA (Ind)",       "jmfsb_FIA_ind",    "2040 FIA (Independent)", "ind_g_f"),
+    # RUSSIA (2026-08-27): E22's Russian Armed Forces, the OPF-side copies of
+    # its three theatres - W is woodland, D is what E22 calls Arid, A is
+    # Alpine (its own display names). E22 stays in the load order - see
+    # KEEP_MODS.
+    ("faction_raf_wdl",    "Russia (Woodland)", "jmfsb_RAF_wdl",  "2040 Russia (Woodland)", "e22_opf_raf_w_f"),
+    ("faction_raf_ard",    "Russia (Arid)",     "jmfsb_RAF_ard",  "2040 Russia (Arid)",     "e22_opf_raf_d_f"),
+    ("faction_raf_alp",    "Russia (Alpine)",   "jmfsb_RAF_alp",  "2040 Russia (Alpine)",   "e22_opf_raf_a_f"),
+    # THE PLA (user, 2026-08-28): OPF_F's order of battle in Chinese identities and
+    # ACP's Xingkong camo (addons/uniform_pla), on the PLA mod's vehicles - read
+    # from its configs, not the dump (PLA_INDEX). t4, Katiba line, Type 115 on the
+    # leaders and recon; CSAT's boats, statics, quads and drones stay.
+    ("faction_pla_ard",    "PLA (Arid)",        "jmfsb_PLA_ard",  "2040 PLA (Arid)",        "opf_f"),
+    ("faction_pla_wdl",    "PLA (Woodland)",    "jmfsb_PLA_wdl",  "2040 PLA (Woodland)",    "opf_f"),
+]
+
+
+# Where a mod files its CfgGroups under a name that is not its
+# CfgFactionClasses name: source faction (lower) -> CfgGroups faction (lower).
+# E22's RAF groups sit under E22_RAF_OPF / E22_RAF_D_OPF / E22_RAF_A_OPF.
+GROUP_ALIAS = {
+    # the base game files BLU_G_F's groups under "Guerilla"
+    "blu_g_f": "guerilla",
+    "e22_opf_raf_w_f": "e22_raf_opf",
+    "e22_opf_raf_d_f": "e22_raf_d_opf",
+    "e22_opf_raf_a_f": "e22_raf_a_opf",
+}
+
+
+# ---------------------------------------------------------------------------
+# MODS THAT ARE OUT OF THE LOAD ORDER
+# ---------------------------------------------------------------------------
+# The RPT dump was taken with every mod loaded, so a source faction's roster
+# holds whatever each mod bolted onto it: Aegis fills BLU_T_F and BLU_W_F out
+# with its own Ghost Hawks, F-35s and CQ riflemen under plain B_T_/B_W_ names,
+# Atlas adds the JSOC sub-roster, and neither can be told from the base game
+# by its name alone. Dropping a mod from the load order means dropping every
+# class that came from it.
+#
+# THREE TESTS, IN ORDER:
+#   1. A class prefixed with a dropped mod's tag is that mod's.  Aegis_B_...
+#   2. A class the base game defines is vanilla - work/vanilla_vehicles.json,
+#      written by tools/gen_vanilla_vehicles.py from the unpacked A3 tree.
+#   3. Anything else is some mod's. If it matches a KEEP_MODS test - a CDLC
+#      or a mod still in the load order - it stays; otherwise it is taken to
+#      be a dropped mod's plain-named addition and goes.
+#
+# THE THIRD TEST IS THE ONE THAT CAN BE WRONG, in both directions: a mod
+# missing from KEEP_MODS has its classes dropped, and a KEEP test that is too
+# wide keeps a dropped mod's class. So nothing is dropped in silence - every
+# run prints what went - and a new mod in the load order gets a KEEP line.
+DROP_MODS = ("Aegis", "Atlas")
+
+# Dropped mods whose classes carry no prefix of their own - B_KVN_AP is a
+# NATO-looking name from the KVN drone mod. (what the report calls it, test
+# on the lower-cased class name). Checked before the vanilla index, so a
+# test that is too wide would drop base-game classes: keep them tight.
+DROP_TESTS = [
+    ("KVN drones (out 2026-08-27)", lambda c: "_kvn_" in c or c.endswith("_kvn")),
+    # The GX vehicle drones are US kit (see KEEP_MODS); the OPFOR and
+    # Independent copies the mod ships are not anybody's.
+    ("GX drones, OPFOR/IND copies",  lambda c: c.startswith(("gx_o_", "gx_i_"))),
+    # Orion/Orlan (out 2026-08-27 - dropped from the load order, and with it
+    # from Russia, the last faction that fielded them)
+    ("Orion / Orlan (out 2026-08-27)", lambda c: c.startswith(("orion_", "orlan_"))),
+    # Crocus FPV (out 2026-08-28 - the mod is no longer loaded; the 09:11 RPT
+    # filled with "No entry I_Crocus_AP.*" from the Syndikat's copy)
+    ("Crocus FPV (out 2026-08-28)",   lambda c: "crocus" in c),
+]
+
+# IN THE LOAD ORDER, BUT NOT FOR THE AI. The hand-launched GX drones - Raven,
+# Black Hornet, Drone40 - are the players' kit (2026-08-27): a faction that
+# fields them hands the AI the thing the players are meant to be special
+# for. Same shape as DROP_TESTS and treated the same way by every faction;
+# what differs is the reason, so it is its own list. The GX VEHICLE drones
+# are a different matter - see KEEP_MODS.
+GX_HAND = ("rq11b", "blackhornet", "drone40")
+PLAYER_ONLY = [
+    ("GX hand-launched drones (players only)",
+     lambda c: c.startswith("gx_") and any(k in c for k in GX_HAND)),
+]
+
+# Still in the load order: (what the run report calls it, test on the
+# lower-cased class name). Order does not matter; the first hit names it.
+KEEP_MODS = [
+    ("Western Sahara (CDLC)",       lambda c: "lxws" in c),
+    ("Reaction Forces (CDLC)",      lambda c: c.endswith("_rf")),
+    ("Expeditionary Forces (CDLC)", lambda c: c.startswith("ef_") or c.endswith("_ef")),
+    # EUDF35 - the EU Defence Force mod, the 2040 EUDF factions' source (2026-08-27)
+    ("EUDF35",                      lambda c: "eudf35" in c),
+    # the PLA mod (Lurker1011) - its classes carry no common prefix; the index knows them
+    ("PLA (LK)",                    lambda c: c in PLA_CLASSES),
+    # The GX vehicle drones - Fire Scout, Themis, Honeybadger, Magura, RWS
+    # Defender, Hunter-SP - are US forces kit (2026-08-27): the motorpool
+    # fields them crewed, so the US faction must own them. BLUFOR copies
+    # only; the O_/I_ ones are in DROP_TESTS.
+    ("GX vehicle drones (US)",      lambda c: c.startswith("gx_b_") and any(
+        k in c for k in ("mq8b", "themis", "honeybadger", "magura", "rws_defnder", "hunter_sp",
+                         "uav_ai"))),   # the drones' own AI crew, not a man
+    # E22 - Russian Armed Forces (the three RAF factions are built from it),
+    # Northstar and its JTF. In the load order to stay.
+    ("E22 (RAF / Northstar)",       lambda c: c.startswith("e22_")),
+    ("RKSL",                        lambda c: c.startswith("rksla3_")),
+    ("QAV",                         lambda c: "qav" in c),
+    ("ACE",                         lambda c: c.startswith("ace_")),
+    ("JK",                          lambda c: c.startswith("jk_")),
+    ("ALiVE",                       lambda c: c.endswith("_alive")),
+    ("Rev drones",                  lambda c: "_rev_" in c),
+    ("SwitchBlade loitering munition", lambda c: "switchblade" in c),
+    # The Opf mod (OPF_IND_I_F, the old insurgents' source) is out of the
+    # load order since the 2026-08-27 dump; the insurgents are IND_G_F now.
+    ("ours",                        lambda c: c.startswith("jmfsb_")),
+]
+
+# BASE-GAME DRONES THE US DOES NOT FIELD (2026-08-27). Of the base game's
+# drones only three are US and player kit: the UCAV Sentinel, the ED-1D
+# Pelter and IDAP's demining Pelican. The Darter, Greyhawk, Falcon, Pelican
+# (cargo and medical), Stomper and Roller are out of the US factions - the
+# airframes, the bags, and through the bags the men who carried them (a UAV
+# operator without his Darter is a rifleman, and the roster has those).
+# Keyed by faction. Applied to any class, base game or mod, so the CDLC and
+# mod copies of the same airframes go the same way where a test catches
+# them; what a test does not catch is reported by the run.
+#
+# THE REST OF THE SIDE ALLOCATION (2026-08-27), by the same mechanism:
+#   base-game SAM and radar     EAST only
+#   MQ-4A Greyhawk              EAST only
+#   MQ-12 Falcon                EAST too (an east version, see EXTRA_UNITS)
+#   KH-3A Fenghuang             EAST
+#   SwitchBlade 300/600         EAST and IND, never US
+#   RKSL Aeroshark, Watchkeeper EAST (and Aeroshark IND)
+#   RKSL Rapier, Shadow, Hermes IND only
+#   IED Pelican                 IND / low tier (jmfsb_uas builds it)
+US_FACTIONS = ("jmfsb_US_JTF_wdl", "jmfsb_US_JTF_des", "jmfsb_US_JTF_tna", "jmfsb_US_JTF_ocp")
+EU_FACTIONS = ("jmfsb_EUDF", "jmfsb_EUDF_arc", "jmfsb_EUDF_ard")
+# "uav_01" (the Darter) LEFT THIS LIST 2026-08-28: the squad drone table gives every
+# tier-3 west squad a Darter (SQUAD_DRONES), so the airframe is fielded again.
+_US_NOT = ("uav_02_dynamicloadout", "uav_03", "uav_06", "ugv_01", "ugv_02_science")
+# THE WEST'S DRONE RULES - the US and, since 2026-08-27, the EU (user: "same
+# as the US"). EUDF35's Patriot, radar, Darter, Milvus, Pelican and Stomper go
+# the way BLU_F's did.
+_WEST_DRONE_RULES = [
+    ("base-game drones the west does not field",
+     lambda c: any(k in c for k in _US_NOT) and "antimine" not in c),
+    # the Rev mod's "deployable" wrappers of the same airframes - the
+    # Darter, Pelican, Roller and Bustard by another door
+    ("Rev deployables of drones the west does not field",
+     lambda c: c.startswith("b_rev_") and any(k in c for k in ("darter", "pelican", "roller", "bustard", "uav_ied"))),
+    ("SAM and radar are east",       lambda c: "sam_system" in c or "radar_system" in c),
+    ("SwitchBlade is east and ind",  lambda c: "switchblade" in c),
+    ("RKSL UAVs are east and ind",   lambda c: c.startswith("rksla3_")),
+]
+NOT_FIELDED = {
+    US_FACTIONS: _WEST_DRONE_RULES + [
+        # NO PICKUPS (2026-08-27). is_ram catches the Ram 1500s by display
+        # name; this catches anything else calling itself a pickup.
+        ("no pickups",                   lambda c: "pickup" in c),
+        # THE AH-99 BLACKFOOT IS THE EU'S (2026-08-27): B_Heli_Attack_01_* go
+        # to the EUDF factions; E22 gives the JTF the AH-80 Sparrowhawk instead.
+        ("the Blackfoot is the EU's",     lambda c: "heli_attack_01" in c),
+        # NO STRIDERS (user, 2026-08-28): E22's M-ATVs take their group slots -
+        # see _JTF_STRIDER_SUB. THE POLARIS DAGOR FOR THE MANTIS (user, same
+        # day): the base game's Prowlers come in through _JTF_LSV, painted by
+        # jtf_paint(); the LSV MK.II goes.
+        ("no Striders",                  lambda c: "mrap_03" in c),
+        ("the Polaris for the Mantis",   lambda c: "lsv_02" in c),
+    ],
+    EU_FACTIONS: _WEST_DRONE_RULES,
+    # NO WEST RUSSIA (user, 2026-08-28). E22 ships the RAF three times over - west,
+    # east and independent - and its alpine CfgGroups name the WEST classes; 27 of
+    # them leaked into 2040 Russia (Alpine). The east twins take the slots
+    # (see the group loop) and the west ones are refused here.
+    ("jmfsb_RAF_wdl", "jmfsb_RAF_ard", "jmfsb_RAF_alp"): [
+        ("west RAF classes",             lambda c: c.startswith("e22_b_raf")),
+        ("independent RAF classes",      lambda c: c.startswith("e22_i_raf")),
+    ],
+    ("jmfsb_CSAT", "jmfsb_CSAT_tna", "jmfsb_RAF_wdl", "jmfsb_RAF_ard", "jmfsb_RAF_alp", "jmfsb_PLA_ard", "jmfsb_PLA_wdl"): [
+        ("Hermes 450 is ind",            lambda c: c.startswith("rksla3_") and "h450" in c),
+    ],
+    # tier 0 has no air arm (NOT_FIELDED_VCLASS), so no pilot either
+    ("jmfsb_Syndikat",): [
+        ("no aircraft, no pilot",        lambda c: "pilot" in c),
+        # no artillery either (user, 2026-08-28) - the Ram 1500 (MRL) was the one piece
+        ("no artillery at tier 0",       lambda c: "_mrl" in c or "arty" in c or "mortar" in c),
+    ],
+}
+
+# WHOLE CATEGORIES A FACTION DOES NOT FIELD, by the dump's vehicleClass.
+# Tier 0 has no air arm: the Syndikat's Caesar BTT, its Mohawk and its Taru
+# are bought or stolen airframes a bandit network could not keep flying, so
+# the whole "Air" category goes - drones are "Autonomous" and stay.
+# {faction: (vehicleClasses, unless)} - `unless` is a test on the lower-cased
+# class name that keeps a class the category would have dropped.
+#
+# THE US ARMY HAS NO TANKS AND NO APCs EXCEPT QAV's (2026-08-27): the M3A
+# Knights (QAV's AbramsX) and QAV's Marshalls, which ROSTER_ADD pulls in and
+# GROUP_SUB puts into the armour and mech groups in place of E22's.
+#
+# THE US ARMY'S ARMOUR IS QAV's; ITS ARTILLERY AND AIRCRAFT ARE NATO's (user,
+# 2026-08-28): E22's air arm - Sparrowhawk, Blackfish, its F-181s - goes,
+# and the base game's Little Birds, Ghost Hawks, Hurons, A-10Ds and Black
+# Wasps come in through ROSTER_ADD (_NATO_AIR), with the Sholef, the Seara
+# and RF's mortars (_NATO_ARTY). The `unless` lets exactly those through
+# the two categories; the Blackfoot is still refused by NOT_FIELDED.
+_JTF_NOT_FIELDED = (("Armored", "Air"),
+                    lambda c: "qav" in c or "_arty_" in c or "_mlrs_" in c
+                    or "apc_wheeled_01" in c or c.startswith("b_t_vtol_01")
+                    or c.startswith("b_heli_") or c.startswith("b_plane_"))
+NOT_FIELDED_VCLASS = {
+    "jmfsb_Syndikat":   (("Air",), None),
+    # THE PLA DRIVES AND FLIES ITS OWN (user, 2026-08-28): CSAT's armour, cars,
+    # trucks and aircraft go; the PLA mod's come in (ROSTER_ADD). CSAT's boats,
+    # statics, quad bikes and drones stay - the mod has none of those.
+    "jmfsb_PLA_ard":    (("Armored", "Car", "Air", "Support"), lambda c: c in PLA_CLASSES or "quadbike" in c),
+    "jmfsb_PLA_wdl":    (("Armored", "Car", "Air", "Support"), lambda c: c in PLA_CLASSES or "quadbike" in c),
+    "jmfsb_US_JTF_wdl": _JTF_NOT_FIELDED,
+    "jmfsb_US_JTF_des": _JTF_NOT_FIELDED,
+    "jmfsb_US_JTF_tna": _JTF_NOT_FIELDED,
+    "jmfsb_US_JTF_ocp": _JTF_NOT_FIELDED,
+}
+
+# CLASSES PULLED INTO A FACTION'S ROSTER FROM THE DUMP that its source faction
+# does not list - built exactly like the roster's own (crew, kit, tier), not
+# as extras. They must be in the dump and on the faction's side. The US Army
+# gets QAV's Knights and Marshalls, the Ripsaw, and the GX vehicle drones
+# (US kit - see KEEP_MODS) that used to ride in on BLU_F's roster.
+# NO M3E1 KNIGHT (B_qav_abramsx_zeus) - user, 2026-08-28: the M3A1/A2/A3 only.
+_QAV_ARMOUR = ["B_qav_abramsx", "B_qav_abramsx_templar", "B_qav_abramsx_tusk",
+               "APC_Wheeled_01_apc_qav", "APC_Wheeled_01_mgs_QAV", "APC_Wheeled_01_mgs_up_QAV",
+               "APC_Wheeled_01_shorad_QAV"]
+_US_DRONES = ["qav_b_ripsaw_Mk44",
+              "GX_B_MQ8B_UAV_RECON", "GX_B_MQ8B_UAV_RECON_SEATED", "GX_B_MQ8B_UAV_ARMED",
+              "GX_B_THEMIS_UGV_CARGO", "GX_B_THEMIS_UGV_DEFNDER_MEDIUM", "GX_B_THEMIS_UGV_HUNTER_LAUNCHER",
+              "GX_B_HONEYBADGER_UGV_AT_GREEN", "GX_B_HONEYBADGER_UGV_AT_DESERT",
+              "GX_B_HONEYBADGER_UGV_AT_BLACK", "GX_B_HONEYBADGER_UGV_AT_HEX",
+              "GX_B_MAGURA_V5_USV", "GX_B_RWS_DEFNDER_MEDIUM", "GX_B_HUNTER_SP_LAUNCHER", "GX_B_HUNTER_SP_UAV"]
+# THE BOATS ARE CREWED BY THE NAVY (2026-08-27): E22's Naval JTF has no
+# groups and was dropped as a faction, but its Naval Infantry crew every
+# JTF boat - see BOAT_CREW. Pulled into the roster so the crew class exists.
+_US_NAVY = ["E22_B_JTF_Naval_Infantry_F"]
+# NATO'S AIRCRAFT AND ARTILLERY (user, 2026-08-28) - the same set in every
+# theatre. The dynamic-loadout airframes; the legacy fixed-loadout twins
+# (B_Heli_Light_01_armed_F, B_Plane_CAS_01_F) are the same aircraft twice.
+# No Blackfoot - it is the EU's. The Naval JTF's fighter pilot comes along
+# so the jets are not flown by a helicopter pilot (pick_crew).
+_NATO_AIR = ["B_Heli_Light_01_F", "B_Heli_Light_01_stripped_F", "B_Heli_Light_01_dynamicLoadout_F",
+             # THE FIVE TRANSPORTS IN EVERY JTF, PAINTED FOR THE THEATRE (user,
+             # 2026-08-28) - see jtf_paint(); the camo, black and green twins are out.
+             "B_Heli_Transport_01_F", "B_Heli_Transport_01_unarmed_F", "B_Heli_Transport_01_pylons_F",
+             "B_Heli_Transport_03_F", "B_Heli_Transport_03_unarmed_F",
+             "B_Plane_CAS_01_dynamicLoadout_F", "B_Plane_CAS_01_Cluster_F",
+             "B_Plane_Fighter_01_F", "B_Plane_Fighter_01_Stealth_F", "B_Plane_Fighter_01_Cluster_F",
+             "E22_B_JTF_Fighter_Pilot_F"]
+_NATO_ARTY = ["B_MBT_01_arty_F", "B_MBT_01_mlrs_F", "B_CommandoMortar_RF", "B_TwinMortar_RF"]
+# MARSHALLS AND BLACKFISH IN EVERY THEATRE (user, 2026-08-28): the tropic AMV-7 and
+# Western Sahara's ATGM Marshall, and NATO Pacific's three V-44 X Blackfish - the
+# only Blackfish there are (BLU_F has none).
+# JK'S CLAM SHELL RADAR (user, 2026-08-28) - every JTF, both Marines and every
+# east faction. It is a west class; the emitter gives it the faction's side
+# and the faction's side's UAV AI as crew.
+_CLAMSHELL = ["JK_B_CDF_76n6_ClamShell_F", "JK_B_CDF_76n6_ClamShell_Lower_F"]
+_JTF_COMMON = ["B_UAV_01_F",    # the squads' Darter - see SQUAD_DRONES
+               "B_T_APC_Wheeled_01_cannon_F", "B_T_APC_Wheeled_01_atgm_lxWS",
+               "B_T_VTOL_01_armed_F", "B_T_VTOL_01_infantry_F", "B_T_VTOL_01_vehicle_F",
+               # THE STATICS AND THE AIR DEFENCE (user, 2026-08-28): NATO's tripod
+               # guns and their autonomous twins, the Mk6, the Patriot and its
+               # radar, GX's Hunter-SP launcher.
+               "B_GMG_01_F", "B_GMG_01_high_F", "B_GMG_01_A_F",
+               "B_HMG_01_F", "B_HMG_01_high_F", "B_HMG_01_A_F",
+               "B_Mortar_01_F", "B_SAM_System_03_F", "B_Radar_System_01_F",
+               "GX_B_HUNTER_SP_LAUNCHER"] + _CLAMSHELL
+# PER THEATRE (user, 2026-08-28): EF's M-ATV LAAD / AT / FSV in the NATO tropic
+# scheme for the green theatres and Western Sahara's NATO desert scheme for the
+# tan ones; E22's JC air defence - NASAMS, Skynex, Sentinel - green (JC_W) or tan
+# (JC_D); the base game's Prowlers (Polaris DAGOR), painted olive or sand by
+# jtf_paint(), the Pacific ones for the tropical JTF.
+_JTF_GREEN = ["EF_B_MRAP_01_LAAD_NATO_T", "EF_B_MRAP_01_AT_NATO_T", "EF_B_MRAP_01_FSV_NATO_T",
+              "E22_B_JC_W_SAM_system_01_F", "E22_B_JC_W_AAA_System_01_F", "E22_B_JC_W_Radar_system_01_F"]
+_JTF_TAN = ["EF_B_MRAP_01_LAAD_NATO_Des", "EF_B_MRAP_01_AT_NATO_Des", "EF_B_MRAP_01_FSV_NATO_Des",
+            "E22_B_JC_D_SAM_system_01_F", "E22_B_JC_D_AAA_System_01_F", "E22_B_JC_D_Radar_system_01_F"]
+_JTF_LSV = ["B_LSV_01_armed_F", "B_LSV_01_unarmed_F", "B_LSV_01_AT_F"]
+_JTF_LSV_TNA = ["B_T_LSV_01_armed_F", "B_T_LSV_01_unarmed_F", "B_T_LSV_01_AT_F"]
+# THE TROPICAL JTF IS GREEN (user, 2026-08-28): NATO Pacific's Scorcher and
+# Sandstorm, QAV's Pacific Knight and olive Marshalls (no tropic TUSK or Templar
+# exists), the camo Ghost Hawk, the green Hurons and the green Honeybadger take
+# the place of the tan, grey and black ones. Little Birds, the A-10 and the
+# Black Wasp have no green scheme and stay as they are.
+_QAV_ARMOUR_TNA = ["B_T_qav_abramsx", "B_T_APC_Wheeled_01_apc_QAV", "B_T_APC_Wheeled_01_mgs_QAV",
+                   "B_T_APC_Wheeled_01_mgs_up_QAV", "B_T_APC_Wheeled_01_shorad_QAV"]
+_NATO_ARTY_TNA = ["B_T_MBT_01_arty_F", "B_T_MBT_01_mlrs_F", "B_CommandoMortar_RF", "B_TwinMortar_RF"]
+_NOT_GREEN = ("B_Heli_Transport_01_F", "B_Heli_Transport_01_unarmed_F", "B_Heli_Transport_01_pylons_F",
+              "B_Heli_Transport_03_black_F", "B_Heli_Transport_03_unarmed_F")
+# (_NOT_GREEN is history: the transports are painted per theatre by jtf_paint().)
+_NATO_AIR_TNA = list(_NATO_AIR)
+_US_DRONES_TNA = [x for x in _US_DRONES if "HONEYBADGER" not in x or x.endswith("_GREEN")]
+_EU_BLACKFOOT = ["B_Heli_Attack_01_dynamicLoadout_F", "B_Heli_Attack_01_pylons_dynamicLoadout_F"]
+# THE EUDF'S EXTRAS (user, 2026-08-28): NATO's Cheetah and RF's Ram 1500 (AA),
+# painted for the theatre by eu_paint() where the base game has the paint; EF's
+# combat boats in NATO's scheme; and the drones aligned with the JTFs - the GX
+# fleet (_US_DRONES) beside EUDF35's own Darters.
+_EU_EXTRA = ["B_APC_Tracked_01_AA_F", "B_Pickup_aat_rf",
+             "EF_B_CombatBoat_Unarmed_NATO", "EF_B_CombatBoat_HMG_NATO", "EF_B_CombatBoat_AT_NATO",
+             # QAV's Ripsaws, the plain ones (user, 2026-08-28): the M6A (Mk44) and the M6C Bullfrog
+             "qav_ripsaw_Mk44", "qav_ripsaw_c"]
+# E22's JC air defence for the EUDF too (user, 2026-08-28): green for the
+# temperate theatre, tan for the arid one - and for the arctic one, where tan
+# is the lighter of the two paints E22 ships.
+_JC_GREEN = ["E22_B_JC_W_SAM_system_01_F", "E22_B_JC_W_AAA_System_01_F", "E22_B_JC_W_Radar_system_01_F"]
+_JC_TAN = ["E22_B_JC_D_SAM_system_01_F", "E22_B_JC_D_AAA_System_01_F", "E22_B_JC_D_Radar_system_01_F"]
+ROSTER_ADD = {
+    "jmfsb_US_JTF_wdl": _QAV_ARMOUR + _US_DRONES + _US_NAVY + _NATO_ARTY + _NATO_AIR + _JTF_COMMON + _JTF_GREEN + _JTF_LSV,
+    "jmfsb_US_JTF_des": _QAV_ARMOUR + _US_DRONES + _US_NAVY + _NATO_ARTY + _NATO_AIR + _JTF_COMMON + _JTF_TAN + _JTF_LSV,
+    "jmfsb_US_JTF_tna": _QAV_ARMOUR_TNA + _US_DRONES_TNA + _US_NAVY + _NATO_ARTY_TNA + _NATO_AIR_TNA + _JTF_COMMON + _JTF_GREEN + _JTF_LSV_TNA,
+    "jmfsb_US_JTF_ocp": _QAV_ARMOUR + _US_DRONES + _US_NAVY + _NATO_ARTY + _NATO_AIR + _JTF_COMMON + _JTF_TAN + _JTF_LSV,
+    # THE AH-99 BLACKFOOT (both dynamic-loadout airframes; "Stub Wings" is the
+    # pylons one) is the EU's - user, 2026-08-27. BLU_F's, so on the EU's side.
+    "jmfsb_EUDF":     _EU_BLACKFOOT + _US_DRONES + _EU_EXTRA + _JC_GREEN,
+    "jmfsb_EUDF_arc": _EU_BLACKFOOT + _US_DRONES + _EU_EXTRA + _JC_TAN,
+    "jmfsb_EUDF_ard": _EU_BLACKFOOT + _US_DRONES + _EU_EXTRA + _JC_TAN,
+    # every vehicle the PLA mod ships, both theatres - painted per theatre by pla_camo()
+    "jmfsb_PLA_ard":  sorted(PLA_INDEX),
+    "jmfsb_PLA_wdl":  sorted(PLA_INDEX),
+    # THE SYNDIKAT'S LOW-END DRONES (user, 2026-08-28): the UAV_02 quad and its
+    # IED twin - crude, daylight, bought - for the squads (SQUAD_DRONES)
+    "jmfsb_Syndikat": ["I_UAV_02_lxWS", "I_G_UAV_02_IED_lxWS"],
+}
+# THE CLAM SHELL EVERYWHERE ELSE IT GOES - see _CLAMSHELL.
+for _f in ("jmfsb_Marine_wdl", "jmfsb_Marine_des",
+           "jmfsb_CSAT", "jmfsb_CSAT_tna", "jmfsb_PLA_ard", "jmfsb_PLA_wdl",
+           "jmfsb_RAF_wdl", "jmfsb_RAF_ard", "jmfsb_RAF_alp"):
+    ROSTER_ADD[_f] = list(ROSTER_ADD.get(_f, [])) + _CLAMSHELL
+
+# {faction: dumped man class} - the crew written for every vehicle whose
+# vehicleClass is "Ship". Submarines (the SDV) keep their divers. The man
+# must be in the roster (ROSTER_ADD); if it is not, the usual crew stands.
+BOAT_CREW = {
+    "jmfsb_US_JTF_wdl": "E22_B_JTF_Naval_Infantry_F",
+    "jmfsb_US_JTF_des": "E22_B_JTF_Naval_Infantry_F",
+    "jmfsb_US_JTF_tna": "E22_B_JTF_Naval_Infantry_F",
+    "jmfsb_US_JTF_ocp": "E22_B_JTF_Naval_Infantry_F",
+}
+
+# GROUP SLOT SUBSTITUTION: {faction: {source class: class that takes its
+# slot}}. Applied wherever a group names the source class - the group keeps
+# its shape and its category, with QAV's vehicle where E22's was. The
+# substitute must be in the roster (ROSTER_ADD).
+_JTF_ARMOUR_SUB = {
+    "APC_Wheeled_03_cannon_F":    "APC_Wheeled_01_mgs_QAV",
+    "APC_Wheeled_03_cannon_AA_F": "APC_Wheeled_01_shorad_QAV",
+    "APC_Wheeled_03_unarmed_F":   "APC_Wheeled_01_apc_qav",
+    "MBT_03_cannon_F":            "B_qav_abramsx",
+    "MBT_03_cannon_UP_F":         "B_qav_abramsx_tusk",
+}
+_PLA_SUB = {
+    "O_MBT_02_cannon_F": "O_ZTZ96B", "O_MBT_02_arty_F": "O_PLZ05",
+    "O_MBT_04_cannon_F": "O_ZTZ99A", "O_MBT_04_command_F": "O_ZTZ99A",
+    "O_APC_Tracked_02_cannon_F": "O_ZBD04A", "O_APC_Tracked_02_AA_F": "O_PGZ09_AA",
+    "O_APC_Wheeled_02_rcws_F": "O_ZBL09", "O_APC_Wheeled_02_rcws_v2_F": "O_ZBL09",
+    "O_MRAP_02_F": "CSK181", "O_MRAP_02_hmg_F": "CSK181", "O_MRAP_02_gmg_F": "CSK181",
+    "O_Truck_02_covered_F": "SX2316", "O_Truck_02_transport_F": "SX2316",
+    "O_Truck_03_transport_F": "SX2220", "O_Truck_03_covered_F": "SX2220",
+    "O_Heli_Attack_02_F": "Z10", "O_Heli_Attack_02_dynamicLoadout_F": "Z10",
+    "O_Heli_Light_02_F": "Z11WA", "O_Heli_Light_02_dynamicLoadout_F": "Z19", "O_Heli_Light_02_unarmed_F": "Z11WA",
+    "O_Heli_Transport_04_F": "Z8L", "O_Heli_Transport_04_bench_F": "Z8L", "O_Heli_Transport_04_covered_F": "Z8L",
+    "O_Plane_CAS_02_dynamicLoadout_F": "PLAAF_Fighter_J10", "O_Plane_Fighter_02_F": "PLAAF_Fighter_J20",
+    "O_Plane_Fighter_02_Stealth_F": "PLAAF_Fighter_J20",
+    "EF_O_Gyra_OPF": "CSK181", "EF_O_Gyra_HMG_OPF": "CSK181", "EF_O_Gyra_Armed_OPF": "O_ZBL09",
+    "EF_O_Gyra_Antiair_OPF": "O_PGZ09_AA", "EF_O_Gyra_Mortar_OPF": "O_PLL09",
+    "O_LSV_02_armed_viper_F": "CSK181", "O_LSV_02_unarmed_viper_F": "CSK181",
+}
+
+# The tropic Knight and Marshalls for the Tropical JTF's groups; the TUSK and the
+# Templar have no tropic twin and fold onto the plain Knight.
+_TNA_QAV = {"APC_Wheeled_01_mgs_QAV": "B_T_APC_Wheeled_01_mgs_QAV", "APC_Wheeled_01_mgs_up_QAV": "B_T_APC_Wheeled_01_mgs_up_QAV",
+            "APC_Wheeled_01_shorad_QAV": "B_T_APC_Wheeled_01_shorad_QAV", "APC_Wheeled_01_apc_qav": "B_T_APC_Wheeled_01_apc_QAV",
+            "B_qav_abramsx": "B_T_qav_abramsx", "B_qav_abramsx_tusk": "B_T_qav_abramsx", "B_qav_abramsx_templar": "B_T_qav_abramsx"}
+# NO STRIDERS (user, 2026-08-28): E22's own M-ATV of the same fit takes the
+# slot, so the desert JTF's motorised groups keep their shape.
+_JTF_STRIDER_SUB = {"MRAP_03_F": "MRAP_01_F", "MRAP_03_hmg_F": "MRAP_01_hmg_F", "MRAP_03_gmg_F": "MRAP_01_gmg_F"}
+
+
+def _jtf_sub(pfx, tna=False):
+    d = dict((pfx + k, (_TNA_QAV.get(v, v) if tna else v)) for k, v in _JTF_ARMOUR_SUB.items())
+    d.update((pfx + k, pfx + v) for k, v in _JTF_STRIDER_SUB.items())
+    return d
+
+
+GROUP_SUB = {
+    "jmfsb_US_JTF_wdl": _jtf_sub("E22_B_JTF_"),
+    "jmfsb_US_JTF_des": _jtf_sub("E22_B_JTF_D_"),
+    "jmfsb_US_JTF_tna": _jtf_sub("E22_B_JTF_", tna=True),
+    "jmfsb_US_JTF_ocp": _jtf_sub("E22_B_JTF_D_"),
+    # CSAT's groups keep their shape with the PLA mod's vehicle in each slot:
+    # T-100 -> ZTZ96B, T-140 -> ZTZ99A, Kamysh -> ZBD04A, Marid -> ZBL09, Ifrit ->
+    # CSK181, Tempest -> SX2316/2220, Kajman -> Z10, Orca -> Z11/Z19, Taru -> Z8L,
+    # Neophron -> J10, Shikra -> J20, EF Gyras -> the wheeled family.
+    "jmfsb_PLA_ard": _PLA_SUB,
+    "jmfsb_PLA_wdl": _PLA_SUB,
+}
+
+# A texture, icon or flag path into a dropped mod's PBO.
+DROP_PATH = re.compile(r"\\A3_(?:%s)\\" % "|".join(DROP_MODS), re.I)
+
+# The base game's side art, for a faction whose own lived in a dropped mod.
+VANILLA_ART = {
+    "icon": {0: r"\A3\Data_F\cfgFactionClasses_OPF_ca.paa",
+             1: r"\A3\Data_F\cfgFactionClasses_BLU_ca.paa",
+             2: r"\A3\Data_F\cfgFactionClasses_IND_ca.paa"},
+    "flag": {0: r"\A3\Data_F\Flags\flag_CSAT_CO.paa",
+             1: r"\A3\Data_F\Flags\flag_NATO_CO.paa",
+             2: r"\A3\Data_F\Flags\flag_AAF_CO.paa"},
+}
+
+
+def load_vanilla():
+    """Every class the base game defines, lower-cased -> {"backpack": ...};
+    None if the index is absent. A dict, so `c in vanilla` still reads as a
+    membership test and the backpack is there for NOT_FIELDED."""
+    import json
+    p = os.path.join(ROOT, "work", "vanilla_vehicles.json")
+    if not os.path.exists(p):
+        return None
+    return dict((k.lower(), {"backpack": (e.get("backpack") or "").lower()})
+                for k, e in json.load(io.open(p, encoding="utf-8")).items())
+
+
+def class_origin(cls, vanilla, faction=None):
+    """'dropped', 'vanilla', a KEEP_MODS name - or 'unknown' with no index.
+
+    'dropped' covers a mod that left the load order, one the AI is not
+    allowed to field (PLAYER_ONLY), and - given the faction - a base-game
+    class that faction does not field (NOT_FIELDED): the faction treats
+    them all the same.
+    """
+    c = cls.lower()
+    for m in DROP_MODS:
+        if c.startswith(m.lower() + "_"):
+            return "dropped"
+    for _name, test in DROP_TESTS + PLAYER_ONLY:
+        if test(c):
+            return "dropped"
+    if faction:
+        # the class itself, or (base game) the bag it is issued with - a man
+        # is dropped with the drone on his back
+        bag = vanilla[c].get("backpack", "") if (vanilla is not None and c in vanilla) else ""
+        for facs, tests in NOT_FIELDED.items():
+            if faction in facs:
+                for _name, test in tests:
+                    if test(c) or (bag and test(bag)):
+                        return "dropped"
+    if vanilla is not None and c in vanilla:
+        return "vanilla"
+    for name, test in KEEP_MODS:
+        if test(c):
+            return name
+    return "dropped" if vanilla is not None else "unknown"
+
+
+def is_dropped(cls, vanilla, faction=None):
+    return class_origin(cls, vanilla, faction) == "dropped"
+
+
+def pick_crew(orig, candidates):
+    """Which of the faction's own men takes the seat a dropped mod's crew held.
+
+    A Wipeout crewed by a tank crewman flies; it just looks wrong on the
+    ramp. So the replacement is matched to what the source had - a pilot for
+    a pilot, a helicopter pilot for a helicopter pilot, a boat crew for a
+    boat crew - and only then falls back to the faction's crewman. None if
+    the faction fields nobody fit for the seat.
+    """
+    o = orig.lower()
+    if "uav_ai" in o:
+        # A drone's crew is its autopilot. No man of ours takes that seat;
+        # the line is left out and the parent's AI stands.
+        return None
+
+    def has(c, *ws):
+        cl = c.lower()
+        return all(w in cl for w in ws)
+
+    def lacks(c, *ws):
+        cl = c.lower()
+        return not any(w in cl for w in ws)
+
+    wants = []
+    if "helipilot" in o or "helicrew" in o:
+        # E22 has an attack-helicopter pilot as well as the plain one; a
+        # Ghost Hawk gets the plain one first (alphabetical order put the
+        # attack pilot in every NATO transport, 2026-08-28).
+        wants = [lambda c: has(c, "helipilot") and lacks(c, "attack"),
+                 lambda c: has(c, "helipilot"), lambda c: has(c, "pilot")]
+    elif "pilot" in o:
+        wants = [lambda c: has(c, "pilot") and lacks(c, "heli"), lambda c: has(c, "pilot")]
+    elif "boatcrew" in o:
+        wants = [lambda c: has(c, "boatcrew")]
+    # "deck" keeps the carrier's deck crew off a tripod launcher
+    wants.append(lambda c: has(c, "crew") and lacks(c, "heli", "boat", "pilot", "crewu", "deck"))
+    for w in wants:
+        hits = [c for c in candidates if w(c)]
+        if hits:
+            # THE PLAIN ONE FIRST: OPF_F has O_crew_F and Western Sahara's
+            # O_A_crew_lxWS, and alphabetical order put the arid crewman in
+            # every PLA tank. The shortest name is the unqualified one.
+            return min(hits, key=lambda c: (len(c), c))
+    return None
+
+
+# ---------------------------------------------------------------------------
+# PER-FACTION RIFLE SUBSTITUTION
+# ---------------------------------------------------------------------------
+# newfac -> [(match on the current weapon, replacement), ...] applied to
+# weapons[] in order, first match wins. Putting a whole faction on one rifle
+# is a small-arms decision, so it is expressed as a rule rather than a list of
+# the spellings that happen to be in the roster today.
+#
+# GRENADIER LAUNCHERS WANT THEIR OWN RULE. Swapping a _GL_ rifle for a plain
+# one takes the underbarrel launcher off the man and leaves him carrying 40mm
+# he cannot fire. DMRs, LMGs, MMGs and SMGs are not rifles and are never
+# matched: a 7.62 marksman handed a 5.56 rifle cannot feed it.
+#
+# CSAT IRAN (user, 2026-08-28): every rifle is Reaction Forces' ASh-12 -
+# the presets RF's own QRF men carry (ACO, suppressor, flashlight; the GL
+# with ACO and suppressor; the long-range one with the VRCO for whoever had
+# a magnified optic) - and every machine gun is the Navid. Marksman rifles,
+# the GM6, the SDAR and the SMGs are left alone, as the note above says.
+_ASH, _ASH_GL, _ASH_LR = ("arifle_ash12_blk_aco_snd_flashlight_RF", "arifle_ash12_GL_blk_aco_snd_RF",
+                          "arifle_ash12_LR_blk_vrco_snd_flashlight_RF")
+_NAVID = "MMG_01_hex_ARCO_LP_F"
+
+
+# THE PLA (user, 2026-08-28): the Katiba with the 6.2 round for the line - so
+# anything OPF_F carries that is NOT a Katiba (CAR-95, RF's ASh-12, WS's SLR
+# and Velko) becomes one - and the Type 115 for the leaders and the recon.
+# Rules here get the man's class as well as the weapon: a team leader keeps
+# his Katiba GL (the Type 115 has no launcher), so the 115 goes to the squad
+# leaders, the recon (bar the JTAC's GL) and the officers; the Vipers have
+# theirs already.
+def is_115_man(c):
+    cl = c.lower()
+    return any(k in cl for k in ("_sl_", "recon", "officer")) and not any(k in cl for k in ("jtac", "_tl_"))
+
+
+def _pla_rifles(arx):
+    return [
+        (lambda w, c: w.startswith("arifle_ARX") or w.startswith("arifle_SDAR"),      None),
+        (lambda w, c: w.startswith("arifle_") and "_GL_" in w and "Katiba" not in w, "arifle_Katiba_GL_ACO_F"),
+        (lambda w, c: w.startswith("arifle_") and "_GL_" in w,                        None),
+        (lambda w, c: w.startswith("arifle_") and is_115_man(c),                      arx),
+        (lambda w, c: w.startswith("arifle_") and "Katiba" not in w,                  "arifle_Katiba_ACO_pointer_F"),
+    ]
+
+
+_ARX_MAG = "20Rnd_650x39_Cased_Mag_F"
+_PLA_MAGS = [
+    # the 115 men's Katiba magazines become 6.5 cased (no FA round for it yet)
+    (lambda m, c: m.startswith("30Rnd_65x39_caseless_green") and is_115_man(c), _ARX_MAG),
+    # everyone else's foreign rifle magazine becomes the Katiba's 6.2 (tiered by the map)
+    (lambda m, c: m.startswith(("30Rnd_580x42", "20Rnd_127x55", "10Rnd_127x55", "35Rnd_556x45_Velko",
+                                "30Rnd_762x51_slr", "20Rnd_762x51_slr")), "30Rnd_65x39_caseless_green"),
+]
+_CSAT_RIFLES = [
+    (lambda w: w.startswith("arifle_ash12"),                                 None),      # already one
+    (lambda w: w.startswith("arifle_SDAR"),                                  None),      # the diver's
+    (lambda w: w.startswith("arifle_") and "_GL_" in w,                      _ASH_GL),
+    (lambda w: w.startswith("arifle_CTARS") or w.startswith("LMG_"),         _NAVID),    # CAR-95-1, Zafir, S77
+    (lambda w: w.startswith("arifle_") and any(k in w for k in ("ARCO", "DMS")), _ASH_LR),
+    (lambda w: w.startswith("arifle_"),                                      _ASH),
+]
+RIFLE_SWAP = {
+    "jmfsb_CSAT":     _CSAT_RIFLES,
+    "jmfsb_CSAT_tna": _CSAT_RIFLES,
+    "jmfsb_PLA_ard":  _pla_rifles("arifle_ARX_hex_ARCO_Pointer_Snds_F"),
+    "jmfsb_PLA_wdl":  _pla_rifles("arifle_ARX_ghex_ARCO_Pointer_Snds_F"),
+}
+
+# MAGAZINES TO MATCH - newfac -> [(match on the magazine, replacement)], first
+# match wins, applied before the tier pass. The 12.7x55 and 9.3x64 have no FA
+# round, so they stay as RF and the base game issue them. Marksman, sniper,
+# underwater and pistol magazines are not matched.
+_ASH_MAG, _NAVID_MAG = "20Rnd_127x55_Mag_RF", "150Rnd_93x64_Mag"
+_CSAT_MAGS = [
+    # 20-round magazines throughout (user, 2026-08-28) - the 10s RF issues
+    # with the same rifle become 20s too.
+    (lambda m: m == "10Rnd_127x55_Mag_RF", _ASH_MAG),
+    (lambda m: m.startswith(("150Rnd_762x54_Box", "100Rnd_580x42", "100Rnd_762x51_S77", "200Rnd_65x39_cased")), _NAVID_MAG),
+    (lambda m: m.startswith(("30Rnd_65x39_caseless_green", "30Rnd_580x42", "35Rnd_556x45_Velko",
+                             "30Rnd_762x51_slr", "20Rnd_762x51_slr", "30Rnd_556x45_Stanag_green",
+                             "20Rnd_650x39_Cased")), _ASH_MAG),
+]
+MAG_SWAP = {
+    "jmfsb_CSAT":     _CSAT_MAGS,
+    "jmfsb_CSAT_tna": _CSAT_MAGS,
+    "jmfsb_PLA_ard":  _PLA_MAGS,
+    "jmfsb_PLA_wdl":  _PLA_MAGS,
+}
+
+
+def rule_hit(test, x, c):
+    """A rule may look at the thing alone or at the thing and the man."""
+    try:
+        return test(x, c)
+    except TypeError:
+        return test(x)
+
+
+def mag_swap(mag, rules, c=""):
+    for test, new_m in rules:
+        if rule_hit(test, mag, c):
+            return new_m
+    return mag
+
+
+# WHO THE MEN ARE - newfac -> identityTypes[] written on every man. CSAT Iran
+# is Iranian in both theatres (user, 2026-08-28): the base game's Altis CSAT
+# already is (Head_TK, Persian), its Pacific CSAT is Chinese (Head_Asian).
+IDENTITY = {
+    "jmfsb_CSAT":     ["LanguagePER_F", "Head_TK", "G_IRAN_default"],
+    "jmfsb_CSAT_tna": ["LanguagePER_F", "Head_TK", "G_IRAN_default"],
+    # the PLA is Chinese - the base game's Pacific CSAT identity
+    "jmfsb_PLA_ard":  ["LanguageCHI_F", "Head_Asian", "G_CIVIL_male"],
+    "jmfsb_PLA_wdl":  ["LanguageCHI_F", "Head_Asian", "G_CIVIL_male"],
+}
+
+
+# ---------------------------------------------------------------------------
+# UNITS A FACTION FIELDS THAT ITS SOURCE DOES NOT
+# ---------------------------------------------------------------------------
+# Each entry is either
+#   {"kind": "veh", "base": <source class>, "name": <3DEN name>,
+#    "crew": <source class of the crew, optional>, "as": <name to build
+#    under, optional - default is the base class>, "tex": [...] optional,
+#    "why": <one line>}
+# or a man built from EXTRA_MAN_BASE[newfac] - this faction's own rifleman -
+#   {"kind": "man", "suffix": <class suffix>, "name": <3DEN name>,
+#    "backpack": <class, optional>, "add_weapons"/"add_mags"/"add_items":
+#    [...] optional, "why": optional}
+# Emitted by emit_extras, shared with tools/apply_faction_extras.py.
+def raf_extras(rifleman, _uav_man, tubes):
+    """What every Russian theatre fields beyond E22's roster: the east drone
+    allocation. E22 names its D and A riflemen differently and the SwitchBlade
+    tubes come in Desert and Woodland only (alpine takes woodland), so the
+    list is built per theatre rather than written three times.
+    """
+    return [
+        {"kind": "veh", "base": "B_T_UAV_03_dynamicLoadout_F", "as": "O_UAV_03_dynamicLoadout_F",
+         "name": "MQ-12 Falcon", "crew": "O_UAV_AI", "why": "the Falcon, in the east"},
+        {"kind": "veh", "base": "B_SwitchBlade_300", "as": "O_SwitchBlade_300", "name": "SwitchBlade 300",
+         "crew": "O_UAV_AI", "why": "loitering munition - AI only, east and ind"},
+        {"kind": "veh", "base": "B_SwitchBlade_600", "as": "O_SwitchBlade_600", "name": "SwitchBlade 600",
+         "crew": "O_UAV_AI", "why": "the anti-armour one"},
+        {"kind": "veh", "base": "B_SwitchBlade_300_LaunchTube_%s" % tubes, "as": "O_SwitchBlade_300_LaunchTube",
+         "name": "SwitchBlade 300 Launch Tube", "crew": rifleman, "why": "emplaced"},
+        {"kind": "veh", "base": "B_SwitchBlade_600_LaunchTube_%s" % tubes, "as": "O_SwitchBlade_600_LaunchTube",
+         "name": "SwitchBlade 600 Launch Tube", "crew": rifleman, "why": "emplaced"},
+        {"kind": "man", "suffix": "SwitchBlade_Operator", "name": "SwitchBlade Operator [RAF]",
+         "add_items": ["SwitchBlade_300_Tube_%s" % tubes, "SwitchBlade_600_Tube_%s" % tubes],
+         "why": "carries the tubes DDT fires"},
+        {"kind": "veh", "base": "rksla3_aeroshark_opfor", "name": "Aeroshark Mini UAV",
+         "why": "RKSL's mini tactical UAV, east"},
+        {"kind": "veh", "base": "rksla3_uav_gdt_sa_o", "name": "UAV Ground Data Terminal",
+         "why": "RKSL's GDT, east paint"},
+        {"kind": "veh", "base": "rksla3_uav_wkshelter_sa_o", "name": "UAV Ground Control Station",
+         "why": "RKSL's GCS shelter, east paint"},
+    ]
+
+
+_IDAP = [
+    # IDAP's demining Pelican in US hands: one of the three base-game drones
+    # the US fields (see NOT_FIELDED) and one no US roster owns.
+    {"kind": "veh", "base": "C_IDAP_UAV_06_antimine_F", "name": "AL-6 Pelican (Demining)",
+     "crew": "B_UAV_AI", "why": "the demining drone - IDAP's airframe, US kit"},
+]
+EXTRA_UNITS = {
+    "jmfsb_US_JTF_wdl": _IDAP,
+    "jmfsb_US_JTF_des": _IDAP,
+    "jmfsb_US_JTF_tna": _IDAP,
+    "jmfsb_US_JTF_ocp": _IDAP,
+
+    # EAST GETS WHAT THE BASE GAME ONLY GAVE THE WEST, AND THE SWITCHBLADE.
+    # The Falcon and the SwitchBlades exist only as B_/I_ classes, so the
+    # east versions are ours: the BLUFOR class with side 0 and CSAT's own
+    # autopilot in the seat. "as" is the name they are built under, so a
+    # CSAT drone is not called jmfsb_CSAT_B_something.
+    "jmfsb_CSAT": [
+        {"kind": "veh", "base": "B_T_UAV_03_dynamicLoadout_F", "as": "O_UAV_03_dynamicLoadout_F",
+         "name": "MQ-12 Falcon", "crew": "O_UAV_AI", "why": "the Falcon, in the east - no base-game east version exists"},
+        {"kind": "veh", "base": "O_T_UAV_04_CAS_F", "name": "KH-3A Fenghuang",
+         "why": "OPF_T_F's CAS drone, fielded by OPF_F's order of battle"},
+        {"kind": "veh", "base": "B_SwitchBlade_300", "as": "O_SwitchBlade_300", "name": "SwitchBlade 300",
+         "crew": "O_UAV_AI", "why": "loitering munition - AI only, east and ind"},
+        {"kind": "veh", "base": "B_SwitchBlade_600", "as": "O_SwitchBlade_600", "name": "SwitchBlade 600",
+         "crew": "O_UAV_AI", "why": "the anti-armour one"},
+        {"kind": "veh", "base": "B_SwitchBlade_300_LaunchTube_Woodland", "as": "O_SwitchBlade_300_LaunchTube",
+         "name": "SwitchBlade 300 Launch Tube", "crew": "O_Soldier_F", "why": "emplaced"},
+        {"kind": "veh", "base": "B_SwitchBlade_600_LaunchTube_Woodland", "as": "O_SwitchBlade_600_LaunchTube",
+         "name": "SwitchBlade 600 Launch Tube", "crew": "O_Soldier_F", "why": "emplaced"},
+        # THE MAN WHO FIRES IT. Drongo's Drone Tweaks launches a SwitchBlade
+        # for the AI from the tube ITEM a man carries (its ddtClassesFPVAT);
+        # a faction with the airframe and nobody carrying a tube never fires
+        # one. The tubes are CBA_MiscItems, hence items[] rather than mags.
+        {"kind": "man", "suffix": "SwitchBlade_Operator", "name": "SwitchBlade Operator [CSAT]",
+         "add_items": ["SwitchBlade_300_Tube_Woodland", "SwitchBlade_600_Tube_Woodland"],
+         "why": "carries the tubes DDT fires"},
+        # RKSL, EAST: the Aeroshark and its ground station. Class names from
+        # the 2026-08-27 in-game dump (D:\work\rksl_classes.txt) - the PBOs
+        # are obfuscated. The Watchkeeper the allocation named is not in the
+        # load order, so it is not here.
+        {"kind": "veh", "base": "rksla3_aeroshark_opfor", "name": "Aeroshark Mini UAV",
+         "why": "RKSL's mini tactical UAV, east"},
+        {"kind": "veh", "base": "rksla3_uav_gdt_sa_o", "name": "UAV Ground Data Terminal",
+         "why": "RKSL's GDT, east paint"},
+        {"kind": "veh", "base": "rksla3_uav_wkshelter_sa_o", "name": "UAV Ground Control Station",
+         "why": "RKSL's GCS shelter, east paint"},
+    ],
+    # The Pacific CSAT is the same army in green: what it fields beyond
+    # OPF_T_F's own roster is the same list (the SwitchBlade tubes come in
+    # woodland only, which suits it).
+    "jmfsb_CSAT_tna": [
+        {"kind": "veh", "base": "B_T_UAV_03_dynamicLoadout_F", "as": "O_UAV_03_dynamicLoadout_F",
+         "name": "MQ-12 Falcon", "crew": "O_UAV_AI", "why": "the Falcon, in the east"},
+        {"kind": "veh", "base": "B_SwitchBlade_300", "as": "O_SwitchBlade_300", "name": "SwitchBlade 300",
+         "crew": "O_UAV_AI", "why": "loitering munition - AI only, east and ind"},
+        {"kind": "veh", "base": "B_SwitchBlade_600", "as": "O_SwitchBlade_600", "name": "SwitchBlade 600",
+         "crew": "O_UAV_AI", "why": "the anti-armour one"},
+        {"kind": "veh", "base": "B_SwitchBlade_300_LaunchTube_Woodland", "as": "O_SwitchBlade_300_LaunchTube",
+         "name": "SwitchBlade 300 Launch Tube", "crew": "O_T_Soldier_F", "why": "emplaced"},
+        {"kind": "veh", "base": "B_SwitchBlade_600_LaunchTube_Woodland", "as": "O_SwitchBlade_600_LaunchTube",
+         "name": "SwitchBlade 600 Launch Tube", "crew": "O_T_Soldier_F", "why": "emplaced"},
+        {"kind": "man", "suffix": "SwitchBlade_Operator", "name": "SwitchBlade Operator [CSAT]",
+         "add_items": ["SwitchBlade_300_Tube_Woodland", "SwitchBlade_600_Tube_Woodland"],
+         "why": "carries the tubes DDT fires"},
+        {"kind": "veh", "base": "rksla3_aeroshark_opfor", "name": "Aeroshark Mini UAV",
+         "why": "RKSL's mini tactical UAV, east"},
+        {"kind": "veh", "base": "rksla3_uav_gdt_sa_o", "name": "UAV Ground Data Terminal",
+         "why": "RKSL's GDT, east paint"},
+        {"kind": "veh", "base": "rksla3_uav_wkshelter_sa_o", "name": "UAV Ground Control Station",
+         "why": "RKSL's GCS shelter, east paint"},
+    ],
+
+    # RUSSIA: the east drone allocation in full, per theatre - see raf_extras.
+    "jmfsb_RAF_wdl": raf_extras("E22_O_RAF_Soldier_F",   "E22_O_RAF_Soldier_UAV_F",   "Woodland"),
+    "jmfsb_RAF_ard": raf_extras("E22_O_RAF_D_Soldier_F", "E22_O_RAF_D_Soldier_UAV_F", "Desert"),
+    "jmfsb_RAF_alp": raf_extras("E22_O_RAF_A_Soldier_F", "E22_O_RAF_A_Soldier_UAV_F", "Woodland"),
+
+    # TIER 0 IS A SINGLE FPV, DAYLIGHT, CRUDE - the bottom row of the capability
+    # table in docs/faction_builder_handoff.md.
+    #
+    # ONE AIRFRAME, AND ONLY ANTI-PERSONNEL. The insurgents at tier 1 field an
+    # AP and an AT bird from one supplier; a criminal network fields whatever
+    # it could buy, and having an answer to armour is what it does not have.
+    #
+    # NO FPV LEFT. The insurgents took KVN until the KVN mod left the load
+    # order, the Syndikat took Crocus until that mod left too (2026-08-28,
+    # DROP_TESTS). The IED Pelican is tier 0's drone now.
+    #
+    # Their IED quad and the two UGV Saifs come with the roster already and are
+    # left alone: an IED strapped to a hobby drone is exactly tier 0, and it is
+    # what the faction is known for.
+    "jmfsb_Syndikat": [
+        # THE IED PELICAN, tier 0's other drone - see jmfsb_Insurgents.
+        {"kind": "veh", "base": "jmfsb_uas_UAV_06_IED_I", "as": "UAV_06_IED", "name": "AL-6 Pelican (IED)",
+         "why": "a cargo quad with a charge where the crate was"},
+        {"kind": "man", "suffix": "UAV_06_IED_Operator", "name": "Pelican IED Operator [SYN]",
+         "backpack": "jmfsb_uas_UAV_06_IED_backpack_I"},
+    ],
+
+    # TIER 1 IS LOITERING MUNITIONS, FIBER FPV AND NIGHT - the capability table
+    # in docs/faction_builder_handoff.md. It is NOT tier 2's multi-ship
+    # recon-strike, so there is no recon quad fleet, no UGV, no cargo lift and
+    # no second FPV family: a proxy force gets what one patron sends.
+    #
+    # NO _TI VARIANTS. Every one of these has a thermal-seeker twin in the mod;
+    # thermal is the tier 3 marker.
+    #
+    # Their own Opf_I_I_UAV_02_IED_lxWS stays as it is - a crude IED quad is
+    # exactly tier 0, and keeping it is what makes the new kit read as an
+    # upgrade rather than a replacement.
+    "jmfsb_Insurgents": [
+        {"kind": "veh", "base": "I_SwitchBlade_300", "name": "SwitchBlade 300",
+         "why": "the loitering munition - reach without an air force"},
+        {"kind": "veh", "base": "I_SwitchBlade_300_LaunchTube_Desert",
+         "name": "SwitchBlade 300 Launch Tube",
+         "why": "emplaced, because they have no vehicle to fire it from"},
+        {"kind": "veh", "base": "I_SwitchBlade_600", "name": "SwitchBlade 600",
+         "why": "the anti-armour one - what KVN used to be for"},
+        {"kind": "veh", "base": "I_SwitchBlade_600_LaunchTube_Desert", "name": "SwitchBlade 600 Launch Tube",
+         "why": "emplaced"},
+        {"kind": "man", "suffix": "SwitchBlade_Operator", "name": "SwitchBlade Operator [INS]",
+         "add_items": ["SwitchBlade_300_Tube_Desert", "SwitchBlade_600_Tube_Desert"],
+         "why": "carries the tubes DDT fires - see jmfsb_CSAT"},
+        # The KVN AP/AT pair and their operators were here - the fiber FPV,
+        # and the only thing the insurgents had that killed armour. Gone with
+        # the KVN mod; the SwitchBlade is what is left of their reach.
+        # THE IED PELICAN - jmfsb_uas builds the airframe (a cargo quad with a
+        # charge where the crate was) and registers it with DDT as an FPV;
+        # this is the faction fielding it and the man who carries it.
+        {"kind": "veh", "base": "jmfsb_uas_UAV_06_IED_I", "as": "UAV_06_IED", "name": "AL-6 Pelican (IED)",
+         "why": "the cheap answer to everything - tier 1"},
+        {"kind": "man", "suffix": "UAV_06_IED_Operator", "name": "Pelican IED Operator [INS]",
+         "backpack": "jmfsb_uas_UAV_06_IED_backpack_I"},
+        # RKSL, IND. The allocation said "ind side"; of the two IND factions
+        # built here this is the organised one, so it gets the lot - the
+        # Aeroshark, the Shadow, the Hermes, the Rapier battery and the
+        # ground stations. Names from the 2026-08-27 dump. RKSL's own side
+        # numbers are unreliable (the "infor" Aeroshark says side 0, the
+        # "opfor" Shadow says faction BLU_F) - ours are written on top, and
+        # the Shadow and the Rapier get an IND autopilot because the mod
+        # crews them with NATO's.
+        {"kind": "veh", "base": "rksla3_aeroshark_infor", "name": "Aeroshark Mini UAV",
+         "why": "RKSL's mini tactical UAV, ind"},
+        {"kind": "veh", "base": "rksla3_uav_rq7shadow_01_insurg", "name": "RQ-7 Shadow 200",
+         "crew": "I_UAV_AI", "why": "RKSL's tactical UAV - ind only"},
+        {"kind": "veh", "base": "rksla3_uav_h450_3", "name": "Hermes 450",
+         "why": "RKSL's Hermes - ind only"},
+        {"kind": "veh", "base": "RKSLA3_Static_Rapier_FSC_Launcher", "name": "Rapier FSC Launcher",
+         "crew": "I_UAV_AI", "why": "RKSL's Rapier SAM - ind only"},
+        {"kind": "veh", "base": "RKSLA3_Static_Rapier_FSC_Blindfire", "name": "Rapier FSC Blindfire FCR",
+         "crew": "I_UAV_AI", "why": "the Rapier's fire-control radar"},
+        {"kind": "veh", "base": "RKSLA3_Static_Rapier_FSC_Dagger", "name": "Rapier FSC Dagger Search Radar",
+         "crew": "I_UAV_AI", "why": "the Rapier's search radar"},
+        {"kind": "veh", "base": "rksla3_uav_gdt_sa_i", "name": "UAV Ground Data Terminal",
+         "why": "RKSL's GDT, ind paint"},
+        {"kind": "veh", "base": "rksla3_uav_wkshelter_sa_i", "name": "UAV Ground Control Station",
+         "why": "RKSL's GCS shelter, ind paint"},
+    ],
+}
+
+# The man every operator is built from: this faction's own rifleman, so each
+# inherits the faction's rifle and tier ammunition rather than the source's.
+EXTRA_MAN_BASE = {
+    "jmfsb_CSAT": "O_Soldier_F",
+    "jmfsb_CSAT_tna": "O_T_Soldier_F",
+    "jmfsb_PLA_ard": "O_Soldier_F", "jmfsb_PLA_wdl": "O_Soldier_F",
+    "jmfsb_US_JTF_wdl": "E22_B_JTF_Marine_F", "jmfsb_US_JTF_tna": "E22_B_JTF_Marine_F",
+    "jmfsb_US_JTF_des": "E22_B_JTF_D_Marine_F", "jmfsb_US_JTF_ocp": "E22_B_JTF_D_Marine_F",
+    "jmfsb_EUDF": "B_EUDF35_Soldier_F", "jmfsb_EUDF_arc": "B_EUDF35_A_Soldier_F", "jmfsb_EUDF_ard": "B_EUDF35_D_Soldier_F",
+    "jmfsb_Marine_wdl": "EF_B_Marine_R_Wdl", "jmfsb_Marine_des": "EF_B_Marine_R_Des",
+    "jmfsb_AAF": "I_soldier_F", "jmfsb_LDF": "I_E_Soldier_F",
+    "jmfsb_FIA": "B_G_Soldier_F", "jmfsb_FIA_ind": "I_G_Soldier_F",
+    # each E22 theatre has its own rifleman: W is plain, D and A are infixed
+    "jmfsb_RAF_wdl": "E22_O_RAF_Soldier_F",
+    "jmfsb_RAF_ard": "E22_O_RAF_D_Soldier_F",
+    "jmfsb_RAF_alp": "E22_O_RAF_A_Soldier_F",
+    "jmfsb_Insurgents": "I_G_Soldier_F",
+    "jmfsb_Syndikat": "I_C_Soldier_Bandit_7_F",
+}
+
+HDR = ("// Generated by tools/gen_us_factions.py - re-run rather than hand-edit.\n"
+       "//\n")
+
+
+# ---------------------------------------------------------------------------
+# FA TIER AMMUNITION
+# ---------------------------------------------------------------------------
+# A faction at tier 2 or above carries the FA round of its tier - every
+# vanilla magazine with an FA equivalent is swapped for that round's _tN
+# variant. A magazine with no FA equivalent is left alone: FA does not cover
+# grenades, smoke, chemlights or pistol ammunition, and most of what a
+# faction carries is exactly that.
+#
+# THE SWAP IS SAFE BECAUSE fa_tiers PUTS EVERY TIER MAGAZINE IN THE WELLS ITS
+# BASE MAGAZINE SITS IN (fa_tiers/CfgMagazineWells.hpp). Not because of
+# inheritance: a weapon knows its magazines by NAME, through magazines[] and
+# CfgMagazineWells, and FA_b_30Rnd_65_EPR_t3 descending from the vanilla
+# magazine does nothing for that. Believing otherwise is how a whole faction
+# spawned with magazines it could not chamber.
+#
+# WHICH FA ROUND, WHEN SEVERAL DESCEND FROM THE SAME VANILLA MAGAZINE:
+#
+#   1. Never one from an fa_antidrone* addon. Those are proximity-airburst
+#      counter-UAS rounds - Mk367 PAB and friends - and issuing them as ball
+#      ammunition would arm the whole army against drones and nothing else.
+#   2. The faction's own prefix first - FA_b_ (NATO) for the US and the
+#      Marines, FA_i_ (AAF) for the independents; see FA_PREFER.
+#   3. Anything still tied is named in PICK below, with the reason.
+FA_SKIP_ADDONS = ("fa_antidrone",)
+
+PICK = {
+    # M80A2 HV is a hybrid case that "feeds existing 7.62 wells"; XM751 CTEP is
+    # cased-telescoped and "needs rated well", so it is not a drop-in.
+    "20Rnd_762x51_Mag": "FA_b_20Rnd_762_M80A2_HV",
+    # The other 40mm rounds are a different NATURE - smoke, EMP, decoy, UGS,
+    # jammer. Only the TBK is HE, so only it replaces an HE shell.
+    "1Rnd_HE_Grenade_shell": "FA_b_1Rnd_40mm_Mk389_TBK",
+    "3Rnd_HE_Grenade_shell": "FA_b_3Rnd_40mm_Mk389_TBK",
+    # HEAT for HEAT; the others are guided or anti-air.
+    "MRAWS_HEAT_F": "FA_MRAWS_HEAT758_TT",
+    # HE for HE; AD and DP are other natures.
+    "1Rnd_RC40_HE_shell_RF": "FA_1Rnd_RC40_HEP",
+    # THE ASh-12 (CSAT Iran, 2026-08-28): fa_rf builds three 12.7x55 loads and
+    # nothing says which is standard. 7N52 Molot - transonic tungsten AP -
+    # is the general-issue round; 7U13/7U14 are the subsonic suppressed loads.
+    "20Rnd_127x55_Mag_RF": "FA_rf_20Rnd_127x55_7N52",
+    "10Rnd_127x55_Mag_RF": "FA_rf_10Rnd_127x55_7N52",
+    # THE NAVID'S BELT - fa_ammo's Type40 belt (2026-08-28), the Cyrus's round belted.
+    "150Rnd_93x64_Mag": "FA_o_150Rnd_93x64_Type40",
+    # CSAT'S RIFLE MAGAZINE IS 6.2, NOT 6.5. The green caseless magazine has
+    # seven FA descendants - three Type 4x in 6.5 and four DBP in 6.2 - so it
+    # was ambiguous and got no substitution at all, leaving the whole faction
+    # on vanilla ammunition. DBP-25 is the "caseless standard": DBP-26 is
+    # tungsten AP, DBP-88B is the heavy DMR/GPMG load, and DBJ-25 PAB is a
+    # proximity airburst driven by the anti-drone fuze registry.
+    "30Rnd_65x39_caseless_green": "FA_o_30Rnd_62_DBP25",
+    # The leaders' tracer magazine has NO FA descendant of its own, so it fell
+    # through the map entirely and left squad and team leaders on vanilla
+    # ammunition while their riflemen were on DBP-25. Green to match the round
+    # CSAT already fires.
+    "30Rnd_65x39_caseless_green_mag_Tracer": "FA_o_30Rnd_62_DBP25_T_Green",
+    # ARBITRARY, AND FLAGGED AS SUCH. Both Titan variants are the right nature
+    # and nothing in the configs says which the US issues. Change the line and
+    # re-run.
+    "Titan_AT": "FA_Titan_AT_BGM185_Broadsword",
+    "Titan_AA": "FA_Titan_AA_MIM165_Sentry",
+}
+
+
+# ---------------------------------------------------------------------------
+# VEHICLE CAMO
+# ---------------------------------------------------------------------------
+# Keyed by faction, then SOURCE class -> {"tex": [...], "sel": [...]}: the
+# paint a vehicle spawns in, written as hiddenSelectionsTextures. EMPTY since
+# 2026-08-27: jmfsb_CSAT is OPF_F in its own hex again and jmfsb_CSAT_tna is
+# OPF_T_F in its own green-hex, so nothing needs repainting. The mechanism
+# stays for the day something does - the array order is the hiddenSelections
+# order, and a swap paints the turret with the hull.
+VEH_TEX = {}
+
+# THE PLA'S PAINT. Each PLA vehicle offers TextureSources; the theatre picks one
+# by name, first match wins - the arid faction the desert scheme, the woodland
+# one the wood digital. The mod randomises between them at spawn (textureList),
+# so the emitter also writes textureList[] = {} (the "notl" flag). Helicopters
+# and jets offer no camo scheme and are left as the mod paints them.
+_PLA_CAMO = {
+    "jmfsb_PLA_ard": ("Desertcamo", "desert", "Desert", "khaki", "Khaki"),
+    "jmfsb_PLA_wdl": ("Woodcamo2", "woodcamo2", "Woodcamo", "woodcamo", "Woodland", "Woodland2", "Woodland_2", "Olive"),
+}
+
+
+def pla_camo():
+    for fac, prefs in _PLA_CAMO.items():
+        for c, rec in PLA_INDEX.items():
+            srcs = rec.get("textureSources") or {}
+            pick = next((n for n in prefs if n in srcs), None)
+            if not pick:
+                continue
+            tex = ["\\" + t.lstrip("\\") for t in srcs[pick]]
+            VEH_TEX.setdefault(fac, {})[c] = {"tex": tex, "sel": rec.get("hiddenSelections"), "notl": True}
+
+
+pla_camo()
+
+# THE JTF'S PAINT (user, 2026-08-28, "with proper camo"). The base game paints
+# the Ghost Hawk four ways - NATO grey, BLUFOR camo, CTRG sand and tropic - the
+# Huron green or black, the Prowler sand or olive. Woodland flies camo JMSB
+# Hawks, tropical the tropic ones, both with green Hurons and olive Prowlers;
+# desert and OCP fly sand Ghost Hawks and black Hurons (there is no desert
+# Huron) and drive sand Prowlers. Paths as the dump lists them for the
+# variants (B_Heli_Transport_01_camo_F, B_CTRG_Heli_Transport_01_sand_F, ...).
+_GH_B = "\\A3\\Air_F_Beta\\Heli_Transport_01\\Data\\Heli_Transport_01_"
+_GH_X = "\\A3\\Air_F_Exp\\Heli_Transport_01\\Data\\Heli_Transport_01_"
+_HU = "\\a3\\air_f_heli\\heli_transport_03\\data\\heli_transport_03_"
+_LSV = "\\A3\\Soft_F_Exp\\LSV_01\\Data\\NATO_LSV_"
+_TITAN = ["\\A3\\weapons_f_beta\\launchers\\titan\\data\\launcher_co.paa",
+          "\\A3\\weapons_f_beta\\launchers\\titan\\data\\tubem_co.paa"]
+
+
+def _ghosthawk(kind):
+    if kind == "BLUFOR":
+        return [_GH_B + "ext01_BLUFOR_CO.paa", _GH_B + "ext02_BLUFOR_CO.paa",
+                _GH_B + "ext01_add_BLUFOR_co.paa", _GH_B + "DAP_BLUFOR_CO.paa"]
+    return [_GH_X + "ext01_%s_CO.paa" % kind, _GH_X + "ext02_%s_CO.paa" % kind,
+            _GH_B + "ext01_add_%s_CO.paa" % kind, _GH_B + "DAP_%s_CO.paa" % kind]
+
+
+def _huron(kind):
+    sfx = "_black" if kind == "black" else ""
+    return [_HU + "ext01%s_co.paa" % sfx, _HU + "ext02%s_co.paa" % sfx]
+
+
+def _prowler(kind):
+    return [_LSV + "0%d_%s_CO.paa" % (i, kind) for i in (1, 2, 3)] + [_LSV + "Adds_%s_CO.paa" % kind]
+
+
+# faction -> (Ghost Hawk, Huron, Prowler)
+_JTF_PAINT = {"jmfsb_US_JTF_wdl": ("BLUFOR", "green", "olive"),
+              "jmfsb_US_JTF_tna": ("tropic", "green", "olive"),
+              "jmfsb_US_JTF_des": ("sand", "black", "sand"),
+              "jmfsb_US_JTF_ocp": ("sand", "black", "sand")}
+
+
+def jtf_paint():
+    for fac, (gh, hu, lsv) in _JTF_PAINT.items():
+        vt = VEH_TEX.setdefault(fac, {})
+        for c in ("B_Heli_Transport_01_F", "B_Heli_Transport_01_unarmed_F", "B_Heli_Transport_01_pylons_F"):
+            vt[c] = {"tex": _ghosthawk(gh), "notl": True}
+        for c in ("B_Heli_Transport_03_F", "B_Heli_Transport_03_unarmed_F"):
+            vt[c] = {"tex": _huron(hu), "notl": True}
+        for c in ("B_LSV_01_armed_F", "B_LSV_01_unarmed_F", "B_T_LSV_01_armed_F", "B_T_LSV_01_unarmed_F"):
+            vt[c] = {"tex": _prowler(lsv), "notl": True}
+        for c in ("B_LSV_01_AT_F", "B_T_LSV_01_AT_F"):
+            # the AT one's launcher and tube are two more selections
+            vt[c] = {"tex": _prowler(lsv) + _TITAN, "notl": True}
+
+
+jtf_paint()
+
+_CHEETAH_OLIVE = ["A3\\Armor_F_exp\\APC_Tracked_01\\Data\\apc_tracked_01_aa_body_olive_co.paa",
+                  "A3\\Armor_F_exp\\APC_Tracked_01\\Data\\mbt_01_body_olive_co.paa",
+                  "A3\\Armor_F_exp\\APC_Tracked_01\\Data\\apc_tracked_01_aa_tower_olive_co.paa",
+                  "a3\\Armor_F\\Data\\camonet_NATO_Green_CO.paa"]
+
+
+def eu_paint():
+    """The temperate EUDF's Cheetah in NATO Pacific's olive, its AA pickup in
+    RF's Jungle; the arctic and arid EUDFs keep the base game's sand Cheetah
+    and RF's black pickup until the dump names their paints."""
+    vt = VEH_TEX.setdefault("jmfsb_EUDF", {})
+    vt["B_APC_Tracked_01_AA_F"] = {"tex": _CHEETAH_OLIVE, "notl": True}
+    vt["B_Pickup_aat_rf"] = {"tl": "Jungle"}
+
+
+eu_paint()
+
+# WHAT THE EDITOR CALLS IT (user, 2026-08-28). A loaded mod renames the base
+# game's AMV-7 "Badger IFV" and E22 calls its M-ATVs "Hunter"; the JTFs say
+# Marshall and M-ATV. Exact names first, then the Hunter family - never the
+# Hunter-SP, which is a loitering munition.
+RENAME = {"Badger IFV": "AMV-7 Marshall", "Badger IFV (ATGM)": "AMV-7 Marshall (ATGM)"}
+
+# ALiVE'S AA PICKER READS THE NAME (user, 2026-08-28: "the custom factions AA
+# did not show up in the ALiVE selection window").
+#
+# ALiVE_fnc_listFactionAAUnits will not list a vehicle as anti-air unless its
+# CLASS NAME or its DISPLAY NAME contains one of the markers below, or it
+# inherits one of six vanilla AA base classes. That is deliberate on ALiVE's
+# side - the behavioural test alone (a high turret with airLock ammo) also
+# catches every 30 mm IFV - but it means an AA system whose name says neither
+# "AA" nor a cold-war codename is invisible to the picker. The PLA's PGZ09 and
+# HQ6A, QAV's Guardian, RF's AA pickup and E22's Skynex all fall in that hole.
+#
+# ALiVE is read-only reference here, so the fix is on our side: the classes
+# below say "(Anti-Air)" in the editor, which is both true and a marker ALiVE
+# matches. Appended only when nothing in the name is a marker already, so it
+# never doubles up and the vehicles ALiVE already finds are left alone.
+_ALIVE_AA_MARKERS = ("_aa_", "_aa.", "aa_pod", "aapod", "anti_air", "anti-air", "antiair",
+                     "_sam_", "stinger", "igla", "avenger", "tunguska", "shilka", "zsu",
+                     "zu23", "zu_23", "zu-23", "praetorian", "patriot", "centurion",
+                     "pantsir", "tigris", "bardelas", "buk", "manpad", " tor ", "_tor_",
+                     "rapier", "starstreak", "strela", "roland", "2s6")
+# THE GAME'S OWN ANSWER FIRST. Anything the dump files under the AA editor
+# subcategory IS air defence - that is what 3DEN sorts it as, so it needs no
+# list here and nothing new can be missed (the EF M-ATV LAAD went unnoticed
+# exactly that way). The names below are the fallback for a vehicle whose
+# subcategory the dump did not resolve - the PLA mod's, merged from
+# work/pla_vehicles.json rather than read from the dump.
+AA_SUBCATEGORY = "EdSubcat_AAs"
+_AA_SYSTEMS = {"o_pgz09_aa", "o_pgz09_ty90", "hq6a",                     # PLA mod
+               "apc_wheeled_01_shorad_qav", "b_t_apc_wheeled_01_shorad_qav"}   # QAV Guardian
+_AA_SUBSTR = ("pickup_aat",          # RF's Ram 1500 (AA), every side's copy
+              "_aaa_system_")        # E22's ADS-2 Skynex
+
+
+def is_aa_system(cls, subcat=""):
+    if subcat == AA_SUBCATEGORY:
+        return True
+    c = cls.lower()
+    return c in _AA_SYSTEMS or any(k in c for k in _AA_SUBSTR)
+
+
+def display(cls, name, subcat=""):
+    if name in RENAME:
+        name = RENAME[name]
+    elif name == "Hunter" or name.startswith("Hunter "):
+        name = "M-ATV" + name[len("Hunter"):]
+    # see _ALIVE_AA_MARKERS: make the air defence findable by name. A name that
+    # already says "(AA)" - RF's Ram 1500 - has it SPELLED OUT rather than a
+    # second bracket bolted on; anything else gets the suffix.
+    if is_aa_system(cls, subcat) and not any(m in (cls + " " + name).lower() for m in _ALIVE_AA_MARKERS):
+        if name.endswith("(AA)"):
+            name = name[:-len("(AA)")].rstrip() + " (Anti-Air)"
+        else:
+            name += " (Anti-Air)"
+    return name
+
+
+def fa_map(addons_dir, prefer="FA_b_"):
+    """vanilla magazine -> the FA magazine a tiered unit should carry.
+
+    `prefer` is the FA prefix that wins a tie - FA_b_ (NATO) by default,
+    FA_i_ (AAF) for the independents; see FA_PREFER.
+    """
+    import glob as _glob
+    cand = {}
+    for mp in _glob.glob(os.path.join(addons_dir, "fa_*", "CfgMagazines.hpp")):
+        src = os.path.basename(os.path.dirname(mp))
+        if src.startswith(FA_SKIP_ADDONS):
+            continue
+        txt = io.open(mp, encoding="utf-8", errors="replace").read()
+        for m in re.finditer(r"^\s*class (FA_[A-Za-z0-9_]+)\s*:\s*([A-Za-z0-9_]+)",
+                             txt, re.M):
+            child, parent = m.group(1), m.group(2)
+            if parent.startswith("FA_") or "_T_" in child:
+                continue          # tracer variants are the same round
+            cand.setdefault(parent, []).append(child)
+
+    out = {}
+    for van, lst in cand.items():
+        if van in PICK:
+            out[van] = PICK[van]
+            continue
+        mine = [c for c in lst if c.startswith(prefer)]
+        if len(mine) > 1:
+            # THE INDEPENDENTS' ROUNDS COME IN THREE NATURES per magazine -
+            # AF556_HV, AF556C_CT, AF556P_AP - and a tie is no pick at all.
+            # The caseless-telescoped round is the standard issue, the same
+            # call PICK makes for CSAT's DBP-25; HV is the fallback. E22's
+            # 5.45 comes as 7N44 (the standard), 7N48 and 7U5 (subsonic).
+            for nature in ("_CT", "_HV", "_7N44"):
+                std = [c for c in mine if c.endswith(nature)]
+                if len(std) == 1:
+                    mine = std
+                    break
+            if len(mine) > 1:
+                # JCA's PMAG comes plain, _XM891_CTEP and _Mk332_AP: the
+                # plain one is the standard, and it is the one the others
+                # are named after.
+                shortest = min(mine, key=len)
+                if all(c.startswith(shortest) for c in mine):
+                    mine = [shortest]
+        blue = [c for c in lst if not c.startswith("FA_i_")]
+        if len(mine) == 1:
+            out[van] = mine[0]
+        elif len(blue) == 1:
+            out[van] = blue[0]
+        elif len(lst) == 1:
+            out[van] = lst[0]
+
+    # A PICK ENTRY IS AUTHORITATIVE EVEN IF NOTHING INHERITS FROM THE VANILLA
+    # MAGAZINE. The loop above only walks magazines that have FA descendants;
+    # CSAT's tracer magazine has none, so its mapping would never have been
+    # reached and its squad leaders would have quietly kept vanilla rounds.
+    for van, fa in PICK.items():
+        out.setdefault(van, fa)
+    return out, cand
+
+
+# ---------------------------------------------------------------------------
+# FACTION TIER
+# ---------------------------------------------------------------------------
+# Which FA tier a faction's ammunition is drawn from. 3 is the FA round as
+# built and is the default; 4 is peer+, the edge nobody else has.
+# Tier 1 and 0 are base game ammunition. gen_fa_tiers generates nothing below
+# t2 - "the FA round IS tier 3" and there is no FA round at all down here - so a
+# tier 1 faction gets NO substitution and keeps what its source issues. Asking
+# for _t1 would name magazines that were never built.
+TIER = {"jmfsb_CSAT": 4, "jmfsb_CSAT_tna": 4,
+        "jmfsb_PLA_ard": 4, "jmfsb_PLA_wdl": 4,    # peer+ (user, 2026-08-28)
+        # Russia at peer (t3): the E22 kit is current-generation, the
+        # depth and procurement freedom of t4 is CSAT's alone. Change here.
+        "jmfsb_RAF_wdl": 3, "jmfsb_RAF_ard": 3, "jmfsb_RAF_alp": 3,
+        "jmfsb_AAF": 2, "jmfsb_LDF": 2,
+        "jmfsb_FIA": 1, "jmfsb_FIA_ind": 1,
+        "jmfsb_Insurgents": 1, "jmfsb_Syndikat": 0}
+DEFAULT_TIER = 3
+
+# EDITOR CATEGORIES (user, 2026-08-28: "only need Men (Special Forces) and Men
+# (Story); the rest can be removed - if the unit is unique, move it to just
+# Men"; "yes to SF" for the mods' recon sets). Every man lands in one of three
+# 3DEN subcategories. A man in any other subcategory is a DUPLICATE when a man
+# in plain Men of the same source faction has the same displayName - CSAT's
+# urban-camo and African copies, RF's QRF men - and is dropped, the twin taking
+# his group slots; otherwise he is unique and moves to Men (the Syndikat's
+# bandits and paramilitaries, E22's Marines and Navy, the Pacific men...).
+# SUBCAT_SF are special forces under a mod's own name - and the Vipers; the
+# VR entities go regardless. The generated class restates editorSubcategory
+# and vehicleClass only when it moves.
+SUBCAT_KEEP = ("EdSubcat_Personnel", "EdSubcat_Personnel_SpecialForces", "EdSubcat_Personnel_Story")
+SUBCAT_SF = ("EdSubcat_Personnel_Viper", "E22_EdSubcat_Personel_Recon", "E22_EdSubcat_Personel_Spetsnaz",
+             "E22_EdSubcat_Personel_Marines_Recon", "EF_EdSubcat_Personnel_Recon")
+SUBCAT_OUT = ("EdSubcat_Personnel_VR",)
+SUBCAT_WRITE = {"sf": ("EdSubcat_Personnel_SpecialForces", "MenRecon"),
+                "men": ("EdSubcat_Personnel", "Men")}
+
+
+def prop_inh(units, props, c, name):
+    """A dumped property up the parent chain - the dump logs OWN values only."""
+    seen = set()
+    while c and c not in seen:
+        seen.add(c)
+        v = props.get(c, {}).get(name)
+        if v:
+            return v[1]
+        c = units.get(c, {}).get("parent")
+    return ""
+
+
+# SUPPRESSORS (user, 2026-08-28: "peer factions get silencers" - and the
+# attachments rule in docs/weapon_pools_2040.md: at t3-4 suppressors are the
+# DEFAULT on every primary, the pistols one tier behind). A faction at
+# SUPPRESS_TIER or above gets a suppressed preset of every primary its men
+# carry that links no muzzle item yet; at SUPPRESS_PISTOL_TIER the sidearms
+# too. The can comes from the weapon's own MuzzleSlot as the dump logged it -
+# CBA Joint Rails decides what fits, so nothing is guessed - picked by the
+# faction's colour words first (SUPPRESS_PREFER), the thermal-insulated ones
+# first at t4, the base game's when all else is equal. The presets are
+# written to the addon's CfgWeapons.hpp as children of the weapon with the
+# can as a LinkedItem: config, not a script. A dump made before the dump
+# script logged weapons has none of this, and says so.
+SUPPRESS_TIER = 3
+SUPPRESS_PISTOL_TIER = 4
+_CAN = re.compile(r"snds|suppress|silenc|pbs_|_sd_|_sd$", re.I)
+_NOT_CAN = re.compile(r"mzls|flash|brake|antenna|bayonet|_comp", re.I)
+# KHAKI IS A GREEN IN ARMA (user, 2026-08-28), not the tan the word means
+# everywhere else - "khk" belongs in a woodland or tropical list and never in
+# a desert one. The arid factions take sand and tan; the green ones take khaki,
+# olive and green.
+SUPPRESS_PREFER = {
+    "jmfsb_US_JTF_des": ("snd", "sand", "tan", "arid"), "jmfsb_US_JTF_ocp": ("snd", "sand", "tan", "arid"),
+    "jmfsb_US_JTF_wdl": ("khk", "olive", "oli", "grn", "blk", "black"),
+    "jmfsb_US_JTF_tna": ("khk", "olive", "oli", "grn", "lush", "blk", "black"),
+    "jmfsb_EUDF": ("khk", "grn", "olive", "oli", "blk"), "jmfsb_EUDF_arc": ("wht", "white", "arctic", "snow", "blk"),
+    "jmfsb_EUDF_ard": ("snd", "sand", "tan", "arid"),
+    "jmfsb_Marine_wdl": ("khk", "grn", "olive", "oli", "blk"), "jmfsb_Marine_des": ("snd", "sand", "tan", "arid"),
+    "jmfsb_RAF_wdl": ("khk", "grn", "olive", "blk", "black"),
+    "jmfsb_RAF_ard": ("snd", "sand", "tan", "arid", "blk"), "jmfsb_RAF_alp": ("wht", "white", "snow", "blk"),
+    "jmfsb_CSAT": ("hex", "blk", "black"), "jmfsb_CSAT_tna": ("ghex", "grn", "khk", "blk", "black"),
+    "jmfsb_PLA_ard": ("snd", "sand", "tan", "arid", "blk", "black"),
+    "jmfsb_PLA_wdl": ("grn", "olive", "oli", "khk", "blk", "black"),
+}
+
+
+def pick_can(fac, tier, compat):
+    """The suppressor this faction fits from a weapon's MuzzleSlot, or None."""
+    cans = [x for x in compat
+            if _CAN.search(x) and not _NOT_CAN.search(x) and class_origin(x, None) != "dropped"]
+    if not cans:
+        return None
+    prefer = SUPPRESS_PREFER.get(fac, ())
+
+    def score(x):
+        xl = x.lower()
+        sc = 0
+        if tier >= 4 and "_ti" in xl:
+            sc -= 20
+        for i, tok in enumerate(prefer):
+            if tok in xl:
+                sc -= 10 - i
+                break
+        if xl.startswith("muzzle_snds_"):
+            sc -= 1
+        return (sc, len(x), xl)
+
+    return min(cans, key=score)
+
+
+WEAPONS_DB, WLOW = {}, {}
+
+# WHOSE ROUND, when a vanilla magazine has both a NATO (FA_b_) and an AAF
+# (FA_i_) descendant. The US and the Marines carry the b round; the
+# independents carry the i round - the AAF's own, and the LDF's by the same
+# logic (an independent army does not draw NATO ammunition).
+FA_PREFER = {"jmfsb_AAF": "FA_i_", "jmfsb_LDF": "FA_i_",
+             "jmfsb_US_JTF_wdl": "FA_JCA_", "jmfsb_US_JTF_des": "FA_JCA_",
+             "jmfsb_US_JTF_tna": "FA_JCA_", "jmfsb_US_JTF_ocp": "FA_JCA_",
+             "jmfsb_RAF_wdl": "FA_e22raf_", "jmfsb_RAF_ard": "FA_e22raf_", "jmfsb_RAF_alp": "FA_e22raf_"}
+
+# A MAGAZINE BY ANOTHER NAME. E22 issues its men the colour variants of its
+# magazines (..._Mag_black_Green_F) while fa_e22raf maps the plain one
+# (..._Mag_black_F) - same round, same well. The variant is folded onto the
+# plain name before the FA map is consulted; a magazine the fold does not
+# touch is looked up as it is.
+def mag_alias(mag, famap=None):
+    """The FA-map key for `mag`, or `mag` itself when no fold applies."""
+    cands = [mag]
+    if mag.startswith("E22_RAF_"):
+        cands.append(re.sub(r"_black_[A-Za-z]+_F$", "_black_F", mag))
+    if mag.startswith("JCA_"):
+        # JCA's TRACER MAGAZINES carry the tracer colour in the name -
+        # JCA_30Rnd_556x45_Red_sand_PMAG, ..._Tracer_IR_PMAG - and fa_jca
+        # maps the plain magazine (..._sand_PMAG, ..._PMAG). Same round,
+        # same well; the fold drops the tracer, as fa_map does for the
+        # vanilla ones. Without it the desert JTF (sand magazines) kept
+        # base-game rounds while the woodland JTF was tiered (2026-08-27).
+        cands.append(re.sub(r"_(?:Red|Green|Yellow|White|Blue|Orange|Tracer_IR)_((?:[Ss]and_)?(?:PMAG|EMAG))$",
+                            r"_\1", mag))
+    if famap is None:
+        return cands[-1]
+    # fa_jca writes "Sand" for 7.62 and "sand" for 5.56; config does not
+    # care about case and neither does this.
+    low = dict((k.lower(), k) for k in famap)
+    for c in cands:
+        if c in famap:
+            return c
+        if c.lower() in low:
+            return low[c.lower()]
+    return mag
+
+
+# ---------------------------------------------------------------------------
+# KIT SUBSTITUTION
+# ---------------------------------------------------------------------------
+# newfac -> {source item -> item this faction wears}. Mapped item by item
+# rather than by matching each man to a counterpart: only the men who carry
+# a mapped item are rewritten, everyone else keeps what the source issued.
+#
+# ANYTHING WITH NO EQUIVALENT IS LEFT AS ISSUED and named in the run report -
+# a wetsuit is a wetsuit, and inventing a colour for the RF heavy helmets
+# would mean writing a classname that does not exist. KIT_KEEP is the list of
+# things that are left alone on purpose and so are not reported.
+#
+# The SOF classes below are NAMED, not required - see faction_csat/config.cpp.
+# A load order without SOF_Characters spawns these men in nothing, which is
+# the same bargain every faction makes with its tier magazines.
+KIT_SWAP = {
+    # 2040 CSAT: OPF_F's order of battle in the SOF_Characters mod's HEX set
+    # (2026-08-27) - fatigues, CHPC rig, Attacker helmet cover - with OPF_F's
+    # own items filling the slots the set does not cover (pilots, crews,
+    # officers, ghillies, the bandolier and belt).
+    "jmfsb_CSAT": {
+        # --- uniforms ---
+        "U_O_CombatUniform_ocamo":       "SOF_U_O_SFFatigues_hex",
+        "U_O_CombatUniform_oucamo":      "SOF_U_O_SFFatigues_hex",
+        "U_O_LCF_noInsignia_hex_lxWS":   "SOF_U_O_SFFatigues_hex",
+        "U_O_LCF_noInsignia_hex_lxws":   "SOF_U_O_SFFatigues_hex",
+        "U_O_SpecopsUniform_ocamo":      "SOF_U_O_SFFatigues_hex",
+        # --- vests ---
+        "V_TacVest_khk":                 "SOF_V_CHPCCarrier_Rig_hex",
+        "V_TacVest_gry":                 "SOF_V_CHPCCarrier_Rig_hex",
+        "V_TacVest_blk":                 "SOF_V_CHPCCarrier_Rig_hex",
+        "V_TacVest_brn":                 "SOF_V_CHPCCarrier_Rig_hex",
+        "V_HarnessO_brn":                "SOF_V_CHPCCarrier_Rig_hex",
+        "V_HarnessO_gry":                "SOF_V_CHPCCarrier_Rig_hex",
+        "V_HarnessOGL_brn":              "SOF_V_CHPCCarrier_Rig_hex",
+        "V_HarnessOGL_gry":              "SOF_V_CHPCCarrier_Rig_hex",
+        "V_HarnessOSpec_brn":            "SOF_V_CHPCCarrier_Rig_hex",
+        "V_Chestrig_khk":                "SOF_V_CHPCCarrier_Rig_hex",
+        "V_ChestrigF_khk":               "SOF_V_CHPCCarrier_Rig_hex",
+        # --- helmets ---
+        "H_HelmetO_ocamo":               "SOF_H_HelmetAttacker_Cover_hex",
+        "H_HelmetO_oucamo":              "SOF_H_HelmetAttacker_Cover_hex",
+        "H_O_Helmet_canvas_ocamo":       "SOF_H_HelmetAttacker_Cover_hex",
+        "H_HelmetO_ocamo_sb_hex_RF":     "SOF_H_HelmetAttacker_Cover_hex",
+        "H_HelmetSpecO_ocamo":           "SOF_H_HelmetAttacker_Cover_hex",
+        "H_HelmetLeaderO_ocamo":         "SOF_H_HelmetAttacker_Cover_hex",
+        "H_HelmetLeaderO_oucamo":        "SOF_H_HelmetAttacker_Cover_hex",
+    },
+    # 2040 CSAT (Pacific): OPF_T_F in the same set's GREEN-HEX colours.
+    "jmfsb_CSAT_tna": {
+        # --- uniforms ---
+        "U_O_T_Soldier_F":               "SOF_U_O_SFFatigues_ghex",
+        # --- vests ---
+        "V_HarnessO_ghex_F":             "SOF_V_CHPCCarrier_Rig_ghex",
+        "V_HarnessOGL_ghex_F":           "SOF_V_CHPCCarrier_Rig_ghex",
+        "V_HarnessOSpec_ghex_F":         "SOF_V_CHPCCarrier_Rig_ghex",
+        "V_TacVest_oli":                 "SOF_V_CHPCCarrier_Rig_ghex",
+        "V_TacChestrig_oli_F":           "SOF_V_CHPCCarrier_Rig_ghex",
+        # --- helmets ---
+        "H_HelmetO_ghex_F":              "SOF_H_HelmetAttacker_Cover_ghex",
+        "H_HelmetSpecO_ghex_F":          "SOF_H_HelmetAttacker_Cover_ghex",
+        "H_HelmetLeaderO_ghex_F":        "SOF_H_HelmetAttacker_Cover_ghex",
+    },
+    # 2040 US Army JTF (Tropical): E22's woodland JTF in the base game's NATO
+    # Pacific kit (user, 2026-08-27). One E22 item maps to one base-game item,
+    # so the roles keep E22's spread: the headset helmet most men wear is the
+    # plain tropic helmet, the bare one the light, chops and ear-pro the
+    # enhanced. Berets, the fighter helmet, the wetsuit and the Navy's
+    # black-and-navy kit are left as they are.
+    "jmfsb_US_JTF_tna": {
+        # --- uniforms ---
+        "E22_U_CombatUniform_woodland_F":                     "U_B_T_Soldier_F",
+        "E22_U_CombatUniform_woodland_shirt_F":               "U_B_T_Soldier_F",
+        "E22_U_CombatUniform_woodland_shirt_shemagh_F":       "U_B_T_Soldier_F",
+        "E22_U_CombatUniform_woodland_shortsleeve_F":         "U_B_T_Soldier_SL_F",
+        "E22_U_CombatUniform_woodland_tee_F":                 "U_B_T_Soldier_F",    # no T-shirts (user)
+        "E22_U_CombatUniform_woodland_fins_F":                "U_B_Wetsuit",
+        "E22_U_CombatUniform_01_woodland_F":                  "U_B_T_Soldier_F",
+        "E22_U_CombatUniform_01_woodland_shortsleeve_F":      "U_B_T_Soldier_SL_F",
+        "E22_U_CombatUniform_01_woodland_shortsleeve_gloves_F": "U_B_T_Soldier_SL_F",
+        "E22_U_Coveralls_woodland_F":                         "U_B_T_Soldier_SL_F",
+        "E22_U_JTF_FullGhillie_lesnoy_F":                     "U_B_T_FullGhillie_tna_F",
+        # --- vests ---
+        "E22_V_CarrierRigKBT_01_combat_woodland_F":           "V_PlateCarrier1_tna_F",
+        "E22_V_CarrierRigKBT_01_CQB_woodland_F":              "V_PlateCarrier1_tna_F",
+        "E22_V_CarrierRigKBT_01_heavy_woodland_F":            "V_PlateCarrier2_tna_F",
+        "E22_V_CarrierRigKBT_01_tactical_woodland_F":         "V_PlateCarrierGL_tna_F",
+        "E22_V_CarrierRigKBT_01_command_woodland_F":          "V_PlateCarrierGL_tna_F",
+        "E22_V_CarrierRigKBT_01_compact_woodland_F":          "V_Chestrig_rgr",
+        "E22_V_CarrierRigKBT_01_recon_woodland_F":            "V_Chestrig_rgr",
+        "E22_V_CarrierRigKBT_01_light_woodland_F":            "V_Chestrig_rgr",
+        "E22_V_CarrierRigKBT_01_crew_woodland_F":             "V_BandollierB_rgr",
+        "E22_V_CarrierRigKBT_01_holster_woodland_F":          "V_BandollierB_rgr",
+        "E22_V_Rebreather_woodland_F":                        "V_RebreatherB",
+        # --- helmets and hats ---
+        "E22_H_HelmetHBK_woodland_headset_F":                 "H_HelmetB_tna_F",
+        "E22_H_HelmetHBK_woodland_F":                         "H_HelmetB_Light_tna_F",
+        "E22_H_HelmetHBK_woodland_chops_F":                   "H_HelmetB_Enh_tna_F",
+        "E22_H_HelmetHBK_woodland_ear_F":                     "H_HelmetB_Enh_tna_F",
+        "E22_H_Cap_woodland_F":                               "H_MilCap_tna_F",
+        "E22_H_Cap_woodland_Patch_F":                         "H_MilCap_tna_F",
+        "E22_H_Cap_Military_woodland_F":                      "H_MilCap_tna_F",
+        "E22_H_Booniehat_woodland_F":                         "H_Booniehat_tna_F",
+        "E22_H_Booniehat_woodland_hs_F":                      "H_Booniehat_tna_F",
+        "E22_H_Headset_Combat_woodland_F":                    "H_Watchcap_camo",
+        "E22_H_Helmet_Crew_woodland_F":                       "H_HelmetCrew_B",
+        "E22_H_Helmet_Heli_JTF_woodland_F":                   "H_PilotHelmetHeli_B",
+        "E22_H_Helmet_Heli_JTF_VisorUp_woodland_F":           "H_PilotHelmetHeli_B",
+        "E22_H_Helmet_Heli_JTF_crew_woodland_F":              "H_CrewHelmetHeli_B",
+    },
+    # 2040 US Army JTF (OCP): E22's desert JTF in the repo's own OCP
+    # retextures of the base game's NATO kit (user, 2026-08-27) - combat
+    # fatigues (uniform), plate carriers (vests), FAST-MT helmets and the
+    # booniehat (headware). Caps, crew and aircrew helmets and the beret have
+    # no OCP version and stay desert tan.
+    "jmfsb_US_JTF_ocp": {
+        # --- uniforms ---
+        "E22_U_CombatUniform_desert_F":                       "jmfsb_uniform_U_B_CombatUniform_ocp_F",
+        "E22_U_CombatUniform_desert_shirt_F":                 "jmfsb_uniform_U_B_CombatUniform_ocp_F",
+        "E22_U_CombatUniform_desert_shirt_shemagh_F":         "jmfsb_uniform_U_B_CombatUniform_ocp_F",
+        "E22_U_CombatUniform_desert_shortsleeve_F":           "jmfsb_uniform_U_B_CombatUniform_ocp_F",
+        "E22_U_CombatUniform_desert_tee_F":                   "jmfsb_uniform_U_B_CombatUniform_ocp_F",
+        "E22_U_CombatUniform_desert_fins_F":                  "U_B_Wetsuit",
+        "E22_U_CombatUniform_01_desert_F":                    "jmfsb_uniform_U_B_CombatUniform_ocp_F",
+        "E22_U_CombatUniform_01_desert_shortsleeve_F":        "jmfsb_uniform_U_B_CombatUniform_ocp_F",
+        "E22_U_CombatUniform_01_desert_shortsleeve_gloves_F": "jmfsb_uniform_U_B_CombatUniform_ocp_F",
+        "E22_U_Coveralls_desert_F":                           "jmfsb_uniform_U_B_CombatUniform_ocp_F",
+        # --- vests ---
+        "E22_V_CarrierRigKBT_01_combat_desert_F":             "jmfsb_vests_V_PlateCarrier1_ocp",
+        "E22_V_CarrierRigKBT_01_CQB_desert_F":                "jmfsb_vests_V_PlateCarrier1_ocp",
+        "E22_V_CarrierRigKBT_01_compact_desert_F":            "jmfsb_vests_V_PlateCarrier1_ocp",
+        "E22_V_CarrierRigKBT_01_light_desert_F":              "jmfsb_vests_V_PlateCarrier1_ocp",
+        "E22_V_CarrierRigKBT_01_heavy_desert_F":              "jmfsb_vests_V_PlateCarrier2_ocp",
+        "E22_V_CarrierRigKBT_01_tactical_desert_F":           "jmfsb_vests_V_PlateCarrierGL_ocp",
+        "E22_V_CarrierRigKBT_01_command_desert_F":            "jmfsb_vests_V_PlateCarrierGL_ocp",
+        "E22_V_CarrierRigKBT_01_recon_desert_F":              "jmfsb_vests_V_PlateCarrierSpec_ocp",
+        # --- helmets and hats ---
+        "E22_H_HelmetHBK_desert_headset_F":                   "jmfsb_headware_H_Helmet_FASTMT_Headset_US_OCP_F",
+        "E22_H_HelmetHBK_desert_F":                           "jmfsb_headware_H_Helmet_FASTMT_US_OCP_F",
+        "E22_H_HelmetHBK_desert_chops_F":                     "jmfsb_headware_H_Helmet_FASTMT_Cover_US_OCP_F",
+        "E22_H_HelmetHBK_desert_ear_F":                       "jmfsb_headware_H_Helmet_FASTMT_Cover_US_OCP_F",
+        "E22_H_Booniehat_desert_F":                           "jmfsb_headware_H_Booniehat_ocp_F",
+        "E22_H_Booniehat_desert_hs_F":                        "jmfsb_headware_H_Booniehat_ocp_hs_F",
+    },
+    # 2040 PLA (Arid): OPF_F's kit in the vendored Xingkong Arid set - addons/uniform_pla (user, 2026-08-28).
+    # VESTS (user, 2026-08-28: "a lot of the vests had no pouches, they were plain"): the plain Modular
+    # Carrier is out - the rifle line wears the GL rig (heavy), the chest-rig roles the Lite (light). Vipers wear the Xingkong Special Purpose Suit; packs are not swapped (their contents are the loadout).
+    "jmfsb_PLA_ard": {
+        "U_O_CombatUniform_ocamo": "jmfsb_uniform_pla_U_B_CombatUniform_A",
+        "U_O_CombatUniform_oucamo": "jmfsb_uniform_pla_U_B_CombatUniform_A",
+        "U_O_LCF_noInsignia_hex_lxWS": "jmfsb_uniform_pla_U_B_CombatUniform_A",
+        "U_O_LCF_noInsignia_hex_lxws": "jmfsb_uniform_pla_U_B_CombatUniform_A",
+        "U_O_officer_noInsignia_hex_F": "jmfsb_uniform_pla_U_B_CombatUniform_A",
+        "U_O_OfficerUniform_ocamo": "jmfsb_uniform_pla_U_B_CombatUniform_A",
+        "SOF_U_O_SFFatigues_hex": "jmfsb_uniform_pla_U_B_CombatUniform_A",
+        "SOF_U_O_SFFatigues_Shortsleeve_hex": "jmfsb_uniform_pla_U_B_CombatUniform_vest_A",
+        "U_O_SpecopsUniform_ocamo": "jmfsb_uniform_pla_U_Tank_A",
+        "U_O_PilotCoveralls": "jmfsb_uniform_pla_U_O_PilotCoveralls_A",
+        "U_O_GhillieSuit": "jmfsb_uniform_pla_U_B_GhillieSuit_A",
+        # THE VIPERS TOO (user, 2026-08-28): ACP's Special Purpose Suit and helmet
+        "U_O_V_Soldier_Viper_hex_F": "jmfsb_uniform_pla_U_O_V_Soldier_Viper_A",
+        "U_O_V_Soldier_Viper_F": "jmfsb_uniform_pla_U_O_V_Soldier_Viper_A",
+        "H_HelmetO_ViperSP_hex_F": "jmfsb_uniform_pla_H_HelmetO_ViperSP_A",
+        "H_HelmetO_ViperSP_ghex_F": "jmfsb_uniform_pla_H_HelmetO_ViperSP_A",
+        "V_Chestrig_khk": "jmfsb_uniform_pla_V_CarrierRigKBT_01_light_A",
+        "V_TacVest_khk": "jmfsb_uniform_pla_V_CarrierRigKBT_01_heavy_A",
+        "V_TacVest_brn": "jmfsb_uniform_pla_V_CarrierRigKBT_01_heavy_A",
+        "V_TacVest_blk": "jmfsb_uniform_pla_V_CarrierRigKBT_01_heavy_A",
+        "V_TacVest_Blk": "jmfsb_uniform_pla_V_CarrierRigKBT_01_heavy_A",
+        "V_TacVest_rig_khk_RF": "jmfsb_uniform_pla_V_CarrierRigKBT_01_heavy_A",
+        "V_HarnessO_brn": "jmfsb_uniform_pla_V_CarrierRigKBT_01_heavy_A",
+        "V_HarnessO_gry": "jmfsb_uniform_pla_V_CarrierRigKBT_01_heavy_A",
+        "V_HarnessOGL_brn": "jmfsb_uniform_pla_V_CarrierRigKBT_01_heavy_A",
+        "V_HarnessOGL_gry": "jmfsb_uniform_pla_V_CarrierRigKBT_01_heavy_A",
+        "V_BandollierB_cbr": "jmfsb_uniform_pla_V_SmershVest_01_A",
+        "V_BandollierB_khk": "jmfsb_uniform_pla_V_SmershVest_01_A",
+        "H_HelmetO_ocamo": "jmfsb_uniform_pla_H_HelmetHBK_A",
+        "H_HelmetO_oucamo": "jmfsb_uniform_pla_H_HelmetHBK_A",
+        "H_HelmetO_ocamo_sb_hex_RF": "jmfsb_uniform_pla_H_HelmetHBK_A",
+        "H_HelmetB_plain_sb_hex_RF": "jmfsb_uniform_pla_H_HelmetHBK_A",
+        "H_HelmetLeaderO_ocamo": "jmfsb_uniform_pla_H_HelmetHBK_headset_A",
+        "H_HelmetLeaderO_oucamo": "jmfsb_uniform_pla_H_HelmetHBK_headset_A",
+        "H_HelmetSpecO_ocamo": "jmfsb_uniform_pla_H_HelmetHBK_chops_A",
+        "H_HelmetSpecO_blk": "jmfsb_uniform_pla_H_HelmetHBK_chops_A",
+        "H_MilCap_ocamo": "jmfsb_uniform_pla_H_MilCap_A",
+        "H_Cap_brn_SPECOPS": "jmfsb_uniform_pla_H_Cap_A",
+        "H_Beret_ocamo": "jmfsb_uniform_pla_H_Cap_A",
+        "H_HelmetCrew_O": "jmfsb_uniform_pla_H_HelmetCrew_A",
+        "EF_H_HelmetCrew_O_Urban": "jmfsb_uniform_pla_H_HelmetCrew_A",
+        "H_Tank_black_F": "jmfsb_uniform_pla_H_HelmetCrew_A",
+        "H_PilotHelmetHeli_O": "jmfsb_uniform_pla_H_PilotHelmetHeli_A",
+        "H_PilotHelmetHeli_B": "jmfsb_uniform_pla_H_PilotHelmetHeli_A",
+        "H_CrewHelmetHeli_O": "jmfsb_uniform_pla_H_CrewHelmetHeli_A",
+        # Western Sahara's arid CSAT men (in OPF_F's roster) wear SSh-40s and turbans
+        "lxWS_H_ssh40_sand": "jmfsb_uniform_pla_H_HelmetHBK_A",
+        "lxWS_H_turban_02_sand": "jmfsb_uniform_pla_H_MilCap_A",
+        "H_turban_02_mask_hex_lxws": "jmfsb_uniform_pla_H_MilCap_A",
+    },
+    # 2040 PLA (Woodland): the same in Xingkong Woodland.
+    "jmfsb_PLA_wdl": {
+        "U_O_CombatUniform_ocamo": "jmfsb_uniform_pla_U_B_CombatUniform_W",
+        "U_O_CombatUniform_oucamo": "jmfsb_uniform_pla_U_B_CombatUniform_W",
+        "U_O_LCF_noInsignia_hex_lxWS": "jmfsb_uniform_pla_U_B_CombatUniform_W",
+        "U_O_LCF_noInsignia_hex_lxws": "jmfsb_uniform_pla_U_B_CombatUniform_W",
+        "U_O_officer_noInsignia_hex_F": "jmfsb_uniform_pla_U_B_CombatUniform_W",
+        "U_O_OfficerUniform_ocamo": "jmfsb_uniform_pla_U_B_CombatUniform_W",
+        "SOF_U_O_SFFatigues_hex": "jmfsb_uniform_pla_U_B_CombatUniform_W",
+        "SOF_U_O_SFFatigues_Shortsleeve_hex": "jmfsb_uniform_pla_U_B_CombatUniform_vest_W",
+        "U_O_SpecopsUniform_ocamo": "jmfsb_uniform_pla_U_Tank_W",
+        "U_O_PilotCoveralls": "jmfsb_uniform_pla_U_O_PilotCoveralls_W",
+        "U_O_GhillieSuit": "jmfsb_uniform_pla_U_B_GhillieSuit_W",
+        # THE VIPERS TOO (user, 2026-08-28): ACP's Special Purpose Suit and helmet
+        "U_O_V_Soldier_Viper_hex_F": "jmfsb_uniform_pla_U_O_V_Soldier_Viper_W",
+        "U_O_V_Soldier_Viper_F": "jmfsb_uniform_pla_U_O_V_Soldier_Viper_W",
+        "H_HelmetO_ViperSP_hex_F": "jmfsb_uniform_pla_H_HelmetO_ViperSP_W",
+        "H_HelmetO_ViperSP_ghex_F": "jmfsb_uniform_pla_H_HelmetO_ViperSP_W",
+        "V_Chestrig_khk": "jmfsb_uniform_pla_V_CarrierRigKBT_01_light_W",
+        "V_TacVest_khk": "jmfsb_uniform_pla_V_CarrierRigKBT_01_heavy_W",
+        "V_TacVest_brn": "jmfsb_uniform_pla_V_CarrierRigKBT_01_heavy_W",
+        "V_TacVest_blk": "jmfsb_uniform_pla_V_CarrierRigKBT_01_heavy_W",
+        "V_TacVest_Blk": "jmfsb_uniform_pla_V_CarrierRigKBT_01_heavy_W",
+        "V_TacVest_rig_khk_RF": "jmfsb_uniform_pla_V_CarrierRigKBT_01_heavy_W",
+        "V_HarnessO_brn": "jmfsb_uniform_pla_V_CarrierRigKBT_01_heavy_W",
+        "V_HarnessO_gry": "jmfsb_uniform_pla_V_CarrierRigKBT_01_heavy_W",
+        "V_HarnessOGL_brn": "jmfsb_uniform_pla_V_CarrierRigKBT_01_heavy_W",
+        "V_HarnessOGL_gry": "jmfsb_uniform_pla_V_CarrierRigKBT_01_heavy_W",
+        "V_BandollierB_cbr": "jmfsb_uniform_pla_V_SmershVest_01_W",
+        "V_BandollierB_khk": "jmfsb_uniform_pla_V_SmershVest_01_W",
+        "H_HelmetO_ocamo": "jmfsb_uniform_pla_H_HelmetHBK_W",
+        "H_HelmetO_oucamo": "jmfsb_uniform_pla_H_HelmetHBK_W",
+        "H_HelmetO_ocamo_sb_hex_RF": "jmfsb_uniform_pla_H_HelmetHBK_W",
+        "H_HelmetB_plain_sb_hex_RF": "jmfsb_uniform_pla_H_HelmetHBK_W",
+        "H_HelmetLeaderO_ocamo": "jmfsb_uniform_pla_H_HelmetHBK_headset_W",
+        "H_HelmetLeaderO_oucamo": "jmfsb_uniform_pla_H_HelmetHBK_headset_W",
+        "H_HelmetSpecO_ocamo": "jmfsb_uniform_pla_H_HelmetHBK_chops_W",
+        "H_HelmetSpecO_blk": "jmfsb_uniform_pla_H_HelmetHBK_chops_W",
+        "H_MilCap_ocamo": "jmfsb_uniform_pla_H_MilCap_W",
+        "H_Cap_brn_SPECOPS": "jmfsb_uniform_pla_H_Cap_W",
+        "H_Beret_ocamo": "jmfsb_uniform_pla_H_Cap_W",
+        "H_HelmetCrew_O": "jmfsb_uniform_pla_H_HelmetCrew_W",
+        "EF_H_HelmetCrew_O_Urban": "jmfsb_uniform_pla_H_HelmetCrew_W",
+        "H_Tank_black_F": "jmfsb_uniform_pla_H_HelmetCrew_W",
+        "H_PilotHelmetHeli_O": "jmfsb_uniform_pla_H_PilotHelmetHeli_W",
+        "H_PilotHelmetHeli_B": "jmfsb_uniform_pla_H_PilotHelmetHeli_W",
+        "H_CrewHelmetHeli_O": "jmfsb_uniform_pla_H_CrewHelmetHeli_W",
+        # Western Sahara's arid CSAT men (in OPF_F's roster) wear SSh-40s and turbans
+        "lxWS_H_ssh40_sand": "jmfsb_uniform_pla_H_HelmetHBK_W",
+        "lxWS_H_turban_02_sand": "jmfsb_uniform_pla_H_MilCap_W",
+        "H_turban_02_mask_hex_lxws": "jmfsb_uniform_pla_H_MilCap_W",
+    },
+    # NO T-SHIRTS AT THIS LEVEL (user, 2026-08-28): E22's tee becomes its sleeved fatigues
+    "jmfsb_US_JTF_wdl": {"E22_U_CombatUniform_woodland_tee_F": "E22_U_CombatUniform_woodland_F"},
+    "jmfsb_US_JTF_des": {"E22_U_CombatUniform_desert_tee_F": "E22_U_CombatUniform_desert_F"},
+}
+
+# Issued unchanged on purpose - the SOF set has no version, or the item is
+# not a uniform, vest or helmet in the sense the set replaces.
+KIT_KEEP = {
+    "U_O_Wetsuit", "V_RebreatherIR", "U_O_Protagonist_VR",
+    "U_O_ParadeUniform_01_CSAT_F", "U_O_ParadeUniform_01_CSAT_decorated_F",
+    "H_ParadeDressCap_01_CSAT_F", "H_Beret_CSAT_01_F", "H_HelmetSpecO_blk",
+    "H_PilotHelmetHeli_O", "H_CrewHelmetHeli_O", "H_PilotHelmetFighter_O",
+    "H_HelmetHeavy_VisorUp_Hex_RF", "H_HelmetHeavy_Hex_RF",
+    "H_HelmetHeavy_Simple_Hex_RF", "V_TacVest_Blk",
+    # OPF_F's and OPF_T_F's own specialist kit, left alone by both CSATs
+    "U_O_OfficerUniform_ocamo", "U_O_PilotCoveralls", "U_O_GhillieSuit",
+    "U_O_FullGhillie_lsh", "U_O_FullGhillie_sard", "U_O_FullGhillie_ard",
+    "U_O_T_Officer_F", "U_O_T_Pilot_F", "U_O_T_FullGhillie_tna_F",
+    "V_BandollierB_khk", "V_BandolierB_khk", "V_BandollierB_ghex_F",
+    "V_Rangemaster_belt_khk", "V_Rangemaster_belt_ghex_F",
+    "H_HelmetCrew_O", "H_HelmetCrew_O_ghex_F", "H_MilCap_ocamo", "H_MilCap_ghex_F",
+    # the Vipers keep their own suits and helmets; the officer's no-insignia
+    # fatigues are an officer's
+    "U_O_V_Soldier_Viper_hex_F", "U_O_V_Soldier_Viper_F",
+    "H_HelmetO_ViperSP_hex_F", "H_HelmetO_ViperSP_ghex_F",
+    "U_O_officer_noInsignia_hex_F",
+}
+
+
+def is_ram(cls, disp):
+    """The Ram 1500s are out of every US faction.
+
+    A civilian pickup with a gun bolted on is an insurgent's answer to not
+    having an MRAP. A US or Marine formation has MRAPs, so the technical reads
+    as the wrong army the moment it drives past.
+
+    Matched on the display name first, because that is what says Ram; the AT
+    variants are matched on the classname instead, because theirs is a raw
+    classname with no display name at all. NOT BUILT rather than scoped to 0 -
+    a class that does not exist cannot be fielded by anything.
+    """
+    if disp and disp.startswith("Ram 1500"):
+        return True
+    return "Pickup" in cls and ("_AT_RF" in cls or "_AT_rf" in cls)
+
+
+def resolve(new, src):
+    """This faction's class for a source class, whatever the case.
+
+    CfgVehicles says O_Soldier_F, the dump said O_soldier_F, config does not
+    care which - and a lookup that did left a CSAT man inheriting from a
+    class that was never declared in scope.
+    """
+    if src in new:
+        return new[src]
+    low = src.lower()
+    for k, v in new.items():
+        if k.lower() == low:
+            return v
+    return src
+
+
+# THE PLA'S DRONES ARE CSAT'S - the east allocation, with the SwitchBlade tubes
+# in the theatre's colour.
+def _pla_extras(tubes):
+    out = []
+    for e in EXTRA_UNITS["jmfsb_CSAT"]:
+        e = dict(e)
+        for k in ("base", "name"):
+            if k in e:
+                e[k] = e[k].replace("_Woodland", "_" + tubes).replace("[CSAT]", "[PLA]")
+        if "add_items" in e:
+            e["add_items"] = [x.replace("_Woodland", "_" + tubes) for x in e["add_items"]]
+        out.append(e)
+    return out
+
+
+EXTRA_UNITS["jmfsb_PLA_ard"] = _pla_extras("Desert")
+EXTRA_UNITS["jmfsb_PLA_wdl"] = _pla_extras("Woodland")
+# the west's tier-3 squads carry the IDAP demining Pelican as their second drone
+for _f in ("jmfsb_EUDF", "jmfsb_EUDF_arc", "jmfsb_EUDF_ard", "jmfsb_Marine_wdl", "jmfsb_Marine_des"):
+    EXTRA_UNITS.setdefault(_f, []).extend(_IDAP)
+# the LDF carries SwitchBlade tubes like the AAF, so it fields the airframes too
+EXTRA_UNITS.setdefault("jmfsb_LDF", []).extend([e for e in EXTRA_UNITS.get("jmfsb_AAF", []) if "SwitchBlade" in e.get("base", "")])
+
+# ---------------------------------------------------------------------------
+# DRONES ON THE SQUADS (user, 2026-08-28)
+# ---------------------------------------------------------------------------
+# docs/weapon_pools_2040.md: "every squad carries 2-3 drones - the SEO carries
+# the primary, other members carry the rest". No squad did; the source rosters
+# keep their drones in dedicated UAV teams, and ALiVE spawns groups, so an
+# operator outside a group is never seen. So:
+#   * every infantry, motorised and mechanised squad (4+ men, no drone man
+#     already) gets ONE Drone Operator appended - the faction's rifleman with
+#     the tier's recon bag and, east and independent, the SwitchBlade tubes
+#     Drongo's Drone Tweaks fires (the FPV rows of the table: KVN and Crocus
+#     left the load order);
+#   * the squad's GRENADIER carries the second drone - a pack-less role, so no
+#     loadout is lost;
+#   * every bag is a CHILD of the source's that assembles THIS faction's own
+#     drone class, where the faction fields one (a PLA operator deploys a PLA
+#     Darter, not CSAT's); otherwise the source bag as it is.
+# By tier: t0 the IED Pelican; t1 the UAV_02 quad + the IED quad (+ a 300 tube
+# for the insurgents); t2 the Darter + AL-6 + both tubes (independents); t3-4
+# the Darter + AL-6 medical + a SWITCHBLADE OPERATOR in every squad (east - user,
+# 2026-08-28: the tubes ride with a man of their own, the "escort") or the Darter + IDAP demining
+# Pelican (west - user: "west t3 gets Darter + IDAP Pelican"). Kedr is not in
+# the load order. Tube colour follows the theatre.
+def _sb(colour):
+    return ["SwitchBlade_300_Tube_%s" % colour, "SwitchBlade_600_Tube_%s" % colour]
+
+
+SQUAD_DRONES = {
+    # east - the same load on every east force (user)
+    "jmfsb_CSAT":       {"bag": "O_UAV_01_backpack_F", "tubes": [], "escort": "SwitchBlade_Operator",   "second": "O_UAV_06_medical_backpack_F"},
+    "jmfsb_CSAT_tna":   {"bag": "O_UAV_01_backpack_F", "tubes": [], "escort": "SwitchBlade_Operator", "second": "O_UAV_06_medical_backpack_F"},
+    "jmfsb_PLA_ard":    {"bag": "O_UAV_01_backpack_F", "tubes": [], "escort": "SwitchBlade_Operator",   "second": "O_UAV_06_medical_backpack_F"},
+    "jmfsb_PLA_wdl":    {"bag": "O_UAV_01_backpack_F", "tubes": [], "escort": "SwitchBlade_Operator", "second": "O_UAV_06_medical_backpack_F"},
+    "jmfsb_RAF_wdl":    {"bag": "E22_O_RAF_UAV_01_backpack_F", "tubes": [], "escort": "SwitchBlade_Operator", "second": "E22_O_RAF_UAV_06_medical_backpack_F"},
+    "jmfsb_RAF_ard":    {"bag": "E22_O_RAF_D_UAV_01_backpack_F", "tubes": [], "escort": "SwitchBlade_Operator",   "second": "E22_O_RAF_D_UAV_06_medical_backpack_F"},
+    "jmfsb_RAF_alp":    {"bag": "E22_O_RAF_A_UAV_01_backpack_F", "tubes": [], "escort": "SwitchBlade_Operator", "second": "E22_O_RAF_A_UAV_06_medical_backpack_F"},
+    # west, tier 3
+    "jmfsb_US_JTF_wdl": {"bag": "B_UAV_01_backpack_F", "tubes": [], "second": "C_IDAP_UAV_06_antimine_backpack_F"},
+    "jmfsb_US_JTF_des": {"bag": "B_UAV_01_backpack_F", "tubes": [], "second": "C_IDAP_UAV_06_antimine_backpack_F"},
+    "jmfsb_US_JTF_tna": {"bag": "B_UAV_01_backpack_F", "tubes": [], "second": "C_IDAP_UAV_06_antimine_backpack_F"},
+    "jmfsb_US_JTF_ocp": {"bag": "B_UAV_01_backpack_F", "tubes": [], "second": "C_IDAP_UAV_06_antimine_backpack_F"},
+    "jmfsb_EUDF":       {"bag": "B_EUDF35_UAV_01_backpack_F",   "tubes": [], "second": "C_IDAP_UAV_06_antimine_backpack_F"},
+    "jmfsb_EUDF_arc":   {"bag": "B_EUDF35_A_UAV_01_backpack_F", "tubes": [], "second": "C_IDAP_UAV_06_antimine_backpack_F"},
+    "jmfsb_EUDF_ard":   {"bag": "B_EUDF35_D_UAV_01_backpack_F", "tubes": [], "second": "C_IDAP_UAV_06_antimine_backpack_F"},
+    "jmfsb_Marine_wdl": {"bag": "EF_B_UAV_01_backpack_coy", "tubes": [], "second": "C_IDAP_UAV_06_antimine_backpack_F"},
+    "jmfsb_Marine_des": {"bag": "EF_B_UAV_01_backpack_coy", "tubes": [], "second": "C_IDAP_UAV_06_antimine_backpack_F"},
+    # independents, tier 2
+    "jmfsb_AAF":        {"bag": "I_UAV_01_backpack_F",   "tubes": _sb("Woodland"), "second": "I_UAV_06_backpack_F"},
+    "jmfsb_LDF":        {"bag": "I_E_UAV_01_backpack_F", "tubes": _sb("Woodland"), "second": "I_E_UAV_06_backpack_F"},
+    # irregulars, tier 1 (the FIA is west: no tubes)
+    "jmfsb_FIA":        {"bag": "B_UAV_02_backpack_lxWS", "tubes": [], "second": "B_G_UAV_02_IED_backpack_lxWS"},
+    "jmfsb_FIA_ind":    {"bag": "I_UAV_02_backpack_lxWS", "tubes": [], "second": "I_G_UAV_02_IED_backpack_lxWS"},
+    "jmfsb_Insurgents": {"bag": "I_UAV_02_backpack_lxWS", "tubes": ["SwitchBlade_300_Tube_Woodland"], "second": "I_G_UAV_02_IED_backpack_lxWS"},
+    # tier 0: the IED Pelican, and nothing else
+    # the Syndikat has no grenadier: its second drone rides on a man of its own
+    # (second_man), and its IED Pelican operator joins every squad too (user:
+    # "low end drones and drones in the squad, IED ones")
+    "jmfsb_Syndikat":   {"bag": "I_UAV_02_backpack_lxWS", "tubes": [], "second": "I_G_UAV_02_IED_backpack_lxWS",
+                        "second_man": "IED_Quad_Operator", "escort": ["IED_Quad_Operator", "UAV_06_IED_Operator"]},
+}
+# group categories that are squads; the rest (SpecOps, Support, Armored, Naval,
+# Air, Artillery) keep their own shape
+SQUAD_CATS = ("infantry", "motor", "mech")
+
+
+# ---------------------------------------------------------------------------
+# GROUPS A SOURCE NEVER HAD
+# ---------------------------------------------------------------------------
+# newfac -> [(class suffix, 3DEN name, category, [source classes...])]. The
+# first member leads (a vehicle first means its crew leads, as the base game's
+# motorised groups do); the men take the generator's wedge; the squad drone
+# men join as they join every other squad. A member the faction does not
+# field drops the whole group, said out loud.
+#
+# THE SYNDIKAT'S MOTORISED GROUPS (user, 2026-08-28): IND_C_F has the Jeeps,
+# the technicals and the vans but only six foot groups; ALiVE motorised
+# spawns need groups with a vehicle in them.
+_BANDITS = ["I_C_Soldier_Bandit_4_F", "I_C_Soldier_Bandit_3_F", "I_C_Soldier_Bandit_7_F", "I_C_Soldier_Bandit_5_F",
+            "I_C_Soldier_Bandit_6_F", "I_C_Soldier_Bandit_2_F", "I_C_Soldier_Bandit_8_F", "I_C_Soldier_Bandit_1_F"]
+_PARAS = ["I_C_Soldier_Para_2_F", "I_C_Soldier_Para_4_F", "I_C_Soldier_Para_6_F", "I_C_Soldier_Para_1_F",
+          "I_C_Soldier_Para_7_F", "I_C_Soldier_Para_5_F", "I_C_Soldier_Para_8_F", "I_C_Soldier_Para_3_F"]
+EXTRA_GROUPS = {
+    "jmfsb_Syndikat": [
+        ("BanditMotorized_LMG",   "Bandit Motorized Group (LMG)",     "Motorized", ["I_C_Offroad_02_LMG_F"] + _BANDITS[:5]),
+        ("BanditMotorized_AT",    "Bandit Motorized Group (SPG-9)",   "Motorized", ["I_C_Offroad_02_AT_F"] + _BANDITS[:4]),
+        ("BanditTechnical_HMG",   "Bandit Technical (HMG)",           "Motorized", ["I_C_Pickup_hmg_rf"] + _BANDITS[:4]),
+        ("BanditMotorized_Truck", "Bandit Motorized Combat Group",    "Motorized", ["I_C_Van_01_transport_F"] + _BANDITS),
+        ("ParaMotorized_LMG",     "Paramilitary Motorized Group (LMG)", "Motorized", ["I_C_Offroad_02_LMG_F"] + _PARAS[:5]),
+        ("ParaTechnical_HMG",     "Paramilitary Technical (HMG)",     "Motorized", ["I_C_Pickup_hmg_rf"] + _PARAS[:4]),
+        ("ParaMotorized_Van",     "Paramilitary Motorized Combat Group", "Motorized", ["I_C_Van_02_transport_F"] + _PARAS),
+    ],
+}
+
+
+def wedge(i):
+    """The wedge every generated group uses: leader at the point, the rest
+    alternating right and left, five metres back a row."""
+    if i == 0:
+        return "[0,0,0]"
+    row = (i + 1) // 2 * 5
+    return "[%d,-%d,0]" % (row if i % 2 else -row, row)
+
+
+def squad_drone_plan(newfac, new, ulow):
+    """(bag-child config lines, operator bag class, second bag class) for a
+    faction - the bags as children assembling the faction's own drone where it
+    has one (roster or extras), the source's bag otherwise."""
+    sd = SQUAD_DRONES.get(newfac)
+    if not sd:
+        return [], None, None
+    lines, out = [], {}
+    extras = dict((e["base"], "%s_%s" % (newfac, e.get("as", e["base"])))
+                  for e in EXTRA_UNITS.get(newfac, []) if e.get("kind") == "veh")
+    for key in ("bag", "second"):
+        bag = sd.get(key)
+        if not bag:
+            out[key] = None
+            continue
+        drone = bag.replace("_backpack", "")
+        own = new.get(ulow.get(drone.lower(), drone)) or extras.get(drone)
+        if not own:
+            out[key] = bag
+            continue
+        child = "%s_%s" % (newfac, bag)
+        # assembleInfo IN FULL, all five fields. A nested class under a
+        # forward-declared parent has nothing to inherit from at build time, so
+        # a partial one silently loses every field it does not restate - which
+        # is exactly what the RPT showed, once per bag per faction:
+        #     No entry '.../<bag>/assembleInfo.primary'
+        #     ... .assembleTo ... .displayName ... .dissasembleTo
+        #
+        # And the drone belongs in assembleTo, NOT base. "base" is the bag that
+        # anchors a multi-part assembly and is empty for a one-bag drone; with
+        # the drone in "base" these bags assembled into nothing of ours, in
+        # every faction that has one.
+        lines += ["    class %s;" % bag,
+                  "    class %s: %s {" % (child, bag),
+                  "        scope = 1;",
+                  "        scopeCurator = 0;",
+                  "        author = QAUTHOR;",
+                  "        class assembleInfo {",
+                  "            primary = 1;",
+                  '            base = "";',
+                  '            assembleTo = "%s";' % own,
+                  '            displayName = "";',
+                  "            dissasembleTo[] = {};",
+                  "        };",
+                  "    };   // assembles this faction's own drone"]
+        out[key] = child
+    return lines, out["bag"], out["second"]
+
+
+
+# A faction's own art where the source's would be wrong: the PLA under the
+# PRC flag the mod ships, not CSAT's.
+FACTION_ART = {
+    "jmfsb_PLA_ard": {"icon": r"\Main\Data\PRC_flag.paa", "flag": r"\Main\Data\PRC_flag.paa"},
+    "jmfsb_PLA_wdl": {"icon": r"\Main\Data\PRC_flag.paa", "flag": r"\Main\Data\PRC_flag.paa"},
+}
+
+
+def emit_extras(newfac, addon, side, new, men, vanilla):
+    """The classes in EXTRA_UNITS[newfac] as config lines: (lines, class names).
+
+    Shared by main() and tools/apply_faction_extras.py, so an extra added
+    while the dump is gone is written the same way a regeneration would
+    write it. `new` maps source class -> this faction's class for everything
+    the faction already fields; `men` is the source names of its men.
+    """
+    L, names = [], []
+    extra = EXTRA_UNITS.get(newfac, [])
+    if not extra:
+        return L, names
+    L.append("    // ---- fielded by this faction, not by its source ----")
+    L.append("    // NEW CLASSES, NOT A SCRIPT. A man either is a drone")
+    L.append("    // operator or is not; picking men out of a spawning group")
+    L.append("    // and handing them a bag is a group composition decision,")
+    L.append("    // and group composition is CfgGroups' job.")
+    L.append("")
+    manbase = EXTRA_MAN_BASE.get(newfac)
+    for e in extra:
+        if e["kind"] == "veh":
+            base = e["base"]
+            if is_dropped(base, vanilla, newfac):
+                print("  -- %s: extra %s is a dropped mod's - skipped" % (addon, base))
+                continue
+            if base in new:
+                # The source faction fields it after all - the roster
+                # already built it, crew and all, and a second class of
+                # the same name is a config error. Say so and move on.
+                print("  -- %s: extra %s is already in the roster - skipped" % (addon, base))
+                continue
+            cls = "%s_%s" % (newfac, e.get("as", base))
+            L.append("    class %s;" % base)
+            L.append("    class %s: %s {" % (cls, base))
+            L += ["        scope = 2;",
+                  "        scopeCurator = 2;",
+                  "        author = QAUTHOR;",
+                  '        displayName = "%s";' % e["name"],
+                  "        side = %d;" % side,
+                  '        faction = "%s";' % newfac]
+            if e.get("crew"):
+                # A crewed vehicle needs this faction's men in it or it
+                # spawns with the source faction's. Resolved through the
+                # roster the same way the roster's own crews are.
+                cr = e["crew"]
+                if is_dropped(cr, vanilla, newfac):
+                    cr = pick_crew(cr, men)
+                if cr:
+                    L.append('        crew = "%s";' % resolve(new, cr))
+            if e.get("tex") and not any(DROP_PATH.search(x) for x in e["tex"]):
+                # hiddenSelectionsTextures, NOT a TextureSources entry -
+                # this is the skin it wears when it spawns, not an option
+                # in the editor's dropdown.
+                L.append("        hiddenSelectionsTextures[] = {")
+                for i, tx in enumerate(e["tex"]):
+                    L.append('            "%s"%s' % (tx, "," if i < len(e["tex"]) - 1 else ""))
+                L.append("        };")
+            L.append("    };%s" % ("   // " + e["why"] if e.get("why") else ""))
+        else:
+            # A rifleman who carries one system instead of a rucksack.
+            bp = e.get("backpack")
+            if bp and is_dropped(bp, vanilla, newfac):
+                # The system went with its mod; so does the man who
+                # carried it. A rifleman with nothing on his back is
+                # just a rifleman, and the roster has those.
+                print("  -- %s: extra %s carries a dropped mod's %s - skipped"
+                      % (addon, e["suffix"], bp))
+                continue
+            parent = resolve(new, manbase)
+            cls = "%s_%s" % (newfac, e["suffix"])
+            L += ["    class %s: %s {" % (cls, parent),
+                  "        scope = 2;",
+                  "        scopeCurator = 2;",
+                  "        author = QAUTHOR;",
+                  '        displayName = "%s";' % e["name"],
+                  '        faction = "%s";' % newfac]
+            if bp:
+                L.append('        backpack = "%s";' % bp)
+            if e.get("add_weapons"):
+                # += APPENDS. Writing weapons[] = {...} here would take
+                # away the rifle, the sidearm and the binoculars along
+                # with everything else the parent gave him.
+                a = ",".join('"%s"' % w for w in e["add_weapons"])
+                L.append("        weapons[] += {%s};" % a)
+                L.append("        respawnWeapons[] += {%s};" % a)
+            if e.get("add_mags"):
+                a = ",".join('"%s"' % w for w in e["add_mags"])
+                L.append("        magazines[] += {%s};" % a)
+                L.append("        respawnMagazines[] += {%s};" % a)
+            if e.get("add_items"):
+                # Inventory items - the SwitchBlade tubes are CBA_MiscItems,
+                # not magazines, and DDT looks for them in `items`.
+                a = ",".join('"%s"' % w for w in e["add_items"])
+                L.append("        items[] += {%s};" % a)
+                L.append("        respawnItems[] += {%s};" % a)
+            L.append("    };%s" % ("   // " + e["why"] if e.get("why") else ""))
+        names.append(cls)
+    L.append("")
+    return L, names
+
+
+def crlf(path, lines):
+    io.open(path, "w", encoding="utf-8", newline="\r\n").write("\n".join(lines) + "\n")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--rpt")
+    args = ap.parse_args()
+
+    rpt = args.rpt or R.newest_rpt()
+    if not rpt or not os.path.exists(rpt):
+        print("no RPT given and none found - pass --rpt <path>")
+        return 2
+
+    facside, facprops, units, props, groups, gprops, gmen = R.read(rpt)
+    WEAPONS_DB.update(R.read_weapons(rpt))
+    WLOW.update((k.lower(), k) for k in WEAPONS_DB)
+    if WEAPONS_DB:
+        print("weapons %d class(es) with muzzle slots - see SUPPRESS_TIER" % len(WEAPONS_DB))
+    else:
+        print("!! the dump has no WEAPON lines - NO SUPPRESSORS this build; re-run tools/dump_orbat.sqf in game")
+    if not units:
+        print("%s holds no UNIT records - wrong RPT?" % rpt)
+        return 2
+    print("read   %s" % rpt)
+
+    # THE PLA MOD'S VEHICLES join the dump here - see PLA_INDEX.
+    import json as _json
+    for c, rec in PLA_INDEX.items():
+        if c in units:
+            continue
+        units[c] = {"faction": rec.get("faction", "PLA_Armored_Force").lower(),
+                    "parent": rec.get("parent", ""), "side": int(rec.get("side", 0)), "scope": 2}
+        pr = {"displayName": ("txt", rec.get("displayName") or c),
+              "vehicleClass": ("txt", rec.get("vehicleClass", "")),
+              "scopeCurator": ("num", rec.get("scopeCurator", "2")),
+              "side": ("num", str(rec.get("side", 0)))}
+        for k in ("crew", "editorSubcategory"):
+            if rec.get(k):
+                pr[k] = ("txt", rec[k])
+        for k in ("hiddenSelections", "hiddenSelectionsTextures"):
+            if rec.get(k):
+                pr[k] = ("arr", _json.dumps(rec[k]))
+        props[c] = pr
+    if PLA_INDEX:
+        facside.setdefault("pla_armored_force", 0)
+        print("merged %d PLA vehicle(s) from %s" % (len(PLA_INDEX), os.path.relpath(PLA_INDEX_PATH, ROOT)))
+
+    ulow = dict((k.lower(), k) for k in units)
+
+    vanilla = load_vanilla()
+    if vanilla is None:
+        # NOT FATAL, BUT SAID LOUDLY. Without the index only the prefixed
+        # classes can be dropped; the plain-named ones Aegis adds to the base
+        # game's factions will be built as if they were the base game's.
+        print("!! work/vanilla_vehicles.json is missing - run tools/gen_vanilla_vehicles.py")
+        print("   Only %s-prefixed classes will be dropped this run." % "/".join(DROP_MODS))
+    # A CHOSEN ROUND IS ONLY USABLE IF fa_tiers ACTUALLY BUILT A TIER FOR IT.
+    # Only rounds declaring a lethality figure are tiered, so the two sets are
+    # not the same - and a magazine that does not exist is a soldier with none.
+    # fa_tiers holds the base-game rounds' tiers, fa_tiers_mods the mods'
+    # (E22's 5.45 among them); a faction on a mod's rifle needs both read.
+    t3 = set()
+    for tiers in ("fa_tiers", "fa_tiers_mods"):
+        tp = os.path.join(ADDONS, tiers, "CfgMagazines.hpp")
+        if os.path.exists(tp):
+            t3 |= set(re.findall(r"^\s*class ([A-Za-z0-9_]+)_t[234]:",
+                                 io.open(tp, encoding="utf-8", errors="replace").read(), re.M))
+
+    def fa_for(newfac):
+        """This faction's vanilla -> FA map, tiered rounds only."""
+        m, _cand = fa_map(ADDONS, FA_PREFER.get(newfac, "FA_b_"))
+        return dict((v, f) for v, f in m.items() if f in t3)
+
+    famap, _cand = fa_map(ADDONS)
+    dropped_no_t3 = sorted(v for v, f in famap.items() if f not in t3)
+    famap = dict((v, f) for v, f in famap.items() if f in t3)
+    swapped = [0]
+    swapped_w = [0]
+    suppressed = [0]
+    moved = {"sf": 0, "men": 0}     # men whose editor category collapsed - see SUBCAT_KEEP
+    no_can = {}        # weapon -> men: a muzzle slot with no suppressor this faction may fit
+    kitn = [0]
+    kit_unmapped = {}
+
+    total_u = total_g = 0
+    dropped = [0]
+    squads_armed = [0]
+    for addon, beaut, newfac, disp, src in TARGETS:
+        # ---- what this faction fields ---------------------------------
+        shed = []
+        # EDITOR CATEGORIES - see SUBCAT_KEEP. Planned before keep(), which
+        # refuses the duplicates and the VR men; the twin takes a duplicate's
+        # group slots (gsub, below); the emitter restates the category of a
+        # man who moves.
+        plain_by_name = {}
+        for c0, u0 in units.items():
+            if u0["faction"] == src and u0["scope"] == 2 \
+                    and prop_inh(units, props, c0, "editorSubcategory") == "EdSubcat_Personnel" \
+                    and R.is_man(prop_inh(units, props, c0, "vehicleClass"), props.get(c0, {})):
+                plain_by_name.setdefault(prop_inh(units, props, c0, "displayName"), c0)
+
+        def subcat_of(c0):
+            """'keep' | 'sf' | 'men' | 'out' | ('dupe', twin) for a man."""
+            sc = prop_inh(units, props, c0, "editorSubcategory")
+            if sc in SUBCAT_KEEP or not sc:
+                return "keep"
+            if sc in SUBCAT_SF:
+                return "sf"
+            if sc in SUBCAT_OUT:
+                return "out"
+            twin = plain_by_name.get(prop_inh(units, props, c0, "displayName"))
+            if twin and twin != c0 and units.get(twin, {}).get("faction") == src:
+                return ("dupe", twin)
+            return "men"
+
+        subcat_gone = []
+
+        def keep(c):
+            pr = props.get(c, {})
+            vc = pr.get("vehicleClass", (None, ""))[1] or ""
+            if vc in R.SKIP_VCLASS:
+                return False
+            if R.is_man(vc, pr):
+                plan = subcat_of(c)
+                if plan == "out" or isinstance(plan, tuple):
+                    # a duplicate of a man in plain Men, or a VR entity
+                    if c not in subcat_gone:
+                        subcat_gone.append(c)
+                    return False
+            vcs, unless = NOT_FIELDED_VCLASS.get(newfac, ((), None))
+            if vc in vcs and not (unless and unless(c.lower())):
+                # a category this faction does not field - see the table
+                if c not in shed:
+                    shed.append(c)
+                return False
+            if is_dropped(c, vanilla, newfac):
+                # A dropped mod's class - see DROP_MODS. Recorded so the run
+                # report says what went, not just how many.
+                if c not in shed:
+                    shed.append(c)
+                return False
+            # The Ram 1500 technicals are out of the US and the Marines (see
+            # is_ram) - and exactly right for the irregulars, who keep them.
+            if newfac in US_FACTIONS or newfac.startswith("jmfsb_Marine"):
+                return not is_ram(c, pr.get("displayName", (None, ""))[1] or "")
+            return True
+
+        roster = [c for c, u in units.items()
+                  if u["faction"] == src and u["scope"] == 2 and keep(c)]
+
+        # A mod's CfgGroups can file its groups under a different faction
+        # name than CfgFactionClasses uses - E22 does. GROUP_ALIAS maps one
+        # to the other; the base game needs no entry.
+        gkeys = {src, GROUP_ALIAS.get(src, src)}
+        mine = [g for g in groups if groups[g].get("faction", "").lower() in gkeys]
+
+        # Anything a group names, at whatever scope - see the header. Resolved
+        # case-insensitively: CfgGroups says B_soldier_SL_F where CfgVehicles
+        # declares B_Soldier_SL_F, and config does not care which.
+        gsub = dict(GROUP_SUB.get(newfac, {}))
+        for c0, u0 in units.items():
+            if u0["faction"] == src:
+                plan = subcat_of(c0)
+                if isinstance(plan, tuple):
+                    gsub.setdefault(c0, plan[1])
+        if subcat_gone:
+            print("  -- %s: %d man/men in a removed editor category (duplicates of plain Men, VR): %s%s"
+                  % (addon, len(subcat_gone), ", ".join(subcat_gone[:4]), "..." if len(subcat_gone) > 4 else ""))
+        if newfac.startswith("jmfsb_RAF_"):
+            # E22's groups name the west RAF's classes; the east twin, where the
+            # dump has one, takes the slot - see NOT_FIELDED "west RAF classes".
+            for c in units:
+                if c.startswith("E22_B_RAF"):
+                    twin = "E22_O_RAF" + c[len("E22_B_RAF"):]
+                    if twin in units:
+                        gsub.setdefault(c, twin)
+        for g in mine:
+            for veh, _rank, _pos in R.gmen_values(gmen, g):
+                real = ulow.get(veh.lower())
+                real = gsub.get(real, real)
+                if real and real not in roster and keep(real):
+                    roster.append(real)
+        # ROSTER_ADD - dumped classes this faction fields that its source
+        # does not list. Said out loud when one is not in the dump at all.
+        for c in ROSTER_ADD.get(newfac, []):
+            real = ulow.get(c.lower())
+            if not real:
+                print("  -- %s: ROSTER_ADD %s is not in the dump - skipped" % (addon, c))
+            elif real not in roster and keep(real):
+                roster.append(real)
+        roster = sorted(set(roster))
+
+        if not roster:
+            print("  !! %s: source faction %s fields nothing - skipped" % (addon, src))
+            continue
+
+        new = dict((c, "%s_%s" % (newfac, c)) for c in roster)
+
+        # DRONES ON THE SQUADS - see SQUAD_DRONES. The bag children are written
+        # with the extras; the operator is an extra man; the grenadier's
+        # second bag is written on his class; the squads get the operator.
+        bag_lines, op_bag, second_bag = squad_drone_plan(newfac, new, ulow)
+        operator = None
+        if op_bag and EXTRA_MAN_BASE.get(newfac):
+            sd = SQUAD_DRONES[newfac]
+            operator = "%s_Drone_Operator" % newfac
+            EXTRA_UNITS.setdefault(newfac, [])
+            if not any(e.get("suffix") == "Drone_Operator" for e in EXTRA_UNITS[newfac]):
+                EXTRA_UNITS[newfac].append(
+                    {"kind": "man", "suffix": "Drone_Operator", "name": "Drone Operator [%s]" % disp.replace("2040 ", ""),
+                     "backpack": op_bag, "add_items": sd.get("tubes") or None,
+                     "why": "the squad's drones - see SQUAD_DRONES"})
+            if sd.get("second_man") and second_bag and not any(e.get("suffix") == sd["second_man"] for e in EXTRA_UNITS[newfac]):
+                EXTRA_UNITS[newfac].append(
+                    {"kind": "man", "suffix": sd["second_man"], "name": "%s [%s]" % (sd["second_man"].replace("_", " "), disp.replace("2040 ", "")),
+                     "backpack": second_bag, "why": "the squad's second drone, where there is no grenadier to carry it"})
+        extra_names = []
+        men = [c for c in roster
+               if R.is_man(props.get(c, {}).get("vehicleClass", (None, ""))[1] or "",
+                           props.get(c, {}))]
+        recrewed = []
+        tier = TIER.get(newfac, DEFAULT_TIER)
+        tier_sfx = "_t%d" % tier
+        presets = {}       # weapon -> (preset class, can) - see SUPPRESS_TIER
+        famap = fa_for(newfac)
+        # Looked up case-insensitively: the dump writes the uniform the way the
+        # unit config spelt it, and E22 spells its shirts both ways.
+        kit = dict((k.lower(), v) for k, v in KIT_SWAP.get(newfac, {}).items())
+        side = units[roster[0]]["side"]
+
+        path = os.path.join(ADDONS, addon)
+        if not os.path.isdir(path):
+            os.makedirs(path)
+
+        crlf(os.path.join(path, "$PBOPREFIX$"), ["z\\jmfsb\\addons\\" + addon])
+        crlf(os.path.join(path, "script_component.hpp"), [
+            "#define COMPONENT " + addon,
+            "#define COMPONENT_BEAUTIFIED " + beaut,
+            '#include "\\z\\jmfsb\\addons\\main\\script_mod.hpp"',
+            "",
+            "// #define DEBUG_MODE_FULL",
+            "// #define DISABLE_COMPILE_CACHE",
+            "",
+            '#include "\\z\\jmfsb\\addons\\main\\script_macros.hpp"',
+        ])
+
+        # ---- CfgFactionClasses ----------------------------------------
+        fp = {}
+        for k in facprops:
+            if k.lower() == src:
+                fp = facprops[k]
+                break
+        L = [HDR.rstrip("\n"),
+             "// A NEW FACTION, NOT A CHANGE TO %s. The source faction is left" % src.upper(),
+             "// exactly as its mod ships it; this sits beside it, so a mission",
+             "// using the original is untouched and the two are one glance apart",
+             "// in 3DEN and Zeus.",
+             "",
+             "class CfgFactionClasses {",
+             "    class NO_CATEGORY;",
+             "",
+             "    class %s: NO_CATEGORY {" % newfac,
+             '        displayName = "%s";' % disp,
+             "        author = QAUTHOR;",
+             "        side = %d;" % side,
+             "        priority = %s;" % (fp.get("priority") or "1")]
+        for n in ("icon", "flag"):
+            v = FACTION_ART.get(newfac, {}).get(n) or fp.get(n)
+            if v and DROP_PATH.search(v):
+                # The source faction's art lives in a dropped mod's PBO. The
+                # base game's side art stands in.
+                v = VANILLA_ART[n].get(side)
+            if v:
+                L.append('        %s = "%s";' % (n, v))
+        L += ["    };", "};"]
+        crlf(os.path.join(path, "CfgFactionClasses.hpp"), L)
+
+        # ---- CfgVehicles ----------------------------------------------
+        L = [HDR.rstrip("\n"),
+             "// FORWARD DECLARATIONS, NOT DEPENDENCIES. Every parent below",
+             "// belongs to somebody else's mod. Declaring it means a load order",
+             "// without that mod gets an inert class rather than a config that",
+             "// refuses to build - see requiredAddons in config.cpp.",
+             "",
+             "class CfgVehicles {"]
+        for c in roster:
+            L.append("    class %s;" % c)
+        L.append("")
+
+        for c in roster:
+            u = units[c]
+            pr = props.get(c, {})
+            gv = lambda n: pr.get(n, (None, None))[1]
+            man = R.is_man(gv("vehicleClass") or "", pr)
+
+            L += ["    class %s: %s {" % (new[c], c),
+                  "        scope = %d;" % u["scope"],
+                  "        scopeCurator = %s;" % (gv("scopeCurator") or "2"),
+                  "        author = QAUTHOR;",
+                  '        displayName = "%s";' % display(c, gv("displayName") or c, gv("editorSubcategory") or ""),
+                  # THE FACTION'S side, not the source class's: a west radar
+                  # in an east faction answers to the east - see _CLAMSHELL.
+                  "        side = %d;" % side,
+                  '        faction = "%s";' % newfac]
+            # vehicleClass and editorSubcategory are NOT re-emitted. The class
+            # inherits both from its parent, so writing them again is pure
+            # duplication - and it made check_plumbing flag 291 base-game
+            # categories it has no reason to know about. THE EXCEPTION: a man
+            # whose category collapses into Men or Men (Special Forces) - see
+            # SUBCAT_KEEP.
+            if man:
+                plan = subcat_of(c)
+                if plan in SUBCAT_WRITE:
+                    sub_, vcl_ = SUBCAT_WRITE[plan]
+                    L.append('        editorSubcategory = "%s";' % sub_)
+                    L.append('        vehicleClass = "%s";' % vcl_)
+                    moved[plan] += 1
+            if not man and gv("crew"):
+                # The crew class is the FACTION'S OWN if it fields one, so a
+                # jmfsb_US vehicle does not spawn with somebody else's men.
+                cr = gv("crew")
+                # THE NAVY CREWS THE BOATS - see BOAT_CREW.
+                bc = BOAT_CREW.get(newfac)
+                if bc and gv("vehicleClass") == "Ship":
+                    real_bc = ulow.get(bc.lower())
+                    if real_bc in new:
+                        cr = real_bc
+                if cr in new:
+                    L.append('        crew = "%s";' % new[cr])
+                elif is_dropped(cr, vanilla, newfac):
+                    # The source crewed it with a dropped mod's men - Aegis
+                    # put its own boat crew in the EF boats. This faction's
+                    # own man takes the seat - see pick_crew; failing that
+                    # the line is left out and the parent's crew stands.
+                    sub = pick_crew(cr, men)
+                    if sub:
+                        L.append('        crew = "%s";' % new[sub])
+                    recrewed.append((c, cr, sub))
+                else:
+                    # A crew from outside this roster - QAV's Knights come
+                    # with NATO's B_crew_F. This faction's own man if it has
+                    # one fit for the seat, the source's otherwise.
+                    if "uav_ai" in cr.lower() and u["side"] != side and cr[:2] in ("B_", "O_", "I_"):
+                        # AN AUTONOMOUS SYSTEM FROM ANOTHER SIDE - JK's Clam
+                        # Shell in an east faction - gets this side's UAV AI,
+                        # or the radar would answer to the west.
+                        cr = {0: "O_", 1: "B_", 2: "I_"}[side] + cr[2:]
+                        if cr.lower() not in ulow and cr.lower().endswith("_f"):
+                            cr = cr[:-2]
+                    sub = pick_crew(cr, men)
+                    L.append('        crew = "%s";' % (new[sub] if sub else cr))
+
+            # VEHICLE CAMO - see VEH_TEX. Written after the crew, before the
+            # kit, so the class reads: who it is, who drives it, what it wears.
+            vt = VEH_TEX.get(newfac, {}).get(c)
+            if vt and not man and not any(DROP_PATH.search(x) for x in vt.get("tex", [])):
+                if vt.get("tl"):
+                    # a paint the mod names (TextureSources) - RF's pickups
+                    L.append('        textureList[] = {"%s", 1};' % vt["tl"])
+                elif vt.get("notl"):
+                    L.append("        textureList[] = {};")
+                if vt.get("sel"):
+                    L.append("        hiddenSelections[] = {%s};" % ",".join('"%s"' % x for x in vt["sel"]))
+                if vt.get("tex"):
+                    L.append("        hiddenSelectionsTextures[] = {")
+                    for i, t in enumerate(vt["tex"]):
+                        L.append('            "%s"%s' % (t, "," if i < len(vt["tex"]) - 1 else ""))
+                    L.append("        };")
+
+            # WHO THE MEN ARE - see IDENTITY.
+            if man and newfac in IDENTITY:
+                L.append("        identityTypes[] = {%s};" % ",".join('"%s"' % x for x in IDENTITY[newfac]))
+
+            # KIT SUBSTITUTION - see KIT_SWAP. uniformClass and linkedItems
+            # are inherited and normally left unstated; a faction wearing
+            # somebody else's kit is exactly the case where they must be
+            # written out.
+            if kit:
+                uni = gv("uniformClass")
+                if uni:
+                    if uni.lower() in kit:
+                        L.append('        uniformClass = "%s";' % kit[uni.lower()])
+                        kitn[0] += 1
+                    elif uni not in KIT_KEEP:
+                        kit_unmapped[uni] = kit_unmapped.get(uni, 0) + 1
+                rawl = gv("linkedItems")
+                if rawl:
+                    outl, hitl = [], False
+                    for it in re.findall(r'"([^"]+)"', rawl):
+                        # FACEWEAR CANNOT BE A LINKED ITEM. The dump read the
+                        # unit's live loadout, and that array includes goggles -
+                        # but goggles are CfgGlasses, and a config linkedItems[]
+                        # entry is resolved in CfgWeapons. The engine then
+                        # fabricates an empty weapon per spawn and floods the
+                        # RPT: "creating weapon G_Balaclava_blk with
+                        # scope=private" plus forty No-entry lines each time.
+                        if re.match(r"^(?:[A-Za-z0-9]+_)?G_", it):
+                            hitl = True
+                            continue
+                        if it.lower() in kit:
+                            outl.append(kit[it.lower()])
+                            kitn[0] += 1
+                            hitl = True
+                        else:
+                            if it[:2] in ("V_", "H_") and it not in KIT_KEEP:
+                                kit_unmapped[it] = kit_unmapped.get(it, 0) + 1
+                            outl.append(it)
+                    if hitl:
+                        arrl = "{" + ",".join('"%s"' % x for x in outl) + "}"
+                        L.append("        linkedItems[] = %s;" % arrl)
+                        L.append("        respawnLinkedItems[] = %s;" % arrl)
+
+            # THE PACKS - see PACK_SWAP: the same loaded pack in the faction's skin.
+            bp0 = gv("backpack")
+            if man and second_bag and "_GL_" in c:
+                # THE GRENADIER CARRIES THE SQUAD'S SECOND DRONE - see SQUAD_DRONES
+                L.append('        backpack = "%s";' % second_bag)
+            elif man and bp0 and newfac in PACK_SWAP and bp0 in PACK_SWAP[newfac]:
+                L.append('        backpack = "%s";' % PACK_SWAP[newfac][bp0])
+
+            # RIFLE SUBSTITUTION - see RIFLE_SWAP.
+            rules = RIFLE_SWAP.get(newfac)
+            raww = gv("weapons")
+            wlist = re.findall(r'"([^"]+)"', raww) if raww else []
+            hitw = False
+            if rules and wlist:
+                outw = []
+                for wp in wlist:
+                    rep = None
+                    for test, new_w in rules:
+                        if rule_hit(test, wp, c):
+                            rep = new_w      # None: matched, and left alone
+                            break
+                    if rep:
+                        outw.append(rep)
+                        swapped_w[0] += 1
+                        hitw = True
+                    else:
+                        outw.append(wp)
+                wlist = outw
+            # SUPPRESSORS - see SUPPRESS_TIER. The preset is named for the
+            # weapon and written once per addon (presets -> CfgWeapons.hpp).
+            if man and tier >= SUPPRESS_TIER and WEAPONS_DB and wlist:
+                outw = []
+                for wp in wlist:
+                    real_w = WLOW.get(wp.lower())
+                    info = WEAPONS_DB.get(real_w) if real_w else None
+                    want = bool(info) and (info["type"] == 1 or (info["type"] == 2 and tier >= SUPPRESS_PISTOL_TIER))
+                    if want and not info["linked"]:
+                        can = pick_can(newfac, tier, info["compat"])
+                        if can:
+                            pre = "%s_%s_snds" % (newfac, real_w)
+                            presets[real_w] = (pre, can)
+                            outw.append(pre)
+                            suppressed[0] += 1
+                            hitw = True
+                            continue
+                        no_can[real_w] = no_can.get(real_w, 0) + 1
+                    outw.append(wp)
+                wlist = outw
+            if hitw:
+                arrw = "{" + ",".join('"%s"' % x for x in wlist) + "}"
+                L.append("        weapons[] = %s;" % arrw)
+                L.append("        respawnWeapons[] = %s;" % arrw)
+
+            # FA TIER AMMUNITION - this faction's tier, see TIER. Everything
+            # else this class needs - weapons, uniform, vest, linked items - is
+            # inherited and deliberately not restated. The magazine list is the
+            # exception, because swapping a round is the whole point of a tier.
+            raw = gv("magazines")
+            mrules = MAG_SWAP.get(newfac)
+            if raw and (tier >= 2 or mrules):
+                out, hit = [], False
+                for mag in re.findall(r'"([^"]+)"', raw):
+                    if mrules:
+                        new_m = mag_swap(mag, mrules, c)
+                        if new_m != mag:
+                            mag, hit = new_m, True      # see MAG_SWAP
+                    key = mag if mag in famap else mag_alias(mag, famap)
+                    if key in famap and tier >= 2:
+                        out.append(famap[key] + tier_sfx)
+                        swapped[0] += 1
+                        hit = True
+                    else:
+                        out.append(mag)
+                if hit:
+                    arr = "{" + ",".join('"%s"' % x for x in out) + "}"
+                    L.append("        magazines[] = %s;" % arr)
+                    L.append("        respawnMagazines[] = %s;" % arr)
+
+            L.append("    };")
+            total_u += 1
+
+        # Fielded by this faction, not by its source - see EXTRA_UNITS and
+        # emit_extras, which tools/apply_faction_extras.py shares.
+        if bag_lines:
+            L.append("    // ---- the squads' drone bags, assembling this faction's own drones - see SQUAD_DRONES ----")
+            L += bag_lines
+            for ln in bag_lines:
+                if ln.startswith("    class %s_" % newfac):
+                    extra_names.append(ln.split()[1].rstrip(":"))
+            L.append("")
+        ex_lines, ex_names = emit_extras(newfac, addon, side, new, men, vanilla)
+        L += ex_lines
+        extra_names += ex_names
+        total_u += len(ex_names)
+        if operator and operator not in ex_names:
+            operator = None      # the extra was refused (dropped bag); no squad gets him
+
+        L.append("};")
+        left = sorted(set(s for s in re.findall(r'"([A-Za-z0-9_]+)"', "\n".join(L))
+                          if class_origin(s, None) == "dropped"))
+        if left:
+            # A dropped mod's name in a kept class - a kit item, a crew, a
+            # texture the filters above did not reach. Written anyway, and
+            # said out loud, because the alternative is a class that quietly
+            # points into a PBO that is not there.
+            print("  !! %s: %d dropped-mod name(s) still written: %s"
+                  % (addon, len(left), ", ".join(left[:5])))
+        crlf(os.path.join(path, "CfgVehicles.hpp"), L)
+
+        # ---- CfgWeapons: the suppressed presets - see SUPPRESS_TIER --------
+        wpath = os.path.join(path, "CfgWeapons.hpp")
+        if presets:
+            W = ["// Generated by tools/gen_us_factions.py - re-run rather than hand-edit.",
+                 "// SUPPRESSED PRESETS - see SUPPRESS_TIER. Each is the weapon the source",
+                 "// issues with the suppressor its MuzzleSlot takes linked on; scope 1 and",
+                 "// baseWeapon keep the arsenal showing the plain weapon, as the base",
+                 "// game's own presets do. No script: the man's weapons[] names the preset.",
+                 "class CfgWeapons {"]
+            for w in sorted(presets):
+                W.append("    class %s;" % w)
+            W.append("")
+            for w in sorted(presets):
+                pre, can = presets[w]
+                W += ["    class %s: %s {" % (pre, w),
+                      "        scope = 1;",
+                      "        author = QAUTHOR;",
+                      '        baseWeapon = "%s";' % w,
+                      "        class LinkedItems {",
+                      "            class LinkedItemsMuzzle {",
+                      '                slot = "MuzzleSlot";',
+                      '                item = "%s";' % can,
+                      "            };",
+                      "        };",
+                      "    };"]
+            W.append("};")
+            crlf(wpath, W)
+        elif os.path.exists(wpath):
+            os.remove(wpath)
+        preset_names = [presets[w][0] for w in sorted(presets)]
+
+        # ---- CfgGroups -------------------------------------------------
+        sidecls = {0: "East", 1: "West", 2: "Indep", 3: "Civ"}.get(side, "West")
+        L = [HDR.rstrip("\n"),
+             "// EVERY MAN IS THIS FACTION'S OWN. A group that named the source",
+             "// faction's classes would field somebody else's units under our",
+             "// name; each vehicle below is the jmfsb_ class declared in",
+             "// CfgVehicles.hpp.",
+             "",
+             "class CfgGroups {",
+             "    class %s {" % sidecls,
+             "",
+             "        class %s {" % newfac,
+             '            name = "%s";' % disp,
+             ""]
+        gdropped = []
+        tree = collections.defaultdict(list)
+        for g in mine:
+            tree[groups[g]["cat"]].append(g)
+
+        def arm_squad(men_in, cat):
+            """THE DRONE OPERATOR JOINS EVERY SQUAD - see SQUAD_DRONES: a squad
+            is four or more men in an infantry, motorised or mechanised group
+            that has no drone man of its own yet. He takes the next slot of
+            the wedge the group already uses; the escorts (the east's
+            SwitchBlade Operator, the Syndikat's IED men) follow him."""
+            if not (operator and len(men_in) >= 4 and any(k in cat.lower() for k in SQUAD_CATS)):
+                return
+            if any(("UAV" in v or "Drone" in v or "UGV" in v) for v, _r, _p in men_in):
+                return
+            men_in.append((operator, "PRIVATE", wedge(len(men_in))))
+            squads_armed[0] += 1
+            esc = SQUAD_DRONES[newfac].get("escort") or []
+            for e_sfx in ([esc] if isinstance(esc, str) else esc):
+                esc_cls = "%s_%s" % (newfac, e_sfx)
+                if esc_cls in extra_names and not any(v == esc_cls for v, _r, _p in men_in):
+                    men_in.append((esc_cls, "PRIVATE", wedge(len(men_in))))
+
+        # GROUPS A SOURCE NEVER HAD - see EXTRA_GROUPS. Resolved here so a
+        # missing member is reported with the faction, and filed under their
+        # category beside the dump's groups.
+        xgroups = collections.defaultdict(list)
+        for gsfx, gname_x, gcat, members in EXTRA_GROUPS.get(newfac, []):
+            resolved, missing = [], []
+            for m in members:
+                real = ulow.get(m.lower())
+                cls_m = new.get(real) if real else None
+                if not cls_m and m in extra_names:
+                    cls_m = m
+                if cls_m:
+                    pr_m = props.get(real, {}) if real else {}
+                    is_man_m = R.is_man(pr_m.get("vehicleClass", (None, ""))[1] or "", pr_m) if real else True
+                    resolved.append((cls_m, is_man_m))
+                else:
+                    missing.append(m)
+            if missing:
+                print("  -- %s: extra group %s not written - not fielded: %s" % (addon, gsfx, ", ".join(missing)))
+                continue
+            xgroups[gcat].append((gsfx, gname_x, resolved))
+
+        for cat in sorted(set(tree) | set(xgroups)):
+            L += ["            class %s {" % cat,
+                  '                name = "%s";' % cat,
+                  ""]
+            for g in sorted(tree[cat], key=lambda x: groups[x]["cls"]):
+                gp = gprops.get(g, {})
+                gname = groups[g].get("name") or gp.get("name", "")
+                gcls = "%s_%s" % (newfac, groups[g]["cls"])
+                # WHO IS STILL IN IT - decided before a line of the group is
+                # written, or a dropped group leaves an unclosed class behind.
+                men_in, lost = [], []
+                for veh, rank, pos in R.gmen_values(gmen, g):
+                    real = ulow.get(veh.lower())
+                    real = gsub.get(real, real)
+                    if real and real in new:
+                        men_in.append((real, rank, pos))
+                    else:
+                        dropped[0] += 1
+                        lost.append(real or veh)
+                # A MECHANISED SQUAD THAT LOST ITS APC IS A RIFLE SQUAD UNDER
+                # THE WRONG NAME, in the wrong category - which is what ALiVE
+                # picks by. A group that lost a vehicle, or most of its men,
+                # is not written; one short a man is, and is counted above.
+                # A lost class the dump does not know is taken for a vehicle.
+                def lost_vehicle(x):
+                    pr = props.get(x)
+                    if not pr:
+                        return True
+                    return not R.is_man(pr.get("vehicleClass", (None, ""))[1] or "", pr)
+                if not men_in or any(lost_vehicle(x) for x in lost) or len(lost) * 2 > len(lost) + len(men_in):
+                    if lost:
+                        gdropped.append((groups[g]["cls"], lost))
+                    continue
+                arm_squad(men_in, cat)
+                L.append("                class %s {" % gcls)
+                if gname:
+                    L.append('                    name = "%s";' % gname)
+                L += ["                    side = %d;" % side,
+                      '                    faction = "%s";' % newfac]
+                if gp.get("icon"):
+                    L.append('                    icon = "%s";' % gp["icon"])
+                if gp.get("rarityGroup"):
+                    L.append("                    rarityGroup = %s;" % gp["rarityGroup"])
+                for i, (veh, rank, pos) in enumerate(men_in):
+                    L += ["", "                    class Unit%d {" % i,
+                          "                        side = %d;" % side,
+                          '                        vehicle = "%s";' % new.get(veh, veh)]
+                    if rank:
+                        L.append('                        rank = "%s";' % rank)
+                    L.append("                        position[] = %s;"
+                             % (R.cfg_arr(pos) or "{0,0,0}"))
+                    L.append("                    };")
+                L += ["                };", ""]
+                total_g += 1
+            for gsfx, gname_x, resolved in xgroups.get(cat, []):
+                # the vehicle or the leader first at the point of the wedge; a
+                # sergeant leads a foot group, the first man behind a vehicle
+                men_in = []
+                lead_at = 1 if (resolved and not resolved[0][1]) else 0
+                for i, (cls_m, _is_man) in enumerate(resolved):
+                    men_in.append((cls_m, "SERGEANT" if i == lead_at else "PRIVATE", wedge(i)))
+                arm_squad(men_in, cat)
+                L.append("                class %s_%s {" % (newfac, gsfx))
+                L += ['                    name = "%s";' % gname_x,
+                      "                    side = %d;" % side,
+                      '                    faction = "%s";' % newfac]
+                for i, (veh, rank, pos) in enumerate(men_in):
+                    L += ["", "                    class Unit%d {" % i,
+                          "                        side = %d;" % side,
+                          '                        vehicle = "%s";' % veh,
+                          '                        rank = "%s";' % rank,
+                          "                        position[] = %s;" % (R.cfg_arr(pos) or "{0,0,0}"),
+                          "                    };"]
+                L += ["                };", ""]
+                total_g += 1
+            L += ["            };", ""]
+        L += ["        };", "    };", "};"]
+        crlf(os.path.join(path, "CfgGroups.hpp"), L)
+
+        # ---- config.cpp -------------------------------------------------
+        L = ['#include "script_component.hpp"',
+             "",
+             "class CfgPatches {",
+             "    class ADDON {",
+             "        name = COMPONENT_NAME;",
+             "        units[] = {"]
+        allunits = [new[c] for c in roster] + extra_names
+        L += ["            \"%s\"%s" % (u_, "," if i < len(allunits) - 1 else "")
+              for i, u_ in enumerate(allunits)]
+        L += ["        };",
+              "        weapons[] = {%s};" % ",".join('"%s"' % x for x in preset_names),
+              "        requiredVersion = REQUIRED_VERSION;",
+              "        // jmfsb_fa_tiers IS NOT REQUIRED, DELIBERATELY. The tier",
+              "        // magazines are named as STRINGS in magazines[]; nothing here",
+              "        // inherits from them, so there is no load order to enforce.",
+              "        // Requiring it was fatal: fa_tiers requires fa_rhs, fa_sps,",
+              "        // fa_e22raf and fa_jca, which require RHS, SPS, E22 and JCA -",
+              "        // and with skipWhenMissingDependencies any one of those absent",
+              "        // dropped this whole faction out of 3DEN and Zeus in silence.",
+              "        //",
+              "        // NOTHING FROM THE SOURCE FACTION'S MOD IS REQUIRED EITHER.",
+              "        // Every parent class is forward-declared in CfgVehicles.hpp, so a",
+              "        // load order without that mod gets inert classes instead of a",
+              "        // broken config. skipWhenMissingDependencies does the rest.",
+              '        requiredAddons[] = {"jmfsb_main"};',
+              "        skipWhenMissingDependencies = 1;",
+              "        author = QAUTHOR;",
+              "        VERSION_CONFIG;",
+              "    };",
+              "};",
+              "",
+              '#include "CfgFactionClasses.hpp"']
+        if preset_names:
+            L.append('#include "CfgWeapons.hpp"')
+        L += ['#include "CfgVehicles.hpp"',
+              '#include "CfgGroups.hpp"']
+        crlf(os.path.join(path, "config.cpp"), L)
+
+        if squads_armed[0]:
+            print("       %d squad(s) got a Drone Operator" % squads_armed[0])
+            squads_armed[0] = 0
+        print("  %-20s %-18s %4d unit(s)  %3d group(s)"
+              % (addon, newfac, len(roster), len(mine)))
+        if shed:
+            print("       %d class(es) dropped with %s: %s%s"
+                  % (len(shed), "/".join(DROP_MODS), ", ".join(shed[:6]),
+                     " ..." if len(shed) > 6 else ""))
+        for veh, cr, sub in recrewed:
+            print("       %s: crew %s went with its mod - %s"
+                  % (veh, cr, ("now " + new[sub]) if sub else "parent's crew stands"))
+        for gcls, lost in gdropped:
+            print("       group %s not written - lost %s" % (gcls, ", ".join(lost)))
+
+    print("wrote  %d addon(s), %d unit class(es), %d group(s)"
+          % (len(TARGETS), total_u, total_g))
+    if kitn[0]:
+        print("       %d kit item(s) substituted" % kitn[0])
+    if kit_unmapped:
+        # NOT SILENT. An item with no equivalent stays as it was, and which
+        # ones those are is the difference between a deliberate gap and a miss.
+        print("       %d item(s) had no mapping - left as issued:" % len(kit_unmapped))
+        for k in sorted(kit_unmapped, key=lambda x: -kit_unmapped[x])[:8]:
+            print("         %-42s x%d" % (k, kit_unmapped[k]))
+    if swapped_w[0]:
+        print("       %d rifle(s) substituted" % swapped_w[0])
+    if suppressed[0]:
+        print("       %d weapon slot(s) suppressed - see SUPPRESS_TIER" % suppressed[0])
+    if moved["sf"] or moved["men"]:
+        print("       editor categories collapsed: %d man/men -> Men, %d -> Men (Special Forces)" % (moved["men"], moved["sf"]))
+    if no_can:
+        # NOT SILENT: a peer faction's weapon with a muzzle slot nothing in
+        # the load order suppresses (or nothing kept - see DROP_MODS).
+        print("       %d weapon(s) at a peer tier have NO suppressor to fit - left as issued:" % len(no_can))
+        for k in sorted(no_can, key=lambda x: -no_can[x])[:10]:
+            print("         %-46s x%d" % (k, no_can[k]))
+    print("       %d magazine slot(s) swapped to FA tier rounds, via %d mapping(s)"
+          % (swapped[0], len(famap)))
+    if dropped_no_t3:
+        # NOT SILENT. These have an FA round but fa_tiers built no tier for it,
+        # so the unit keeps its vanilla magazine.
+        print("       %d magazine(s) have an FA round with no tier built - left vanilla:"
+              % len(dropped_no_t3))
+        for v in dropped_no_t3[:6]:
+            print("         %s" % v)
+    if dropped[0]:
+        # SAID OUT LOUD - a squad quietly one man short is worse than a note.
+        print("       %d group slot(s) dropped, the vehicle is not in the faction"
+              % dropped[0])
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

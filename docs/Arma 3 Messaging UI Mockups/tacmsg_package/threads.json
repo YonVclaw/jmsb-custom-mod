@@ -1,0 +1,454 @@
+{
+  "$handoff": {
+    "title": "GFA ATAK — Threaded Messaging",
+    "version": "0.2",
+    "date": "2026-08-12",
+    "prefix": "gfa_atak",
+    "platform": "Arma 3",
+    "requires": ["CBA_A3"],
+    "scope": "The threaded messaging engine ONLY: store, transport, template schema, channels, tags, subscriptions. Tasking rides on this (a task is a thread) but its templates and transition rules are a separate handoff.",
+    "outOfScope": [
+      "App framework / shell / device model / render surfaces",
+      "BFT — already exists as the user's own working scripts",
+      "Notification presentation — the mission framework already has a notification system; call the seam only",
+      "Video feeds — vanilla Arma 3 custom info panels",
+      "EW link-state source — comes from the user's existing ew-zones addon"
+    ],
+    "supersedes": [
+      "cTab / cTAB Advanced as a dependency — dropped entirely; no compat layer, no ctab_fnc_registerMessageTemplate",
+      "Any message 'priority' enum — replaced by tags",
+      "Any To/box addressing model — replaced by post-to-channel + tags"
+    ],
+    "readingOrder": ["principles", "enums", "objects", "channels", "tags", "subscriptions", "templateSchema", "api", "storage", "linkState", "openQuestions"]
+  },
+
+  "principles": [
+    "Server is the single authority. Every message body exists once, on the server.",
+    "Clients hold a disposable cache. If it is lost or stale, refetch. Nothing on a client is authoritative.",
+    "Never publicVariable the store. Never store messages on objects. Both replicate payloads to every machine for the whole mission.",
+    "A thread is the unit of everything — a message, a task, a conversation, an archive entry.",
+    "Templates are data, never hardcoded in the UI layer.",
+    "Sort messages by seq, never by time. Two replies in one frame otherwise order arbitrarily.",
+    "Presentation is not this system's job. Notifications go through one seam.",
+    "Build the transport first, with no UI. If that is not solid, nothing above it will be."
+  ],
+
+  "enums": {
+    "fieldType": ["text", "textarea", "number", "bool", "choice", "grid", "callsign", "freq", "time"],
+    "pickerSource": ["mapMarker", "mapClick", "ownPos", "callsignList", "manual"],
+    "autoFillSource": ["ownGrid", "ownCallsign", "activeSwRadio", "activeLrRadio", "missionTime", "none"],
+    "templateKind": ["root", "reply", "both"],
+    "alertTag": ["FLASH", "IMMEDIATE", "ROUTINE"],
+    "senderMustBe": ["any", "issuer", "assignee", "channelMember"],
+    "threadStatus": ["OPEN", "ISSUED", "RECEIPT", "ACCEPTED", "DECLINED", "IN_PROGRESS", "REPORTED", "ABORTED", "CLOSED"],
+    "subLevel": ["ALERT", "BADGE", "MUTE"],
+    "retention": ["ephemeral", "archive"],
+    "linkState": ["ONLINE", "DEGRADED", "DENIED"]
+  },
+
+  "objects": {
+    "message": {
+      "immutable": true,
+      "id": "string, server-assigned",
+      "seq": "int, per-thread ordering counter",
+      "threadId": "string",
+      "parentId": "string|null",
+      "fromUid": "string — taken from the caller server-side, NEVER from the client payload",
+      "fromCallsign": "string, snapshot at send",
+      "templateId": "string",
+      "payload": "map fieldKey -> value",
+      "sentTime": "number, serverTime",
+      "gameTime": "array, date at send",
+      "tags": "array of string — alert tags and audience tags combined",
+      "transition": "enum threadStatus|null — state this message caused",
+      "reportable": "bool — forwarded to ALiVE C2ISTAR",
+      "readBy": "array of uid"
+    },
+
+    "thread": {
+      "id": "string",
+      "channelId": "string — the channel it was posted in",
+      "subject": "string — derived from root template subjectFormat, never typed by a user",
+      "rootTemplateId": "string",
+      "status": "enum threadStatus",
+      "issuerUid": "string",
+      "claimedBy": "string|null",
+      "participants": "array of uid — grows when audience tags pull people in",
+      "followers": "array of uid — explicit per-thread follow, overrides channel subscription",
+      "tags": "array of string",
+      "anchor": {
+        "pos": "array [x,y,z] — authoritative, snapshotted at send",
+        "marker": "string|null — soft reference only; markers get moved and deleted",
+        "label": "string snapshot of marker text"
+      },
+      "parentThreadId": "string|null",
+      "lastActivity": "number, serverTime",
+      "closed": "bool",
+      "messages": "array of messageId in seq order"
+    },
+
+    "channel": {
+      "id": "string — C2 | C2.reports | FIRES | FIRES.cas | SQUAD:<groupId>",
+      "parent": "string|null — one level of nesting only",
+      "displayName": "string",
+      "members": {
+        "roles": "array of role variable names, e.g. isJFO",
+        "uids": "array of uid",
+        "group": "string|null — engine group id, for squad channels"
+      },
+      "derived": "bool — squad channels are created on demand from the engine group, not declared",
+      "retention": "enum retention",
+      "forwardToAlive": "bool",
+      "threads": "array of threadId"
+    },
+
+    "indexEntry": {
+      "description": "What a client receives on join. No message bodies.",
+      "threadId": "string",
+      "channelId": "string",
+      "subject": "string",
+      "status": "enum threadStatus",
+      "tags": "array of string",
+      "claimedBy": "string|null",
+      "lastActivity": "number",
+      "unread": "int"
+    }
+  },
+
+  "channels": {
+    "nesting": "One level. A sub-channel inherits its parent's retention and forwardToAlive unless overridden.",
+    "declared": [
+      { "id": "C2", "displayName": "C2", "members": { "roles": ["isCO", "isRTO", "isSL"] }, "retention": "archive" },
+      { "id": "C2.reports", "parent": "C2", "displayName": "reports", "members": { "roles": ["isCO", "isRTO", "isSL"] }, "retention": "archive" },
+      { "id": "FIRES", "displayName": "FIRES", "members": { "roles": ["isJFO", "isFSO"] }, "retention": "archive" },
+      { "id": "FIRES.cas", "parent": "FIRES", "displayName": "cas", "members": { "roles": ["isJFO", "isFSO", "isPilot"] }, "retention": "archive" },
+      { "id": "FIRES.arty", "parent": "FIRES", "displayName": "arty", "members": { "roles": ["isJFO", "isFSO", "isGunLine"] }, "retention": "archive" },
+      { "id": "FIRES.trans", "parent": "FIRES", "displayName": "trans", "members": { "roles": ["isJFO", "isFSO", "isPilot"] }, "retention": "archive" },
+      { "id": "MEDICAL", "displayName": "MEDICAL", "members": { "roles": ["isMedic"] }, "retention": "archive" },
+      { "id": "MEDICAL.mist", "parent": "MEDICAL", "displayName": "mist", "members": { "roles": ["isMedic"] }, "retention": "archive" },
+      { "id": "MEDICAL.medevac", "parent": "MEDICAL", "displayName": "medevac", "members": { "roles": ["isMedic", "isPilot"] }, "retention": "archive" }
+    ],
+    "derivedSquad": {
+      "id": "SQUAD:<groupId>",
+      "membership": "the engine group, resolved at delivery time — NOT cached on the channel",
+      "autoJoin": true,
+      "configurable": false,
+      "subLevel": "ALERT, locked",
+      "note": "Membership must resolve at delivery so mid-mission group reassignment works. Old-squad history stays readable in the archive but stops notifying."
+    },
+    "membershipNote": "Membership is a union of role flags, explicit uids, and group. Overlaps are intentional (rotary crews sit in FIRES.trans and MEDICAL.medevac) — dedupe recipients before notifying."
+  },
+
+  "tags": {
+    "description": "Tags do two jobs. Both live in the same array; the resolver treats them differently.",
+    "alert": {
+      "values": ["FLASH", "IMMEDIATE", "ROUTINE"],
+      "source": "derived from the template and the channel — NEVER self-declared by the sender",
+      "reason": "If senders can declare FLASH, everything is FLASH by mission three.",
+      "behaviour": {
+        "FLASH": "forces the surface open, sound, ignores mute",
+        "IMMEDIATE": "notification + sound, respects mute",
+        "ROUTINE": "badge only, no sound"
+      }
+    },
+    "audience": {
+      "values": "channel ids, squad names, role names, or a uid",
+      "effect": [
+        "adds those players to thread.participants — this IS a permission grant, they can reply",
+        "notifies them regardless of channel subscription",
+        "thread stays in its posted channel; it is NOT duplicated"
+      ],
+      "example": "Post a TASKING in C2 tagged NOMAD. Thread lives in C2 and is visible to C2 members. Nomad's members are added as participants, notified, and can WILCO — and that WILCO is visible to C2."
+    },
+    "resolution": {
+      "level": "max(alert tag levels on the message)",
+      "escalation": "+1 level if the recipient is an addressee, a claimant, or matched by an audience tag",
+      "muteOverride": "FLASH and audience-tag matches ignore mute; nothing else does"
+    }
+  },
+
+  "subscriptions": {
+    "surface": "a settings page, one row per channel the player is a member of",
+    "levels": ["ALERT", "BADGE", "MUTE"],
+    "rules": [
+      "Only channels the player is a member of appear. Subscription is not access.",
+      "The squad row is shown but locked to ALERT.",
+      "Defaults: own squad and role channels ALERT, parent channels BADGE, everything else MUTE — sensible enough that nobody has to visit the page.",
+      "Per-thread follow/unfollow lives in the thread view, not settings, and overrides the channel level either way."
+    ],
+    "storage": {
+      "client": "profileNamespace — a personal preference that should persist across missions",
+      "server": "client sends prefs on join; server caches for the session because notification filtering happens at delivery"
+    }
+  },
+
+  "templateSchema": {
+    "origin": "Superset of the PLANOPS Maps export format (maps-beta.plan-ops.fr). The lines[]/fields[] nesting maps onto doctrinal line numbering — keep it.",
+    "conversion": "The user's existing templates are reference data, not code. Read field layouts out of them and re-express in this schema. One mechanical pass.",
+    "gapsInSourceFormat": [
+      "No field IDs — generate keys from position (L3.A), never from labels, which get edited",
+      "No required flags — add them; a MEDEVAC with no grid is useless",
+      "No exclusive-choice grouping — checkbox sets like security N/P/E/X are single-choice in doctrine",
+      "No autofill — this is the entire adoption story, see autoFill below",
+      "Lines with empty fields[] are section headers; the renderer must not choke on them"
+    ],
+    "template": {
+      "id": "string — stable key; do NOT use the PLANOPS uid",
+      "title": "string",
+      "type": "string",
+      "countryCode": "string",
+      "kind": "enum templateKind",
+      "tags": "array of string — alert tags this template always carries",
+      "reportable": "bool",
+      "subjectFormat": "string with {fieldKey} substitutions, e.g. 'MEDEVAC · {L1} · {L3.A}U/{L3.B}P'",
+      "replyableWith": "array of templateId — drives which reply buttons the thread shows",
+      "transitionsTo": "enum threadStatus|null",
+      "allowedFrom": "array of enum threadStatus",
+      "senderMustBe": "enum senderMustBe",
+      "lines": "array of line"
+    },
+    "line": { "line": "string", "label": "string", "fields": "array of field" },
+    "field": {
+      "key": "string — generated from position, stable across label edits",
+      "label": "string",
+      "type": "enum fieldType",
+      "required": "bool",
+      "source": "enum pickerSource|null — grid fields",
+      "allowManual": "bool, default TRUE — never leave a grid field dropdown-only; the failure case is a target nobody has marked yet",
+      "autoFill": "enum autoFillSource",
+      "exclusiveGroup": "string|null",
+      "choices": "array of string",
+      "min": "number|null",
+      "max": "number|null"
+    },
+    "markerPicker": {
+      "why": "Typing grids by hand is where these systems lose people.",
+      "build": "on composer open, not per frame",
+      "filters": [
+        "exclude by marker-name prefix — a mission setting; the user's own BFT prefix and ALiVE's go in it once",
+        "max distance from sender",
+        "optional: player-drawn only (engine _USER_DEFINED naming)"
+      ],
+      "label": "markerText if non-empty, else marker name; plus grid and range/bearing from sender",
+      "sort": "distance ascending — this makes the dropdown a de-facto nearest-contacts list",
+      "payload": "store the RESOLVED position plus a label snapshot. Marker name is a soft reference only. A message is a record of what was reported at the time and must not change when a marker moves.",
+      "reverse": "also offer create-marker-from-received-field, so an inbound report can be dropped on the map in one click"
+    }
+  },
+
+  "templateExamples": [
+    {
+      "id": "MEDEVAC",
+      "title": "MEDEVAC",
+      "type": "MedicalEvacuation",
+      "countryCode": "NATO",
+      "kind": "root",
+      "tags": ["FLASH"],
+      "reportable": false,
+      "subjectFormat": "MEDEVAC · {L1} · {L3.A}U/{L3.B}P",
+      "replyableWith": ["ROGER", "WILCO", "CANTCO", "COMPLETE", "FREETEXT"],
+      "transitionsTo": "ISSUED",
+      "allowedFrom": [],
+      "senderMustBe": "any",
+      "lines": [
+        { "line": "Header", "label": "MEDEVAC", "fields": [] },
+        { "line": "Line 1", "label": "LOCATION", "fields": [
+          { "key": "L1", "label": "Grid of pickup zone", "type": "grid", "required": true, "source": "mapMarker", "allowManual": true, "autoFill": "ownGrid" }
+        ]},
+        { "line": "Line 2", "label": "CALL SIGN & FREQ", "fields": [
+          { "key": "L2.A", "label": "Call sign", "type": "callsign", "required": true, "autoFill": "ownCallsign" },
+          { "key": "L2.B", "label": "Frequency", "type": "freq", "required": true, "autoFill": "activeSwRadio" }
+        ]},
+        { "line": "Line 3", "label": "NUMBER OF PATIENTS / PRECEDENCE", "fields": [
+          { "key": "L3.A", "label": "URGENT — hospital under 90 min", "type": "number", "min": 0, "max": 99 },
+          { "key": "L3.B", "label": "PRIORITY — hospital under 4 hours", "type": "number", "min": 0, "max": 99 },
+          { "key": "L3.C", "label": "ROUTINE — hospital within 24 hours", "type": "number", "min": 0, "max": 99 }
+        ]},
+        { "line": "Line 6", "label": "SECURITY AT PICKUP ZONE", "fields": [
+          { "key": "L6.N", "label": "No enemy", "type": "bool", "required": true, "exclusiveGroup": "sec" },
+          { "key": "L6.P", "label": "Possible enemy", "type": "bool", "exclusiveGroup": "sec" },
+          { "key": "L6.E", "label": "Enemy in area", "type": "bool", "exclusiveGroup": "sec" },
+          { "key": "L6.X", "label": "Hot PZ — armed escort required", "type": "bool", "exclusiveGroup": "sec" }
+        ]}
+      ]
+    },
+    {
+      "id": "WILCO",
+      "title": "WILCO",
+      "kind": "reply",
+      "tags": ["ROUTINE"],
+      "transitionsTo": "ACCEPTED",
+      "allowedFrom": ["ISSUED", "RECEIPT"],
+      "senderMustBe": "assignee",
+      "lines": [],
+      "note": "Zero fields. Sendable from a keybind without opening any UI."
+    },
+    {
+      "id": "CANTCO",
+      "title": "CANTCO",
+      "kind": "reply",
+      "tags": ["IMMEDIATE"],
+      "transitionsTo": "DECLINED",
+      "allowedFrom": ["ISSUED", "RECEIPT", "ACCEPTED", "IN_PROGRESS"],
+      "senderMustBe": "assignee",
+      "lines": [
+        { "line": "Line 1", "label": "REASON", "fields": [
+          { "key": "L1", "label": "Reason unable to comply", "type": "textarea", "required": true }
+        ]}
+      ],
+      "note": "Reason is required. Declining silently is how tasks get lost."
+    },
+    {
+      "id": "FREETEXT",
+      "title": "Message",
+      "kind": "both",
+      "tags": ["ROUTINE"],
+      "transitionsTo": null,
+      "allowedFrom": [],
+      "senderMustBe": "channelMember",
+      "lines": [
+        { "line": "Line 1", "label": "MESSAGE", "fields": [
+          { "key": "L1", "label": "Message", "type": "textarea", "required": true }
+        ]}
+      ],
+      "note": "Build this one first. It is most of the real traffic and it unblocks the transport spike."
+    }
+  ],
+
+  "threadSet": {
+    "note": "Minimum viable set. Everything else is added when someone asks.",
+    "roots": ["FREETEXT", "SPOTREP", "MEDEVAC", "CAS9LINE", "CFF", "TIC", "TASKING"],
+    "replies": ["ROGER", "WILCO", "CANTCO", "BDA", "COMPLETE", "FREETEXT"],
+    "volume": "SPOTREP and FREETEXT will be ~70% of traffic. Make those fast; the rare ones can be clunky."
+  },
+
+  "api": {
+    "cfgRemoteExec": {
+      "note": "Declare these or messaging silently fails on a locked-down server.",
+      "mode": 2,
+      "functions": {
+        "gfa_atak_fnc_srvSubmit": { "allowedTargets": 2 },
+        "gfa_atak_fnc_srvRequestIndex": { "allowedTargets": 2 },
+        "gfa_atak_fnc_srvRequestThread": { "allowedTargets": 2 },
+        "gfa_atak_fnc_srvMarkRead": { "allowedTargets": 2 },
+        "gfa_atak_fnc_srvClaim": { "allowedTargets": 2 },
+        "gfa_atak_fnc_srvSetSubs": { "allowedTargets": 2 },
+        "gfa_atak_fnc_cltReceive": { "allowedTargets": 1 },
+        "gfa_atak_fnc_cltIndex": { "allowedTargets": 1 }
+      }
+    },
+    "srvSubmit": {
+      "runsOn": "server",
+      "params": ["draftNonce", "templateId", "payload", "channelId", "tags", "threadId|null", "parentId|null"],
+      "validates": [
+        "sender is a member of channelId",
+        "sender is a thread participant when threadId is set",
+        "template.allowedFrom contains thread.status",
+        "template.senderMustBe satisfied",
+        "all required fields present",
+        "sender linkState is not DENIED",
+        "draftNonce not already seen (dedupes double-click)"
+      ],
+      "effects": [
+        "assign id, seq, sentTime; fromUid from the caller, not the payload",
+        "create thread on root, else append",
+        "apply template.transitionsTo to thread.status",
+        "resolve audience tags to uids; merge into thread.participants",
+        "index thread into channelId",
+        "push to online recipients; forward to ALiVE if reportable and channel.forwardToAlive"
+      ]
+    },
+    "srvRequestIndex": { "params": ["uid"], "returns": "array of indexEntry — index ONLY, no bodies. Keeps JIP cost flat regardless of traffic volume." },
+    "srvRequestThread": { "params": ["uid", "threadId"], "returns": "thread with full messages, membership-checked" },
+    "srvMarkRead": { "params": ["uid", "threadId", "messageIds"], "effects": ["update readBy — do NOT broadcast read receipts"] },
+    "srvClaim": { "params": ["uid", "threadId"], "effects": ["set claimedBy if unclaimed; post a system message into the thread"], "why": "Two pilots launching for the same MEDEVAC is the failure this prevents." },
+    "srvSweep": { "schedule": "60s", "effects": ["idle-close threads", "drop ephemeral threads past retention", "never touch archive channels"] },
+    "cltReceive": { "params": ["message", "indexEntry"], "effects": ["update cache", "raise gfa_msgReceived", "resolve alert level and call the notify seam"] },
+    "notifySeam": {
+      "name": "GFA_fnc_notify",
+      "params": ["kind", "title", "body", "level", "threadId", "channelId"],
+      "rule": "Core NEVER calls the mission's notification API directly. One file to change if that system changes.",
+      "ownedByThisSystem": ["mute and subscription filtering", "recipient dedupe", "rate limiting"],
+      "note": "A TIC with four replies in five seconds needs throttling, and collapsing to '3 new in FIRES' is a messaging decision, not a display one."
+    },
+    "events": {
+      "gfa_msgReceived": ["message", "indexEntry"],
+      "gfa_threadUpdated": ["threadId", "status"],
+      "gfa_indexRefreshed": [],
+      "gfa_linkStateChanged": ["oldState", "newState"]
+    }
+  },
+
+  "storage": {
+    "runtime": {
+      "where": "server missionNamespace",
+      "vars": ["GFA_threads", "GFA_channels", "GFA_index", "GFA_subs", "GFA_ids"],
+      "rules": [
+        "never publicVariable",
+        "never store on objects or the device item",
+        "convert HashMaps to arrays before crossing the network and rebuild with createHashMapFromArray — HashMap remoteExec serialization is unverified and not worth finding out mid-op",
+        "keep the store on the server proper, not a headless client — HCs get restarted"
+      ]
+    },
+    "client": {
+      "where": "client missionNamespace",
+      "holds": ["index", "bodies of opened threads", "in-progress draft"],
+      "authoritative": false,
+      "recovery": "refetch"
+    },
+    "persistence": {
+      "where": "server profileNamespace",
+      "var": "GFA_archive",
+      "scope": "channels with retention=archive only; personal/ephemeral threads are not persisted",
+      "when": ["timer", "MPEnded"],
+      "format": "nested arrays only — no HashMaps in the namespace",
+      "caveats": [
+        "tied to the host machine's .vars.Arma3Profile; does not follow a host change unless the file is copied",
+        "no query layer — the whole archive loads into memory",
+        "if it outgrows this: iniDBI2 (archives become readable out-of-game for AAR) or ALiVE persistence"
+      ],
+      "why": "An archive that dies at mission end is not an archive. This is in scope for v1 because named channels are archives."
+    }
+  },
+
+  "linkState": {
+    "source": "the user's existing ew-zones addon; evaluated SERVER-side, not client — a client flag is trivially wrong when someone walks out of a zone mid-send",
+    "principle": "Degrade, do not disable. A frozen map with a timestamp is better play than a blank screen.",
+    "ONLINE": { "sync": "5s", "compose": true, "tracks": "live" },
+    "DEGRADED": { "sync": "60s", "compose": true, "tracks": "aged, timestamped" },
+    "DENIED": { "sync": "none", "compose": "queued locally, flushed on restore", "tracks": "frozen, greyed, LAST SYNC shown" },
+    "lpiException": "Low-bandwidth traffic (text and templates) still passes in DENIED on LPI-capable radios; feeds and BFT do not. Mirrors the existing voice-jamming exemption."
+  },
+
+  "failureCases": [
+    "recipient disconnects mid-send — server stores it, delivers on reconnect by uid",
+    "double submit — disable the send control client-side AND dedupe on draftNonce server-side",
+    "sender dies or goes unconscious while composing — block send; a dead man filing his own MEDEVAC is a strange artifact",
+    "thread with zero online participants — still valid, just idle; do not garbage-collect on participant count",
+    "marker referenced by a thread gets deleted — anchor.pos still holds; never re-resolve from marker name",
+    "player changes engine group mid-mission — squad channel membership must resolve at delivery time"
+  ],
+
+  "buildOrder": [
+    { "step": 1, "what": "Transport only. Store, srvSubmit, cltReceive, FREETEXT template hardcoded, hint the output. No UI at all.", "why": "Half a day, and it de-risks the whole stack. Building the form renderer first is how you end up with a beautiful composer that cannot send anything." },
+    { "step": 2, "what": "Index + thread view UI. Still FREETEXT only.", "why": "Threading becomes visible and testable." },
+    { "step": 3, "what": "Template engine — schema loader and runtime form renderer. Convert MEDEVAC first, then CAS 9-line.", "why": "If the schema survives a second real template unchanged, it is probably right." },
+    { "step": 4, "what": "Pickers and autofill — marker dropdown, map click, callsign, TFAR frequency.", "why": "This is the adoption story, not polish." },
+    { "step": 5, "what": "Channels, subscriptions settings page, claim, archive persistence." },
+    { "step": 6, "what": "Tags, alert resolution, notify seam, rate limiting." },
+    { "step": 7, "what": "ALiVE C2ISTAR ingest, thread map anchors, EW link-state degradation." }
+  ],
+
+  "openQuestions": [
+    { "q": "Reply defaults to the channel or to the sender?", "recommendation": "channel, with an explicit reply-to-sender option. Defaulting to sender leaves archives full of half-conversations, which is the worst outcome for an AAR record." },
+    { "q": "Do HashMaps survive remoteExec serialization intact?", "status": "unverified — this spec assumes not and converts to arrays" },
+    { "q": "Exact TFAR accessor for the active radio's frequency", "status": "TFAR_fnc_activeSwRadio / activeLrRadio are confirmed; the settings getter for frequency is not. Check the TFAR wiki rather than guessing." },
+    { "q": "Does a CustomDisplayComponent attach to an infantry unit at all?", "status": "unverified, ~20 min editor test. Gates whether an info-panel surface can carry an unread badge. The dialog path works regardless, so it does not block this handoff." }
+  ],
+
+  "relatedHandoffsNeeded": [
+    "Tasking — X-line tasking templates and their transition rules (rides on this system; a task IS a thread)",
+    "App framework and devices — shell, app contract hooks, device capability table, surface gating, widget slots, core map draw dispatcher",
+    "DESIGN_ATAK_SUITE.md revision — the existing doc still names cTAB Advanced as the base dependency and routes templates through ctab_fnc_registerMessageTemplate. It contradicts this handoff and must be superseded."
+  ]
+}

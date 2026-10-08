@@ -1,0 +1,23 @@
+{
+    "sqf.enableCBA": true,
+    "sqf.enableACE3": true,
+    "files.associations": {
+        "*.hpp": "arma-config"
+    },
+    "sqflint.ignoredVariables": [
+        "_input0",
+        "_thisArgs",
+        "_thisId",
+        "_thisType",
+        "cba_disposable_replaceDisposableLauncher",
+        "cba_disposable_NormalLaunchers",
+    ],
+    "sqflint.exclude": [],
+    "sqflint.includePrefixes": {
+        // Dokan PBO\P drive
+        "\\A3\\": "P:/a3/",
+        "\\a3\\": "P:/a3/",
+        "\\x\\": "P:/x/",
+        "\\z\\": "P:/z/",
+    }
+}

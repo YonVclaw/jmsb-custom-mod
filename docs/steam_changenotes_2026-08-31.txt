@@ -1,0 +1,27 @@
+[h1]30 – 31 August 2026 (builds 929 → 933)[/h1]
+
+[h2]The deploy caught up with the source[/h2]
+The mod folder the game loads had been written by plain file copies, so every PBO any earlier build had ever put there was still in it. Seventeen addons deleted in the 29 August rework were still loading and still inheriting classes that left with E22 and EUDF35 — a 42 MB log, about 335,000 warnings, and the ammunition-tier addon skipped outright because an orphan it required could not load.
+[list]
+[*][b]Deploys mirror now[/b] instead of copying over the top: what the source builds is what ships, and nothing else.
+[*][b]The dev mission points at what the mod ships.[/b] OPFOR moved from the deleted PLA faction to 2040 China — OPCOM, the ATO faction and its drone list; HIMF's support vehicles moved to the pickups it fields now that Atlas's trucks are gone; the tropical SDV, the ALiVE transport helicopter and the CAS aircraft took their current names; the JSOC stealth uniforms name Atlas's originals.
+[/list]
+
+[h2]Everything that talks to you goes through the notification panel[/h2]
+[list]
+[*][b]The motor pool and the vehicle spawner[/b] were using CBA's notification, which ignores the corner, duration and text size you set for jmfsb's.
+[*][b]APS, the vector's marker and waypoint, the breaching round, the 40mm payloads[/b] (decoy, jammer, multispectral screen, NR-P relay, UGS picket, EMP), [b]evac and the Mk364 airburst setting[/b] were plain hints or ACE's centre-screen text. All of them raise a proper notification now, in the house colours — red for a refusal, green for a success, amber for a warning.
+[*]Debug lines, the teleport fade and the Endex splash are deliberately unchanged.
+[/list]
+
+[h2]The PLA armour pack left the load order[/h2]
+[list]
+[*][b]China's air defence and logistics are its own now:[/b] the Gyra AA, the S-750 and the Cronus radar where the HQ-6A and the PGZ-09s were, and the ghex Tempest family for the support and supply trucks. Those two lists had also been keyed to the wrong faction since the rename, so they had been doing nothing at all.
+[*][b]The APS fit table[/b] lost every vehicle name that only the pack (and its CSAT-skin companion) provided. QAV's Type 08 stays. The PGL-625E, which took the PGZ-09's air-defence slot, was getting no APS at all and now gets the same fit the PGZ had; Chinese vehicles get the GL-5 name back, which had stopped matching when the faction was renamed.
+[/list]
+
+[h2]MOPP is out[/h2]
+[list]
+[*]The crate is gone from the logistics table and the Zeus supply-crate module, along with its model and its two dead unpack functions.
+[*][b]The Zeus supply-crate list drew the wrong labels.[/b] Its names and its crate types are paired by position, and MOPP had been removed from one list but not the other — so TOW read "MOPP Crate", the mortar box read "Titan AT Box", and the Javelin label sat on the end where nothing could reach it. Fixed.
+[/list]

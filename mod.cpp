@@ -1,0 +1,12 @@
+name = "1st Joint Multi-Functional Strike Battalion";
+picture = "newlogo.png";
+description = "1st Joint Multi-Functional Strike Battalion Custom Mod";
+logo = "logo_256.paa";
+logoOver = "logo_256_g.paa";
+tooltip = "1st Joint Multi-Functional Strike Battalion";
+tooltipOwned = "1st Joint Multi-Functional Strike Battalion";
+overview = "1st Joint Multi-Functional Strike Battalion Custom Mod";
+author = "1st Joint Multi-Functional Strike Battalion";
+overviewPicture = "logo_256.paa";
+action = "https://github.com/Joint-Multi-Functional-Strike-Battalion";
+dir = "@jmfsb";

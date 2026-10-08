@@ -1,0 +1,82 @@
+[h1]22 – 29 August 2026 (builds 836 → 907)[/h1]
+
+[h2]29 August, evening — the new preset (builds 901+)[/h2]
+E22 Northstar and EUDF35 left the load order; Aegis, Atlas, Atlas - Opposing Forces, Athena, AddGis, Russia 2035 and the Aegis OCP retextures came back.
+[list]
+[*][b]Prefix mmxl → jmfsb[/b] across the mod, the models and the dev mission.
+[*][b]EUDF factions removed[/b] (all three). Russia factions removed pending a dump with Russia 2035 in it. E22 RAF and the three E22 magazine wells gone.
+[*][b]US Army JTF (all four theatres) rebuilt from the base game's own rosters[/b] - which Aegis extends in the load order - with QAV armour, NATO air and artillery, the GX drones and the base game's Praetorian where E22's JC air defence was. Names unchanged, so the mission's motor pool still works.
+[*][b]HIMF on Atlas's own HIMF:[/b] every man inherits Atlas's HIMF (uniform, vest, helmet, M16A4 / XMS, packs), FA tier-2 rounds kept; E22's Pandurs gone; the armour is EF's two Gyras (the Otokar ARMAs that stood in for a night are out).
+[*][b]All four US JTF theatres now field the same 47 groups.[/b] Woodland had six, desert and OCP 36, tropical 45. Every theatre gets the full order of battle - recon, divers, snipers, mech, armour, artillery, support - in its own uniforms.
+[*][b]Nine factions removed:[/b] CSAT Iran (both), Insurgents, AAF, LDF, FIA (both), PLA (both). What remains: US Army JTF (four theatres), Marines (two), MFRC, HIMF, Syndikat and the Gendarmerie. The Roomba mission's OPFOR is now the base game's CSAT (OPF_F) with the PLA pack's vehicles.
+[*][b]HIMF air arm:[/b] the only planes are the AT-27M35 Tucano (Embraer EMB 312 mod, grey) and Atlas's HIMF Caesar BTT; Atlas's own HIMF H225M Super Cougar (armed / unarmed) take the transport slots the EUDF Wildcats held. The Tucano needs the EMB 312 mod in the load order.
+[*][b]Copies of Aegis / Atlas removed, links put back:[/b] the FAST-MT helmets (Aegis), the JSOC uniforms and the NCU models and Multicam paints (Atlas). Our own paints on them inherit the originals; the mission arsenal names Aegis / Atlas classes for the rest.
+[/list]
+
+
+[h2]29 August — builds 876–900[/h2]
+[b]Arsenal[/b]
+[list]
+[*][b]Ammunition folded by round type.[/b] One row per round type per magazine form (100Rnd 6.5mm Mk328, 30Rnd 5.56 Mk332 AP …) with the same option panel the attachments get under the list: Tracer (Ball / Red / Green / … / IR), Finish (Black / Khaki / Tan …), Colour for smoke, flares and chemlights. 1033 magazines → 243 rows; picking a variant loads it.
+[*][b]JCA dual mount now fits the MX and the SPARs.[/b] The same fix restores every 7.62 suppressor to the MX's 6.5 slot.
+[*]Khaki 30Rnd 6.5 EPR magazines added to the arsenal.
+[/list]
+[b]Vehicles[/b]
+[list]
+[*][b]APS map panel.[/b] Open the map from a fitted vehicle: every fitted vehicle you're entitled to see (own / group / side), charges, emitter, and HK HOLD · RF HOLD · BURST. Holds are shared and show on the HUD tile. Tile and panel are hidden on foot.
+[*]APS arms itself from its settings; the JMSB - APS module is an override and applies even when placed after arming.
+[*]Motor pool closes as soon as the vehicle is on the pad.
+[*]Enemy Drones module: airframes per side (West / East / Independent; -1 = shared number, 0 = grounded).
+[/list]
+[b]Weapons[/b]
+[list]
+[*][b]MX family and Mk200 run cooler under ACE[/b] — barrel mass at twice the game's fallback: half the heat per round, double the sustainable rate of fire under the cook-off line. No carried-weight change.
+[/list]
+[b]Factions[/b]
+[list]
+[*][b]HIMF air arm cut down:[/b] one fighter, five helicopters (MH-9, AH-9, RF's WY-55 Hellcat, two transports). Black Wasp, Blackfish, Ghost Hawk, Huron and Blackfoot removed. (Superseded the same evening - see above.)
+[*]HIMF: Mk-I EMR for the marksman, auto rifleman's support weapon corrected, armour is EF's Gyra and E22's Pandur, E22 woodland kit.
+[/list]
+[b]Interface[/b]
+[list]
+[*]Diary menu restored on the map; modal dialogs opaque and OK-only.
+[*]hemtt check clean — zero lints.
+[/list]
+
+[h2]28 August — builds 853–875[/h2]
+[b]Factions[/b]
+[list]
+[*][b]US Army JTF:[/b] NATO aircraft (Little Birds, Ghost Hawks, Hurons, A-10D, Black Wasp) and NATO artillery in place of E22's air arm; armour is the M3A1/A2/A3 Knights only; tropical theatre green throughout; common Marshall / ATGM Marshall / Blackfish set in every JTF.
+[*][b]HIMF rebuilt on the base game:[/b] all 11 RF Ram 1500 variants in Jungle paint (no HEMTTs, no M-ATVs), XMS rifles at FA tier 2, the old olive vests and helmets, Atlas's HIMF paint on base-game kit, Speedboat Minigun.
+[*][b]CSAT → "2040 CSAT Iran"[/b] in both theatres: Persian identities, RF ASh-12 rifles with 12.7×55 FA loads, Navid MMG with a proper magazine well.
+[*][b]PLA (Arid / Woodland)[/b] from the PLA mod: 32 vehicles, ACP Xingkong kit, Contact modular helmets, ARX for leaders, Katiba for the line.
+[*][b]Squad drones:[/b] a drone operator in every rifle, motorised and mechanised squad; East squads get a SwitchBlade operator.
+[*]Blood type on the admin panel's player card.
+[/list]
+[b]Systems[/b]
+[list]
+[*][b]ACRE radio mesh:[/b] manpacks and vehicle racks relay for their own side; jamming on the same signal path.
+[*][b]Active protection:[/b] hard kill fitted by faction tier (Trophy / Afganit / Iron Fist / GL-5) plus the RF burst — strips guidance, drops drones, jams nearby radios.
+[*][b]ACEAX attachment compat:[/b] 233 optics, cans, pointers and bipods fold into 58 dropdown entries.
+[*]JCA bipods and cans on the MX and SPAR slots.
+[/list]
+
+[h2]27 August — builds 849–852[/h2]
+[list]
+[*][b]Mod reduction begins:[/b] Aegis and Atlas leave the load order; KVN drones out; GX drones player-only.
+[*][b]US factions replaced by E22 Northstar's JTF[/b] (woodland / desert / tropical / OCP) with QAV Knights and Marshalls as the armour.
+[*][b]EUDF factions[/b] (standard / arctic / arid) from EUDF35 at tier 3, with the Blackfoot.
+[*]Mission-folder icons moved in-mod; 23 forced settings under a dead prefix fixed.
+[/list]
+
+[h2]26 August — builds 836–848[/h2]
+[list]
+[*]Revisions across the ALiVE adapter, anti-ship, CAS, UAS, hacking, reaction, BFT and ambience systems.
+[/list]
+
+[h2]22 August[/h2]
+[list]
+[*][b]futureAmmo ported in[/b] under the mod's prefix; ammunition tiers now cover all 695 FA rounds, tracers included; tier-2 floor narrowed to penetration.
+[*]Faction fix: 114 vehicles, 64 drones and the MAAWS gunner that were silently dropped are back, and 414 classes are now Zeus-placeable; the six US factions got proper groups.
+[*]HUD slots sized to the vanilla Custom Info panel; the jamming meter now actually draws.
+[/list]

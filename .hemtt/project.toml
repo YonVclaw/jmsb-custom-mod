@@ -1,0 +1,33 @@
+name = "JMSB"
+mainprefix = "z"
+prefix = "jmfsb"
+
+[files]
+include = [
+    "mod.cpp",
+    "README.md",
+    "LICENSE",
+    "AUTHORS.txt",
+    "newlogo.png",
+    "logo_256_g.paa",
+    "logo_256.paa",
+    # TAC//PAC's database extension (DIVINER tools/pacdb, v0.5.0 - the database
+    # name comes from the connection string). Server-side only; clients never load it.
+    "ghostd_pacdb_x64.dll",
+    "ghostd_pacdb_x64.so",
+    "2035_modern_equipment_replacment_helmet.png",
+    "2023-11-18_12-57-37.png"
+]
+
+# Source material that must never reach a PBO. The image formats are the
+# working files the .paa are made from; the Python is the art generators, which
+# have no business in a released addon at all and are kept in tools/art now.
+# This stays as a second line of defence: a stray .py inside addons/ would
+# otherwise be packed and shipped.
+exclude = ["*.psd", "*.png", "*.tga", "*.py", "*.pyc", "__pycache__"]
+
+[version]
+path = "addons/main/script_version.hpp"
+
+[properties]
+author = "1st Joint Multi-Functional Strike Battalion"

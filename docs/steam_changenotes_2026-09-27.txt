@@ -1,0 +1,5 @@
+- EU camo back to NATO colours; EU arctic is solid white
+- Arid EU helicopters now sand; duplicate Tigers removed
+- Future ammo for every 2040 faction
+- New FA magazines: P07/Rook, Glock 19X, Sting, Gepard, G17, Zubr, LRR, Rahim
+- Fixed soldiers carrying magazines that did not fit their weapons
