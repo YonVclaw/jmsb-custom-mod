@@ -327,6 +327,7 @@ force ace_medical_useLimbDamage = 2;
 force force ace_medical_vitals_simulateSpO2 = true;
 force ace_medical_windowOnWakeUp = 1;
 
+
 // ACE Medical Treatment
 force force ace_medical_treatment_advancedBandages = 2;
 force force ace_medical_treatment_advancedDiagnose = 1;
@@ -358,13 +359,13 @@ force force ace_medical_treatment_locationsBoostTraining = true;
 force ace_medical_treatment_locationSplint = 0;
 force force ace_medical_treatment_locationSurgicalKit = 0;
 force ace_medical_treatment_maxLitterObjects = 500;
-force ace_medical_treatment_medicAdenosine = 0;
-force force ace_medical_treatment_medicEpinephrine = 1;
-force force ace_medical_treatment_medicIV = 1;
-force ace_medical_treatment_medicMorphine = 0;
-force force ace_medical_treatment_medicPAK = 0;
+force ace_medical_treatment_medicAdenosine = 2;
+force force ace_medical_treatment_medicEpinephrine = 2;   // Medic (class 2); CLS is class 1
+force force ace_medical_treatment_medicIV = 2;
+force ace_medical_treatment_medicMorphine = 2;
+force force ace_medical_treatment_medicPAK = 2;
 force ace_medical_treatment_medicSplint = 0;
-force force ace_medical_treatment_medicSurgicalKit = 1;
+force force ace_medical_treatment_medicSurgicalKit = 2;
 force ace_medical_treatment_numericalPulse = 0;
 force force ace_medical_treatment_timeCoefficientPAK = 1;
 force force ace_medical_treatment_treatmentTimeAutoinjector = 2.005;
@@ -742,7 +743,10 @@ force force jmfsb_bft_trailingWeight = 0.75;
 force force jmfsb_bft_updateDelay = 5;
 force force jmfsb_boc_walk = true;
 force force jmfsb_chat_allowGlobalChat = true;
-force force jmfsb_evac_enabled = true;
+// OFF: the unit runs ACM, whose own evacuation does this job (user, 2026-10-08:
+// "our evac needs to be disabled cause we are loading acm"). jmfsb_evac also
+// stands down by itself when it sees ACM_main; this is the belt to those braces.
+force force jmfsb_evac_enabled = false;
 force force jmfsb_evac_medicOnly = true;
 force force jmfsb_evac_time = 10;
 force force jmfsb_fatigue_highJogCoef = 0.8;

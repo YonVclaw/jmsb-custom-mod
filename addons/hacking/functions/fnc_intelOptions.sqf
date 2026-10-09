@@ -123,7 +123,7 @@ if (_asymmetric) then {
         _avail pushBack ["leader", "TRACE NETWORK"];
     };
     if (!isNil "jmfsb_adapter_alive_fnc_installations"
-        && {(call jmfsb_adapter_alive_fnc_installations) isNotEqualTo []}) then {
+        && {([] call jmfsb_adapter_alive_fnc_installations) isNotEqualTo []}) then {
         _avail pushBack ["installation", "LOCATE INSTALLATION"];
     };
 };

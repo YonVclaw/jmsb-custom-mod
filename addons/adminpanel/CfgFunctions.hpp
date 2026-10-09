@@ -80,7 +80,7 @@ class CfgFunctions {
             class assignGroup {};
             class getPlayerInfo {};
             class loadPlayerSkills {};
-            class populateSkillCombos {};
+            class labelSkills {};
             class updatePlayerInfo {};
         };
         class utility {

@@ -34,7 +34,9 @@
 // silently rejected at the bottom of FUNC(register). Ten leaves room; the idc
 // blocks are 20 apart from 9200, so ten of them is 9200-9400 and collides with
 // nothing.
-#define PANEL_MAX 10
+// 12, not 10: with hide, settings, tools and the APS panel registered the
+// eleventh was refused every start ("panel 'aps' rejected", rpt 2026-10-08).
+#define PANEL_MAX 12
 
 // RESERVED ZONES, in safe-zone fractions. The design names three regions a
 // panel must never cover, and they are here rather than in the panels because a

@@ -31,7 +31,7 @@ if (isNil "jmfsb_adapter_alive_fnc_installations") exitWith {false};
 // An installation belongs to whichever asymmetric commander owns the ground,
 // and the asking side is by definition not that one - a player only reaches
 // this product by hacking inside asymmetric ground.
-private _pool = (call jmfsb_adapter_alive_fnc_installations) apply {
+private _pool = ([] call jmfsb_adapter_alive_fnc_installations) apply {
     _x params ["_id", "_at", "", "_type"];
     [format ["%1_%2", _type, _id], _at, sideUnknown]
 };

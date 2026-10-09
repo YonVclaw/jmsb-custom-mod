@@ -243,17 +243,17 @@ ships with, which a mission or the forced list below can override.
 | 1 - Left button address | EDITBOX | 1st Joint Multi-Functional Strike Battalion > Main Menu | `"172.93.101.237"` | Host or IP the left button connects to. Empty removes the button. |
 | 1 - Left button port | EDITBOX | 1st Joint Multi-Functional Strike Battalion > Main Menu | `"2402"` | Port for the left button. 0 or empty removes the button. |
 | 1 - Left button password | EDITBOX | 1st Joint Multi-Functional Strike Battalion > Main Menu | `"aitd"` | Sent with the connection. Empty for an open server. Stored in your profile in plain text. |
-| 1 - Left button colour | COLOR | 1st Joint Multi-Functional Strike Battalion > Main Menu | `[0.8, 0.263, 0.192, 1]` | Background of the left button. JMSB red by default. |
+| 1 - Left button colour | COLOR | 1st Joint Multi-Functional Strike Battalion > Main Menu | `[0.761, 0.659, 0.471, 1]` | Background of the left button. the unit's tan by default. |
 | 2 - Centre button name | EDITBOX | 1st Joint Multi-Functional Strike Battalion > Main Menu | `"JMSB Operations Server"` | What the centre button says. Empty leaves whatever the config called it. |
 | 2 - Centre button address | EDITBOX | 1st Joint Multi-Functional Strike Battalion > Main Menu | `"172.93.101.237"` | Host or IP the centre button connects to. Empty removes the button. |
 | 2 - Centre button port | EDITBOX | 1st Joint Multi-Functional Strike Battalion > Main Menu | `"2302"` | Port for the centre button. 0 or empty removes the button. |
 | 2 - Centre button password | EDITBOX | 1st Joint Multi-Functional Strike Battalion > Main Menu | `"aitd"` | Sent with the connection. Empty for an open server. Stored in your profile in plain text. |
-| 2 - Centre button colour | COLOR | 1st Joint Multi-Functional Strike Battalion > Main Menu | `[0.8, 0.263, 0.192, 1]` | Background of the centre button. JMSB red by default. |
+| 2 - Centre button colour | COLOR | 1st Joint Multi-Functional Strike Battalion > Main Menu | `[0.761, 0.659, 0.471, 1]` | Background of the centre button. the unit's tan by default. |
 | 3 - Right button name | EDITBOX | 1st Joint Multi-Functional Strike Battalion > Main Menu | `"JMSB Events Server"` | What the right button says. Empty leaves whatever the config called it. |
 | 3 - Right button address | EDITBOX | 1st Joint Multi-Functional Strike Battalion > Main Menu | `"172.93.101.237"` | Host or IP the right button connects to. Empty removes the button. |
 | 3 - Right button port | EDITBOX | 1st Joint Multi-Functional Strike Battalion > Main Menu | `"2502"` | Port for the right button. 0 or empty removes the button. |
 | 3 - Right button password | EDITBOX | 1st Joint Multi-Functional Strike Battalion > Main Menu | `"aitd"` | Sent with the connection. Empty for an open server. Stored in your profile in plain text. |
-| 3 - Right button colour | COLOR | 1st Joint Multi-Functional Strike Battalion > Main Menu | `[0.8, 0.263, 0.192, 1]` | Background of the right button. JMSB red by default. |
+| 3 - Right button colour | COLOR | 1st Joint Multi-Functional Strike Battalion > Main Menu | `[0.761, 0.659, 0.471, 1]` | Background of the right button. the unit's tan by default. |
 
 ## MedBags (`medbags`)
 
@@ -388,7 +388,7 @@ ships with, which a mission or the forced list below can override.
 | Setting | Type | Category | Default | What it does |
 |---|---|---|---|---|
 | Enable tacpad | CHECKBOX | 1st Joint Multi-Functional Strike Battalion > Tacpad | `true` | Draws the tacpad panels on the map screen. Off leaves the vanilla map exactly as it was. |
-| Colour scheme | LIST | 1st Joint Multi-Functional Strike Battalion > Tacpad | `[ ["light", "olive", "sand", "brass", "d` | Four day grounds and four night ones, in matching pairs: FIELD GREY with NIGHT / RED, OLIVE with NIGHT OLIVE, SAND with NIGHT SAND, BRASS with NIGHT B |
+| Colour scheme | LIST | 1st Joint Multi-Functional Strike Battalion > Tacpad | `[ ["jmsb", "light", "olive", "sand", "ni` | Four day grounds and four night ones, in matching pairs: JMSB DAY with JMSB NIGHT (the unit's ranger green and tan; night is the default), FIELD GREY  |
 | Panel opacity | SLIDER | 1st Joint Multi-Functional Strike Battalion > Tacpad | `[0.3, 1, 0.92, 2, true]` | How solid a panel's ground is over the map. The text stays fully opaque at any setting - a translucent panel you cannot read is not a panel. |
 | Keep clear of reserved areas | CHECKBOX | 1st Joint Multi-Functional Strike Battalion > Tacpad | `true` | Slides a panel out of the game menu, the chat overlay and the map's scale and contour legend when you drop it on one. Off lets you put a panel anywher |
 | Custom: ground | EDITBOX | 1st Joint Multi-Functional Strike Battalion > Tacpad | `""` | Panel background as r,g,b from 0 to 1, e.g. 0.05,0.06,0.05. Used only by the Custom scheme. |
@@ -683,13 +683,13 @@ A forced setting cannot be changed in-game, and overrides the defaults above.
 | `ace_medical_treatment_locationSplint` | `0` |
 | `ace_medical_treatment_locationSurgicalKit` | `0` |
 | `ace_medical_treatment_maxLitterObjects` | `500` |
-| `ace_medical_treatment_medicAdenosine` | `0` |
-| `ace_medical_treatment_medicEpinephrine` | `1` |
-| `ace_medical_treatment_medicIV` | `1` |
-| `ace_medical_treatment_medicMorphine` | `0` |
-| `ace_medical_treatment_medicPAK` | `0` |
+| `ace_medical_treatment_medicAdenosine` | `2` |
+| `ace_medical_treatment_medicEpinephrine` | `2` |
+| `ace_medical_treatment_medicIV` | `2` |
+| `ace_medical_treatment_medicMorphine` | `2` |
+| `ace_medical_treatment_medicPAK` | `2` |
 | `ace_medical_treatment_medicSplint` | `0` |
-| `ace_medical_treatment_medicSurgicalKit` | `1` |
+| `ace_medical_treatment_medicSurgicalKit` | `2` |
 | `ace_medical_treatment_numericalPulse` | `0` |
 | `ace_medical_treatment_timeCoefficientPAK` | `1` |
 | `ace_medical_treatment_treatmentTimeAutoinjector` | `2.005` |
@@ -917,7 +917,7 @@ A forced setting cannot be changed in-game, and overrides the defaults above.
 | `jmfsb_bft_updateDelay` | `5` |
 | `jmfsb_boc_walk` | `true` |
 | `jmfsb_chat_allowGlobalChat` | `true` |
-| `jmfsb_evac_enabled` | `true` |
+| `jmfsb_evac_enabled` | `false` |
 | `jmfsb_evac_medicOnly` | `true` |
 | `jmfsb_evac_time` | `10` |
 | `jmfsb_fatigue_highJogCoef` | `0.8` |

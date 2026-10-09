@@ -17,7 +17,7 @@ class RscStructuredText;
     }; \
     class DOUBLES(slotBar,N): RscText { \
         idc = IDC_BAR(N); \
-        colorBackground[] = {0.871, 0.361, 0.188, 1}; \
+        colorBackground[] = {0.761, 0.659, 0.471, 1}; \
         x = "safezoneX"; y = "safezoneY"; w = 0; h = 0; \
     }; \
     class DOUBLES(slotText,N): RscStructuredText { \

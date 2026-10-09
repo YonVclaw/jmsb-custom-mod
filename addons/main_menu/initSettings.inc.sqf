@@ -53,9 +53,9 @@
 
 [
     QGVAR(server1Colour), "COLOR",
-    ["1 - Left button colour", "Background of the left button. JMSB red by default."],
+    ["1 - Left button colour", "Background of the left button. the unit's tan by default."],
     ["1st Joint Multi-Functional Strike Battalion", "Main Menu"],
-    [0.8, 0.263, 0.192, 1],
+    [0.761, 0.659, 0.471, 1],
     false
 ] call CBA_fnc_addSetting;
 
@@ -93,9 +93,9 @@
 
 [
     QGVAR(server2Colour), "COLOR",
-    ["2 - Centre button colour", "Background of the centre button. JMSB red by default."],
+    ["2 - Centre button colour", "Background of the centre button. the unit's tan by default."],
     ["1st Joint Multi-Functional Strike Battalion", "Main Menu"],
-    [0.8, 0.263, 0.192, 1],
+    [0.761, 0.659, 0.471, 1],
     false
 ] call CBA_fnc_addSetting;
 
@@ -133,8 +133,8 @@
 
 [
     QGVAR(server3Colour), "COLOR",
-    ["3 - Right button colour", "Background of the right button. JMSB red by default."],
+    ["3 - Right button colour", "Background of the right button. the unit's tan by default."],
     ["1st Joint Multi-Functional Strike Battalion", "Main Menu"],
-    [0.8, 0.263, 0.192, 1],
+    [0.761, 0.659, 0.471, 1],
     false
 ] call CBA_fnc_addSetting;

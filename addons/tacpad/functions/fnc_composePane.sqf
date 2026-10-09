@@ -94,7 +94,8 @@ private _cancelX = _dx + _dw - 2 * _cancelW - 2 * _pad;
     GVAR(composeOn) = false;
     GVAR(composePick) = false;
     GVAR(composeToPick) = false;
-    GVAR(composeMarker) = "";
+    GVAR(composeMarker) = "";
+
     GVAR(composePin) = [];
     GVAR(composePinPick) = false;
     GVAR(composeValues) = createHashMap;
@@ -162,7 +163,8 @@ if (!_reply) then {
     [_root, [_changeX, _y, _changeW, _btnH], {
         [] call FUNC(composeHarvest);
         GVAR(composeToPick) = true;
-        GVAR(composeMarker) = "";
+        GVAR(composeMarker) = "";
+
         GVAR(composePin) = [];
         GVAR(composePinPick) = false;
         {[] call FUNC(readerDraw)} call CBA_fnc_execNextFrame;
@@ -316,7 +318,8 @@ private _actW = _dw * 0.24;
 [_root, [_dx + _pad, _y, _actW, _btnH], {
     [] call FUNC(composeHarvest);
     GVAR(composePick) = true;
-    GVAR(composeMarker) = "";
+    GVAR(composeMarker) = "";
+
     GVAR(composePin) = [];
     GVAR(composePinPick) = false;
     {[] call FUNC(readerDraw)} call CBA_fnc_execNextFrame;
@@ -331,7 +334,8 @@ if (_templateId isNotEqualTo "") then {
     [_root, [_dropX, _y, _dropW, _btnH], {
         [] call FUNC(composeHarvest);
         GVAR(composeTemplate) = "";
-        GVAR(composeMarker) = "";
+        GVAR(composeMarker) = "";
+
         GVAR(composePin) = [];
         GVAR(composePinPick) = false;
         {[] call FUNC(readerDraw)} call CBA_fnc_execNextFrame;
@@ -371,7 +375,9 @@ if (_templateId isEqualTo "") then {
 
     [
         _root, [_dx + _pad, _y, _dw - 2 * _pinW - 4 * _pad, _btnH],
-        ["MAP PIN - NONE", format ["MAP PIN - %1", mapGridPosition GVAR(composePin)]] select _pinned,
+        // if/then, not select: select evaluates both halves, and mapGridPosition of
+        // an empty pin threw on every redraw with no pin set (rpt 2026-10-08).
+        if (_pinned) then {format ["MAP PIN - %1", mapGridPosition GVAR(composePin)]} else {"MAP PIN - NONE"},
         [_mute, _accent] select _pinned, 0.62, true, "left", true
     ] call FUNC(drawText);
 

@@ -338,8 +338,8 @@ class CfgVehicles {
         displayName = "Fighter Pilot";
         side = 0;
         faction = QUOTE(ADDON);
-        magazines[] = {"17Rnd_9x21_Mag","17Rnd_9x21_Mag","SmokeShellRed","SmokeShellOrange","SmokeShellYellow"};
-        respawnMagazines[] = {"17Rnd_9x21_Mag","17Rnd_9x21_Mag","SmokeShellRed","SmokeShellOrange","SmokeShellYellow"};
+        magazines[] = {"16Rnd_9x21_Mag","16Rnd_9x21_Mag","SmokeShellRed","SmokeShellOrange","SmokeShellYellow"};
+        respawnMagazines[] = {"16Rnd_9x21_Mag","16Rnd_9x21_Mag","SmokeShellRed","SmokeShellOrange","SmokeShellYellow"};
     };
     class GVAR(O_GMG_01_A_F): O_GMG_01_A_F {
         scope = 2;
@@ -840,8 +840,8 @@ class CfgVehicles {
         respawnLinkedItems[] = {"jmfsb_vests_sof_SOF_V_CHPCCarrier_Lite_oli","SOF_H_HelmetAttacker_Cover_ghex","ItemGPS","ItemMap","ItemCompass","ItemWatch","ItemRadio","O_NVGoggles_hex_F"};
         weapons[] = {"srifle_DMR_01_DMS_snds_F","hgun_Rook40_snds_F","Throw","Put","laserdesignator_02"};
         respawnWeapons[] = {"srifle_DMR_01_DMS_snds_F","hgun_Rook40_snds_F","Throw","Put","laserdesignator_02"};
-        magazines[] = {"FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","17Rnd_9x21_Mag","17Rnd_9x21_Mag","MiniGrenade","MiniGrenade","Laserbatteries","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
-        respawnMagazines[] = {"FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","17Rnd_9x21_Mag","17Rnd_9x21_Mag","MiniGrenade","MiniGrenade","Laserbatteries","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
+        magazines[] = {"FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","16Rnd_9x21_Mag","16Rnd_9x21_Mag","MiniGrenade","MiniGrenade","Laserbatteries","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
+        respawnMagazines[] = {"FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","FA_o_10Rnd_762x54_Ball_HV_t3","16Rnd_9x21_Mag","16Rnd_9x21_Mag","MiniGrenade","MiniGrenade","Laserbatteries","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
     };
     class GVAR(O_Pilot_F): O_Pilot_F {
         scope = 2;
@@ -1132,8 +1132,8 @@ class CfgVehicles {
         respawnLinkedItems[] = {"jmfsb_vests_sof_SOF_V_CHPCCarrier_SMG_oli","SOF_H_HelmetAttacker_Cover_ghex","ItemMap","ItemCompass","ItemWatch","ItemRadio","O_NVGoggles_hex_F"};
         weapons[] = {QEGVAR(weapons,sgun_M4_ACO_F), "hgun_Rook40_F", "Throw", "Put"};
         respawnWeapons[] = {QEGVAR(weapons,sgun_M4_ACO_F), "hgun_Rook40_F", "Throw", "Put"};
-        magazines[] = {"FA_b_6Rnd_12g_No0_Buck","FA_b_6Rnd_12g_No0_Buck","FA_b_6Rnd_12g_No0_Buck","FA_b_6Rnd_12g_No0_Buck","FA_b_6Rnd_12g_No0_Buck","FA_b_6Rnd_12g_No0_Buck","17Rnd_9x21_Mag","17Rnd_9x21_Mag",QEGVAR(weapons,HandGrenade_East),QEGVAR(weapons,HandGrenade_East),"SmokeShell","SmokeShell"};
-        respawnMagazines[] = {"FA_b_6Rnd_12g_No0_Buck","FA_b_6Rnd_12g_No0_Buck","FA_b_6Rnd_12g_No0_Buck","FA_b_6Rnd_12g_No0_Buck","FA_b_6Rnd_12g_No0_Buck","FA_b_6Rnd_12g_No0_Buck","17Rnd_9x21_Mag","17Rnd_9x21_Mag",QEGVAR(weapons,HandGrenade_East),QEGVAR(weapons,HandGrenade_East),"SmokeShell","SmokeShell"};
+        magazines[] = {"FA_b_6Rnd_12g_No0_Buck","FA_b_6Rnd_12g_No0_Buck","FA_b_6Rnd_12g_No0_Buck","FA_b_6Rnd_12g_No0_Buck","FA_b_6Rnd_12g_No0_Buck","FA_b_6Rnd_12g_No0_Buck","16Rnd_9x21_Mag","16Rnd_9x21_Mag",QEGVAR(weapons,HandGrenade_East),QEGVAR(weapons,HandGrenade_East),"SmokeShell","SmokeShell"};
+        respawnMagazines[] = {"FA_b_6Rnd_12g_No0_Buck","FA_b_6Rnd_12g_No0_Buck","FA_b_6Rnd_12g_No0_Buck","FA_b_6Rnd_12g_No0_Buck","FA_b_6Rnd_12g_No0_Buck","FA_b_6Rnd_12g_No0_Buck","16Rnd_9x21_Mag","16Rnd_9x21_Mag",QEGVAR(weapons,HandGrenade_East),QEGVAR(weapons,HandGrenade_East),"SmokeShell","SmokeShell"};
     };
     class GVAR(O_Soldier_GL_F): O_Soldier_GL_F {
         scope = 2;
@@ -1529,8 +1529,8 @@ class CfgVehicles {
         faction = QUOTE(ADDON);
         linkedItems[] = {"V_RebreatherIR","ItemMap","ItemCompass","ItemWatch","ItemRadio"};
         respawnLinkedItems[] = {"V_RebreatherIR","ItemMap","ItemCompass","ItemWatch","ItemRadio"};
-        magazines[] = {"20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","17Rnd_9x21_Mag","17Rnd_9x21_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
-        respawnMagazines[] = {"20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","17Rnd_9x21_Mag","17Rnd_9x21_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
+        magazines[] = {"20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","16Rnd_9x21_Mag","16Rnd_9x21_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
+        respawnMagazines[] = {"20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","16Rnd_9x21_Mag","16Rnd_9x21_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
     };
     class GVAR(O_diver_TL_F): O_diver_TL_F {
         scope = 2;
@@ -1541,8 +1541,8 @@ class CfgVehicles {
         faction = QUOTE(ADDON);
         linkedItems[] = {"V_RebreatherIR","ItemGPS","ItemMap","ItemCompass","ItemWatch","ItemRadio"};
         respawnLinkedItems[] = {"V_RebreatherIR","ItemGPS","ItemMap","ItemCompass","ItemWatch","ItemRadio"};
-        magazines[] = {"20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","17Rnd_9x21_Mag","17Rnd_9x21_Mag","SmokeShell","SmokeShellRed","SmokeShellOrange","SmokeShellYellow","Chemlight_red","Chemlight_red"};
-        respawnMagazines[] = {"20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","17Rnd_9x21_Mag","17Rnd_9x21_Mag","SmokeShell","SmokeShellRed","SmokeShellOrange","SmokeShellYellow","Chemlight_red","Chemlight_red"};
+        magazines[] = {"20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","16Rnd_9x21_Mag","16Rnd_9x21_Mag","SmokeShell","SmokeShellRed","SmokeShellOrange","SmokeShellYellow","Chemlight_red","Chemlight_red"};
+        respawnMagazines[] = {"20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","16Rnd_9x21_Mag","16Rnd_9x21_Mag","SmokeShell","SmokeShellRed","SmokeShellOrange","SmokeShellYellow","Chemlight_red","Chemlight_red"};
     };
     class GVAR(O_diver_exp_F): O_diver_exp_F {
         scope = 2;
@@ -1553,8 +1553,8 @@ class CfgVehicles {
         faction = QUOTE(ADDON);
         linkedItems[] = {"V_RebreatherIR","ItemMap","ItemCompass","ItemWatch","ItemRadio"};
         respawnLinkedItems[] = {"V_RebreatherIR","ItemMap","ItemCompass","ItemWatch","ItemRadio"};
-        magazines[] = {"20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","17Rnd_9x21_Mag","17Rnd_9x21_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
-        respawnMagazines[] = {"20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","17Rnd_9x21_Mag","17Rnd_9x21_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
+        magazines[] = {"20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","16Rnd_9x21_Mag","16Rnd_9x21_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
+        respawnMagazines[] = {"20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_Stanag_green","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","20Rnd_556x45_UW_mag","16Rnd_9x21_Mag","16Rnd_9x21_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
     };
     class GVAR(O_engineer_F): O_engineer_F {
         scope = 2;
@@ -1581,8 +1581,8 @@ class CfgVehicles {
         faction = QUOTE(ADDON);
         linkedItems[] = {"jmfsb_vests_sof_SOF_V_CHPCCarrier_Lite_oli","ItemGPS","ItemMap","ItemCompass","ItemWatch","ItemRadio","O_NVGoggles_hex_F"};
         respawnLinkedItems[] = {"jmfsb_vests_sof_SOF_V_CHPCCarrier_Lite_oli","ItemGPS","ItemMap","ItemCompass","ItemWatch","ItemRadio","O_NVGoggles_hex_F"};
-        magazines[] = {"5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_APDS_Mag","5Rnd_127x108_APDS_Mag","17Rnd_9x21_Mag","17Rnd_9x21_Mag","ClaymoreDirectionalMine_Remote_Mag","APERSTripMine_Wire_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
-        respawnMagazines[] = {"5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_APDS_Mag","5Rnd_127x108_APDS_Mag","17Rnd_9x21_Mag","17Rnd_9x21_Mag","ClaymoreDirectionalMine_Remote_Mag","APERSTripMine_Wire_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
+        magazines[] = {"5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_APDS_Mag","5Rnd_127x108_APDS_Mag","16Rnd_9x21_Mag","16Rnd_9x21_Mag","ClaymoreDirectionalMine_Remote_Mag","APERSTripMine_Wire_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
+        respawnMagazines[] = {"5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_APDS_Mag","5Rnd_127x108_APDS_Mag","16Rnd_9x21_Mag","16Rnd_9x21_Mag","ClaymoreDirectionalMine_Remote_Mag","APERSTripMine_Wire_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
     };
     class GVAR(O_ghillie_lsh_F): O_ghillie_lsh_F {
         scope = 2;
@@ -1593,8 +1593,8 @@ class CfgVehicles {
         faction = QUOTE(ADDON);
         linkedItems[] = {"jmfsb_vests_sof_SOF_V_CHPCCarrier_Lite_oli","ItemGPS","ItemMap","ItemCompass","ItemWatch","ItemRadio","O_NVGoggles_hex_F"};
         respawnLinkedItems[] = {"jmfsb_vests_sof_SOF_V_CHPCCarrier_Lite_oli","ItemGPS","ItemMap","ItemCompass","ItemWatch","ItemRadio","O_NVGoggles_hex_F"};
-        magazines[] = {"5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_APDS_Mag","5Rnd_127x108_APDS_Mag","17Rnd_9x21_Mag","17Rnd_9x21_Mag","ClaymoreDirectionalMine_Remote_Mag","APERSTripMine_Wire_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
-        respawnMagazines[] = {"5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_APDS_Mag","5Rnd_127x108_APDS_Mag","17Rnd_9x21_Mag","17Rnd_9x21_Mag","ClaymoreDirectionalMine_Remote_Mag","APERSTripMine_Wire_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
+        magazines[] = {"5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_APDS_Mag","5Rnd_127x108_APDS_Mag","16Rnd_9x21_Mag","16Rnd_9x21_Mag","ClaymoreDirectionalMine_Remote_Mag","APERSTripMine_Wire_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
+        respawnMagazines[] = {"5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_APDS_Mag","5Rnd_127x108_APDS_Mag","16Rnd_9x21_Mag","16Rnd_9x21_Mag","ClaymoreDirectionalMine_Remote_Mag","APERSTripMine_Wire_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
     };
     class GVAR(O_ghillie_sard_F): O_ghillie_sard_F {
         scope = 2;
@@ -1605,8 +1605,8 @@ class CfgVehicles {
         faction = QUOTE(ADDON);
         linkedItems[] = {"jmfsb_vests_sof_SOF_V_CHPCCarrier_Lite_oli","ItemGPS","ItemMap","ItemCompass","ItemWatch","ItemRadio","O_NVGoggles_hex_F"};
         respawnLinkedItems[] = {"jmfsb_vests_sof_SOF_V_CHPCCarrier_Lite_oli","ItemGPS","ItemMap","ItemCompass","ItemWatch","ItemRadio","O_NVGoggles_hex_F"};
-        magazines[] = {"5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_APDS_Mag","5Rnd_127x108_APDS_Mag","17Rnd_9x21_Mag","17Rnd_9x21_Mag","ClaymoreDirectionalMine_Remote_Mag","APERSTripMine_Wire_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
-        respawnMagazines[] = {"5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_APDS_Mag","5Rnd_127x108_APDS_Mag","17Rnd_9x21_Mag","17Rnd_9x21_Mag","ClaymoreDirectionalMine_Remote_Mag","APERSTripMine_Wire_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
+        magazines[] = {"5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_APDS_Mag","5Rnd_127x108_APDS_Mag","16Rnd_9x21_Mag","16Rnd_9x21_Mag","ClaymoreDirectionalMine_Remote_Mag","APERSTripMine_Wire_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
+        respawnMagazines[] = {"5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_APDS_Mag","5Rnd_127x108_APDS_Mag","16Rnd_9x21_Mag","16Rnd_9x21_Mag","ClaymoreDirectionalMine_Remote_Mag","APERSTripMine_Wire_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
     };
     class GVAR(O_ghillie_spotter_ard_F): EGVAR(uniform,O_ghillie_spotter_ard_F) {
         scope = 2;
@@ -1728,8 +1728,8 @@ class CfgVehicles {
         uniformClass = "SOF_U_O_SFFatigues_ghex";
         linkedItems[] = {"jmfsb_vests_sof_SOF_V_CHPCCarrier_SMG_oli","SOF_H_HelmetAttacker_Cover_ghex","ItemGPS","ItemMap","ItemCompass","ItemWatch","ItemRadio","O_NVGoggles_hex_F"};
         respawnLinkedItems[] = {"jmfsb_vests_sof_SOF_V_CHPCCarrier_SMG_oli","SOF_H_HelmetAttacker_Cover_ghex","ItemGPS","ItemMap","ItemCompass","ItemWatch","ItemRadio","O_NVGoggles_hex_F"};
-        magazines[] = {"FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","17Rnd_9x21_Mag","17Rnd_9x21_Mag","MiniGrenade","MiniGrenade","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
-        respawnMagazines[] = {"FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","17Rnd_9x21_Mag","17Rnd_9x21_Mag","MiniGrenade","MiniGrenade","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
+        magazines[] = {"FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","16Rnd_9x21_Mag","16Rnd_9x21_Mag","MiniGrenade","MiniGrenade","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
+        respawnMagazines[] = {"FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","FA_o_30Rnd_62_DBP25_t3","16Rnd_9x21_Mag","16Rnd_9x21_Mag","MiniGrenade","MiniGrenade","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
     };
     class GVAR(O_recon_F): O_recon_F {
         scope = 2;
@@ -1864,8 +1864,8 @@ class CfgVehicles {
         faction = QUOTE(ADDON);
         linkedItems[] = {"jmfsb_vests_sof_SOF_V_CHPCCarrier_Lite_oli","ItemGPS","ItemMap","ItemCompass","ItemWatch","ItemRadio","O_NVGoggles_hex_F"};
         respawnLinkedItems[] = {"jmfsb_vests_sof_SOF_V_CHPCCarrier_Lite_oli","ItemGPS","ItemMap","ItemCompass","ItemWatch","ItemRadio","O_NVGoggles_hex_F"};
-        magazines[] = {"5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_APDS_Mag","5Rnd_127x108_APDS_Mag","17Rnd_9x21_Mag","17Rnd_9x21_Mag","ClaymoreDirectionalMine_Remote_Mag","APERSTripMine_Wire_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
-        respawnMagazines[] = {"5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_APDS_Mag","5Rnd_127x108_APDS_Mag","17Rnd_9x21_Mag","17Rnd_9x21_Mag","ClaymoreDirectionalMine_Remote_Mag","APERSTripMine_Wire_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
+        magazines[] = {"5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_APDS_Mag","5Rnd_127x108_APDS_Mag","16Rnd_9x21_Mag","16Rnd_9x21_Mag","ClaymoreDirectionalMine_Remote_Mag","APERSTripMine_Wire_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
+        respawnMagazines[] = {"5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_Mag","5Rnd_127x108_APDS_Mag","5Rnd_127x108_APDS_Mag","16Rnd_9x21_Mag","16Rnd_9x21_Mag","ClaymoreDirectionalMine_Remote_Mag","APERSTripMine_Wire_Mag","SmokeShell","SmokeShell","Chemlight_red","Chemlight_red"};
     };
     class GVAR(O_soldier_F): O_soldier_F {
         scope = 2;

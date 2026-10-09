@@ -30,7 +30,10 @@
  * [] call jmfsb_adapter_alive_fnc_installations
  */
 
-params [["_want", ["factory", "hq", "depot", "roadblocks"], [[]]]];
+// A bare `call` hands over the caller's own _this (a hashmap, in the hacking
+// menus - rpt 2026-10-08); anything that is not a list means "the default".
+private _args = if (_this isEqualType []) then {_this} else {[]};
+_args params [["_want", ["factory", "hq", "depot", "roadblocks"], [[]]]];
 
 if (!GVAR(ready)) exitWith {[]};
 

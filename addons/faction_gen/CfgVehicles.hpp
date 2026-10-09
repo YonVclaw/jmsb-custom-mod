@@ -27,8 +27,8 @@ class CfgVehicles {
         uniformClass = "U_B_GEN_Soldier_F";
         weapons[] = {QEGVAR(weapons,hgun_G17_black_F),"Throw","Put"};
         respawnWeapons[] = {QEGVAR(weapons,hgun_G17_black_F),"Throw","Put"};
-        magazines[] = {"17Rnd_9x21_Mag","HandGrenade","SmokeShell"};
-        respawnMagazines[] = {"17Rnd_9x21_Mag","HandGrenade","SmokeShell"};
+        magazines[] = {"16Rnd_9x21_Mag","HandGrenade","SmokeShell"};
+        respawnMagazines[] = {"16Rnd_9x21_Mag","HandGrenade","SmokeShell"};
         linkedItems[] = {"V_PlateCarrier1_blk","STC_H_MK7_blk_Visor_up_F","ItemMap","ItemRadio","ItemCompass","ItemWatch"};
         respawnLinkedItems[] = {"V_PlateCarrier1_blk","STC_H_MK7_blk_Visor_up_F","ItemMap","ItemRadio","ItemCompass","ItemWatch"};
         items[] = {"FirstAidKit"};
@@ -54,8 +54,8 @@ class CfgVehicles {
         uniformClass = "U_B_GEN_Soldier_F";
         weapons[] = {"SMG_05_F",QEGVAR(weapons,hgun_G17_black_F),"Throw","Put"};
         respawnWeapons[] = {"SMG_05_F",QEGVAR(weapons,hgun_G17_black_F),"Throw","Put"};
-        magazines[] = {"30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","17Rnd_9x21_Mag","HandGrenade","SmokeShell"};
-        respawnMagazines[] = {"30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","17Rnd_9x21_Mag","HandGrenade","SmokeShell"};
+        magazines[] = {"30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","16Rnd_9x21_Mag","HandGrenade","SmokeShell"};
+        respawnMagazines[] = {"30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","16Rnd_9x21_Mag","HandGrenade","SmokeShell"};
         linkedItems[] = {"V_PlateCarrier1_blk","H_Beret_gen_F","ItemMap","ItemRadio","ItemCompass","ItemWatch"};
         respawnLinkedItems[] = {"V_PlateCarrier1_blk","H_Beret_gen_F","ItemMap","ItemRadio","ItemCompass","ItemWatch"};
         items[] = {"FirstAidKit"};
@@ -109,8 +109,8 @@ class CfgVehicles {
         uniformClass = "U_B_GEN_Soldier_F";
         weapons[] = {"SMG_05_F",QEGVAR(weapons,hgun_G17_black_F),"Throw","Put"};
         respawnWeapons[] = {"SMG_05_F",QEGVAR(weapons,hgun_G17_black_F),"Throw","Put"};
-        magazines[] = {"30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","17Rnd_9x21_Mag","HandGrenade","SmokeShell"};
-        respawnMagazines[] = {"30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","17Rnd_9x21_Mag","HandGrenade","SmokeShell"};
+        magazines[] = {"30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","16Rnd_9x21_Mag","HandGrenade","SmokeShell"};
+        respawnMagazines[] = {"30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","30Rnd_9x21_Mag_SMG_02","16Rnd_9x21_Mag","HandGrenade","SmokeShell"};
         linkedItems[] = {"V_PlateCarrier1_blk","H_MilCap_gen_F","ItemMap","ItemRadio","ItemCompass","ItemWatch"};
         respawnLinkedItems[] = {"V_PlateCarrier1_blk","H_MilCap_gen_F","ItemMap","ItemRadio","ItemCompass","ItemWatch"};
         items[] = {"FirstAidKit"};

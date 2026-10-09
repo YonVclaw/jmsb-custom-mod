@@ -114,28 +114,27 @@ if (_cached isEqualTo [] || {(_cached # 0) != _key}) then {
             ]
         };
 
-        // BRASS, the briefing deck's own palette (user, 2026-10-07: "the colours
-        // you used in the slides make it an option"): #f4f2ec ground, #1c2321
-        // ink, and the deck's dark brass #7a6224 - its bright #c8a24a is too
-        // pale to read on a light ground, so the day scheme takes the shade
-        // the deck itself set its small text in.
-        case "brass": {
+        // JMSB DAY, the unit's palette (the G logo, 2026-10-08: ranger green and
+        // tan) on its paper: #e9e4d3 ground, #20261c ink, and a darker tan
+        // #8a7550 for the accent - the logo's #c2a878 is too pale to read on
+        // a light ground, as the brass before it was.
+        case "jmsb": {
             [
-                [0.957, 0.949, 0.925, 1],
-                [0.110, 0.137, 0.129, 1],
-                [0.478, 0.384, 0.141, 1],
-                [0.110, 0.137, 0.129, 0.22]
+                [0.914, 0.894, 0.831, 1],
+                [0.125, 0.149, 0.110, 1],
+                [0.541, 0.459, 0.314, 1],
+                [0.125, 0.149, 0.110, 0.22]
             ]
         };
 
-        // NIGHT BRASS: the deck's dark slides - #1c2321 ground, #f4f2ec ink,
-        // #c8a24a brass.
-        case "nightBrass": {
+        // JMSB NIGHT, the unit's own look and the default: #20261c ground,
+        // #e9e4d3 ink, #c2a878 tan - what jmsb.info and pac.jmsb.info paint with.
+        case "nightJmsb": {
             [
-                [0.110, 0.137, 0.129, 1],
-                [0.957, 0.949, 0.925, 1],
-                [0.784, 0.635, 0.290, 1],
-                [0.957, 0.949, 0.925, 0.20]
+                [0.125, 0.149, 0.110, 1],
+                [0.914, 0.894, 0.831, 1],
+                [0.761, 0.659, 0.471, 1],
+                [0.914, 0.894, 0.831, 0.20]
             ]
         };
 

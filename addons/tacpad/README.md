@@ -161,18 +161,18 @@ a repaint of what is already on screen rather than a rebuild.
 
 | scheme | |
 |---|---|
-| `light` *(default)* | **Field Grey** — the design's own ground, `#f3f2f2`, ink `#201e1d`, accent `#ec3013` |
+| `jmsb` | **JMSB Day** — the unit's paper, `#e9e4d3`, ink `#20261c`, accent `#8a7550` (a darker tan; the logo's `#c2a878` is too pale on a light ground) |
+| `light` | **Field Grey** — the design's own ground, `#f3f2f2`, ink `#201e1d`, accent `#ec3013` |
 | `olive` | `#e8e7e2`, ink `#16281d`, accent `#b5cc4a` |
 | `sand` | `#efece4`, ink `#2b2119`, accent `#d99427` |
+| `nightJmsb` *(default)* | **JMSB Night** — the unit's own look (the G logo, ranger green and tan): `#20261c`, ink `#e9e4d3`, accent `#c2a878` |
 | `dark` | **Night / Red** — `#141514`, ink `#e6e5e2`, accent `#ff563c` |
 | `nightOlive` | **Night Olive** — `#101411`, ink `#d9e0d4`, accent `#9cb43c` |
 | `nightSand` | **Night Sand** — `#161310`, ink `#e5e0d6`, accent `#c78221` |
-| `brass` | **Brass** — the briefing deck's palette: `#f4f2ec`, ink `#1c2321`, accent `#7a6224` |
-| `nightBrass` | **Night Brass** — `#1c2321`, ink `#f4f2ec`, accent `#c8a24a` |
 | `custom` | three settings, each `#RRGGBB` or the older `r,g,b`; anything empty falls back to the Field Grey answer |
 
-Four day grounds and four night ones, in **matching pairs** — Field Grey with
-Night / Red, Olive with Night Olive, Sand with Night Sand, Brass with Night Brass — so a unit that runs
+Four day grounds and four night ones, in **matching pairs** — JMSB Day with JMSB Night, Field Grey with
+Night / Red, Olive with Night Olive, Sand with Night Sand — so a unit that runs
 olive by day is not forced onto red the moment the sun goes down. A night scheme
 is the dark ground under its day scheme's own accent, held down to what does not
 blow your eyes out at 0200.

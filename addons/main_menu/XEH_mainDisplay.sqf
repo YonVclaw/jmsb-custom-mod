@@ -42,11 +42,12 @@ params ["_display"];
 
 TRACE_1("Main menu display",_display);
 
-#define JMFSB_RED [ARR_4(0.8,0.263,0.192,1)]
+// #C2A878, the unit's tan (user, 2026-10-08: the buttons match the unit's colours)
+#define JMFSB_TAN [ARR_4(0.761,0.659,0.471,1)]
 #define QUICK_CONNECT_SHIPPED [\
-    [ARR_5("JMSB Training Server","172.93.101.237",2402,"aitd",JMFSB_RED)],\
-    [ARR_5("JMSB Operations Server","172.93.101.237",2302,"aitd",JMFSB_RED)],\
-    [ARR_5("JMSB Events Server","172.93.101.237",2502,"aitd",JMFSB_RED)]\
+    [ARR_5("JMSB Training Server","172.93.101.237",2402,"aitd",JMFSB_TAN)],\
+    [ARR_5("JMSB Operations Server","172.93.101.237",2302,"aitd",JMFSB_TAN)],\
+    [ARR_5("JMSB Events Server","172.93.101.237",2502,"aitd",JMFSB_TAN)]\
 ]
 
 private _servers = profileNamespace getVariable [QGVAR(servers), QUICK_CONNECT_SHIPPED];
@@ -67,8 +68,12 @@ if (!(_servers isEqualType []) || {count _servers < 3}) then {
     if (!isNull _button) then {
         (_servers param [_slot, [], [[]]]) params [
             ["_name", ""], ["_address", ""], ["_port", 0], ["_password", ""],
-            ["_colour", JMFSB_RED]
+            ["_colour", JMFSB_TAN]
         ];
+
+        // A cache written by a build before the rebrand still says Ghost red
+        // (see FUNC(cacheServers)); it is the unit's tan here too.
+        if (_colour isEqualTo [0.8, 0.263, 0.192, 1]) then {_colour = JMFSB_TAN};
 
         if (_address isEqualTo "" || _port isEqualTo 0) then {
             _button ctrlShow false;
@@ -84,6 +89,11 @@ if (!(_servers isEqualType []) || {count _servers < 3}) then {
             // that has to be told what it turns into as well as what it is has
             // two settings where one will do.
             _button ctrlSetBackgroundColor _colour;
+
+            // White text while hovered, the unit's green otherwise (RscButton
+            // only has a hover BACKGROUND colour; the text is swapped by hand).
+            _button ctrlAddEventHandler ["MouseEnter", {(_this select 0) ctrlSetTextColor [1, 1, 1, 1]}];
+            _button ctrlAddEventHandler ["MouseExit", {(_this select 0) ctrlSetTextColor [0.125, 0.149, 0.110, 1]}];
 
             // The click carries the values the button was drawn with rather than
             // reading them again, so a button always does what it said it would.

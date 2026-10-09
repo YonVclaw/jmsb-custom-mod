@@ -243,6 +243,9 @@ def dedupe():
 # ---------------------------------------------------------------------------
 # media is the user's own art and stays whole (user, 2026-10-07: "do not touch the media addon")
 KEEP_ADDONS = {"media"}
+# named by MISSIONS, not by any config: the billboard signs the arsenal crates stand under
+# (user's .rpt, 2026-10-08: "Picture ...a_main\dataa_sign_40mm.paa not found" after the 10-07 pass)
+KEEP_FILES = re.compile(r"(?i)[\\/]fa_main[\\/]data[\\/]fa_sign_[a-z0-9_]+\.paa$")
 ASSET = re.compile(r"(?i)\.(paa|p3d|rvmat|ogg|wss|wav|rtm)$")
 
 
@@ -275,7 +278,7 @@ def unreferenced():
     gone, size = [], 0
     for p in walk(lambda p: ASSET.search(p)):
         addon, inner = rel_parts(p)
-        if addon.split(BS)[0] in KEEP_ADDONS:
+        if addon.split(BS)[0] in KEEP_ADDONS or KEEP_FILES.search(p):
             continue
         base = os.path.basename(p).lower()
         if base.encode() in names or os.path.splitext(base)[0].encode() in names:

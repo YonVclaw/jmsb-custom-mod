@@ -163,7 +163,17 @@ if (_service) then {
         };
         default {
             if (missionNamespace getVariable [QGVAR(svcRequired), false]) then {
-                ["the database did not answer in time"] call FUNC(bootFail);
+                // SAY WHAT THE DATABASE SAID. "did not answer in time" covered a
+                // refused password for a day (user, 2026-10-08: Atlas answered
+                // "Unable to authenticate" and the block still blamed the clock).
+                private _said = missionNamespace getVariable [QGVAR(svcLastError), ""];
+                private _why = switch (true) do {
+                    case (_said isEqualTo ""): {"the database did not answer in time"};
+                    case ((toLower _said) find "authenticat" >= 0): {format ["the database REFUSED THE USER OR PASSWORD - check the connection string (%1)", _said]};
+                    case ((toLower _said) find "invalid request uri" >= 0): {format ["the address is not a mongodb+srv:// string - quotes or a stray character in it? (%1)", _said]};
+                    default {format ["the database answered with an error: %1", _said]};
+                };
+                [_why] call FUNC(bootFail);
             } else {
                 ["3/6", "service: NOT ANSWERING - running on this server's config and the profile"] call FUNC(bootLog);
             };

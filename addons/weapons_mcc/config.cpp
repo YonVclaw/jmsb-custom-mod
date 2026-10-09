@@ -15,3 +15,5 @@ class CfgPatches {
 };
 
 #include "CfgWeapons.hpp"
+// One ACE Arsenal Extended menu for every MCC carbine - tools/gen_mcc_xtdgear.py
+#include "XtdGear.hpp"

@@ -111,7 +111,7 @@ class GVAR(console) {
             y = "0.012 * safezoneH + safezoneY";
             w = "0.078 * safezoneW";
             h = "0.028 * safezoneH";
-            colorBackground[] = {0.85, 0.28, 0.20, 1};
+            colorBackground[] = {0.761, 0.659, 0.471, 1};
         };
 
         class HEADER_CLOSE: RscADMPButton {
@@ -334,7 +334,7 @@ class GVAR(console) {
             y = "0.642 * safezoneH + safezoneY";
             w = "0.082 * safezoneW";
             h = "0.032 * safezoneH";
-            colorBackground[] = {0.85, 0.28, 0.20, 1};
+            colorBackground[] = {0.761, 0.659, 0.471, 1};
         };
 
         class ADMIN_BAN: RscADMPButton {
@@ -435,7 +435,7 @@ class GVAR(console) {
             y = "0.850 * safezoneH + safezoneY";
             w = "0.170 * safezoneW";
             h = "0.032 * safezoneH";
-            colorText[] = {0.85, 0.28, 0.20, 1};
+            colorText[] = {0.761, 0.659, 0.471, 1};
             onButtonClick = QUOTE([] call FUNC(confirmEnd););
         };
 
@@ -677,7 +677,7 @@ class GVAR(console) {
             y = "0.942 * safezoneH + safezoneY";
             w = "0.054 * safezoneW";
             h = "0.032 * safezoneH";
-            colorBackground[] = {0.85, 0.28, 0.20, 1};
+            colorBackground[] = {0.761, 0.659, 0.471, 1};
             colorText[] = {0.05, 0.05, 0.05, 1};
             onButtonClick = QUOTE([] call FUNC(execRun););
         };
@@ -841,7 +841,7 @@ class GVAR(console) {
             y = "0.398 * safezoneH + safezoneY";
             w = "0.135 * safezoneW";
             h = "0.028 * safezoneH";
-            colorText[] = {0.85, 0.28, 0.20, 1};
+            colorText[] = {0.761, 0.659, 0.471, 1};
         };
 
         class PLAYER_INFO_FPS: RscADMPStructuredText {
@@ -900,158 +900,161 @@ class GVAR(console) {
             onLBSelChanged = "[] call admp_fnc_setPlayerRank;";
         };
 
-        class PLAYER_SKILLS_MEDICAL_LABEL: RscADMPStructuredText {
-            idc = IDC_ADMINPANEL_PLAYER_SKILLS_MEDICAL_LABEL;
-            text = "<t font='RobotoCondensed' size='0.75'>MEDICAL</t>";
+        // THE SKILLS, EACH BY ITS NAME (user, 2026-10-08: "remove the eng and
+        // medic drop down, type out the name of each skill"). One box per skill
+        // in two columns, the label the skill's full name - TAC//PAC's own
+        // name for it when PAC is loaded (admp_fnc_labelSkills), these words
+        // otherwise. The MEDICAL and ENGINEERING pickers that chose a level
+        // are gone: the level is the skill's business in PAC, not the panel's.
+        // DRA went with them - nothing in the mod or a mission reads it.
+        class PLAYER_SKILLS_CLS_CHECKBOX: RscADMPCheckbox {
+            idc = IDC_ADMINPANEL_PLAYER_SKILLS_CLS_CHECKBOX;
             x = "0.853 * safezoneW + safezoneX";
             y = "0.392 * safezoneH + safezoneY";
-            w = "0.135 * safezoneW";
-            h = "0.022 * safezoneH";
+            w = "0.018 * safezoneW";
+            h = "0.024 * safezoneH";
         };
-
-        class PLAYER_SKILLS_MEDICAL_COMBO: RscADMPCombo {
-            idc = IDC_ADMINPANEL_PLAYER_SKILLS_MEDICAL_COMBO;
+        class PLAYER_SKILLS_CLS_LABEL: RscADMPStructuredText {
+            idc = IDC_ADMINPANEL_PLAYER_SKILLS_CLS_LABEL;
+            text = "<t font='RobotoCondensed' size='0.7'>Combat Lifesaver</t>";
+            x = "0.872 * safezoneW + safezoneX";
+            y = "0.392 * safezoneH + safezoneY";
+            w = "0.052 * safezoneW";
+            h = "0.024 * safezoneH";
+        };
+        class PLAYER_SKILLS_MED_CHECKBOX: RscADMPCheckbox {
+            idc = IDC_ADMINPANEL_PLAYER_SKILLS_MED_CHECKBOX;
+            x = "0.925 * safezoneW + safezoneX";
+            y = "0.392 * safezoneH + safezoneY";
+            w = "0.018 * safezoneW";
+            h = "0.024 * safezoneH";
+        };
+        class PLAYER_SKILLS_MED_LABEL: RscADMPStructuredText {
+            idc = IDC_ADMINPANEL_PLAYER_SKILLS_MED_LABEL;
+            text = "<t font='RobotoCondensed' size='0.7'>Medic</t>";
+            x = "0.944 * safezoneW + safezoneX";
+            y = "0.392 * safezoneH + safezoneY";
+            w = "0.048 * safezoneW";
+            h = "0.024 * safezoneH";
+        };
+        class PLAYER_SKILLS_ENG_CHECKBOX: RscADMPCheckbox {
+            idc = IDC_ADMINPANEL_PLAYER_SKILLS_ENG_CHECKBOX;
             x = "0.853 * safezoneW + safezoneX";
-            y = "0.414 * safezoneH + safezoneY";
-            w = "0.135 * safezoneW";
-            h = "0.030 * safezoneH";
+            y = "0.420 * safezoneH + safezoneY";
+            w = "0.018 * safezoneW";
+            h = "0.024 * safezoneH";
         };
-
-        class PLAYER_SKILLS_ENGINEER_LABEL: RscADMPStructuredText {
-            idc = IDC_ADMINPANEL_PLAYER_SKILLS_ENGINEER_LABEL;
-            text = "<t font='RobotoCondensed' size='0.75'>ENGINEERING</t>";
-            x = "0.853 * safezoneW + safezoneX";
-            y = "0.450 * safezoneH + safezoneY";
-            w = "0.135 * safezoneW";
-            h = "0.022 * safezoneH";
+        class PLAYER_SKILLS_ENG_LABEL: RscADMPStructuredText {
+            idc = IDC_ADMINPANEL_PLAYER_SKILLS_ENG_LABEL;
+            text = "<t font='RobotoCondensed' size='0.7'>Engineer</t>";
+            x = "0.872 * safezoneW + safezoneX";
+            y = "0.420 * safezoneH + safezoneY";
+            w = "0.052 * safezoneW";
+            h = "0.024 * safezoneH";
         };
-
-        class PLAYER_SKILLS_ENGINEER_COMBO: RscADMPCombo {
-            idc = IDC_ADMINPANEL_PLAYER_SKILLS_ENGINEER_COMBO;
-            x = "0.853 * safezoneW + safezoneX";
-            y = "0.472 * safezoneH + safezoneY";
-            w = "0.135 * safezoneW";
-            h = "0.030 * safezoneH";
-        };
-
         class PLAYER_SKILLS_EOD_CHECKBOX: RscADMPCheckbox {
             idc = IDC_ADMINPANEL_PLAYER_SKILLS_EOD_CHECKBOX;
-            x = "0.853 * safezoneW + safezoneX";
-            y = "0.512 * safezoneH + safezoneY";
+            x = "0.925 * safezoneW + safezoneX";
+            y = "0.420 * safezoneH + safezoneY";
             w = "0.018 * safezoneW";
             h = "0.024 * safezoneH";
         };
-
         class PLAYER_SKILLS_EOD_LABEL: RscADMPStructuredText {
             idc = IDC_ADMINPANEL_PLAYER_SKILLS_EOD_LABEL;
-            text = "<t font='RobotoCondensedBold' size='0.75'>BRC</t>";
-            x = "0.873 * safezoneW + safezoneX";
-            y = "0.512 * safezoneH + safezoneY";
-            w = "0.030 * safezoneW";
+            text = "<t font='RobotoCondensed' size='0.7'>Breacher / EOD</t>";
+            x = "0.944 * safezoneW + safezoneX";
+            y = "0.420 * safezoneH + safezoneY";
+            w = "0.048 * safezoneW";
             h = "0.024 * safezoneH";
         };
-
         class PLAYER_SKILLS_ISR_CHECKBOX: RscADMPCheckbox {
             idc = IDC_ADMINPANEL_PLAYER_SKILLS_ISR_CHECKBOX;
-            x = "0.903 * safezoneW + safezoneX";
-            y = "0.512 * safezoneH + safezoneY";
+            x = "0.853 * safezoneW + safezoneX";
+            y = "0.448 * safezoneH + safezoneY";
             w = "0.018 * safezoneW";
             h = "0.024 * safezoneH";
         };
-
         class PLAYER_SKILLS_ISR_LABEL: RscADMPStructuredText {
             idc = IDC_ADMINPANEL_PLAYER_SKILLS_ISR_LABEL;
-            text = "<t font='RobotoCondensedBold' size='0.75'>ISR</t>";
-            x = "0.923 * safezoneW + safezoneX";
-            y = "0.512 * safezoneH + safezoneY";
-            w = "0.030 * safezoneW";
+            text = "<t font='RobotoCondensed' size='0.7'>ISR</t>";
+            x = "0.872 * safezoneW + safezoneX";
+            y = "0.448 * safezoneH + safezoneY";
+            w = "0.052 * safezoneW";
             h = "0.024 * safezoneH";
         };
-
         class PLAYER_SKILLS_JFO_CHECKBOX: RscADMPCheckbox {
             idc = IDC_ADMINPANEL_PLAYER_SKILLS_JFO_CHECKBOX;
-            x = "0.951 * safezoneW + safezoneX";
-            y = "0.512 * safezoneH + safezoneY";
+            x = "0.925 * safezoneW + safezoneX";
+            y = "0.448 * safezoneH + safezoneY";
             w = "0.018 * safezoneW";
             h = "0.024 * safezoneH";
         };
-
         class PLAYER_SKILLS_JFO_LABEL: RscADMPStructuredText {
             idc = IDC_ADMINPANEL_PLAYER_SKILLS_JFO_LABEL;
-            text = "<t font='RobotoCondensedBold' size='0.75'>JFO</t>";
-            x = "0.971 * safezoneW + safezoneX";
-            y = "0.512 * safezoneH + safezoneY";
-            w = "0.030 * safezoneW";
+            text = "<t font='RobotoCondensed' size='0.7'>JFO</t>";
+            x = "0.944 * safezoneW + safezoneX";
+            y = "0.448 * safezoneH + safezoneY";
+            w = "0.048 * safezoneW";
             h = "0.024 * safezoneH";
         };
-
-        class PLAYER_SKILLS_DRA_CHECKBOX: RscADMPCheckbox {
-            idc = IDC_ADMINPANEL_PLAYER_SKILLS_DRA_CHECKBOX;
-            x = "0.853 * safezoneW + safezoneX";
-            y = "0.540 * safezoneH + safezoneY";
-            w = "0.018 * safezoneW";
-            h = "0.024 * safezoneH";
-        };
-
-        class PLAYER_SKILLS_DRA_LABEL: RscADMPStructuredText {
-            idc = IDC_ADMINPANEL_PLAYER_SKILLS_DRA_LABEL;
-            text = "<t font='RobotoCondensedBold' size='0.75'>DRA</t>";
-            x = "0.873 * safezoneW + safezoneX";
-            y = "0.540 * safezoneH + safezoneY";
-            w = "0.030 * safezoneW";
-            h = "0.024 * safezoneH";
-        };
-
         class PLAYER_SKILLS_UAV_CHECKBOX: RscADMPCheckbox {
             idc = IDC_ADMINPANEL_PLAYER_SKILLS_UAV_CHECKBOX;
-            x = "0.903 * safezoneW + safezoneX";
-            y = "0.540 * safezoneH + safezoneY";
+            x = "0.853 * safezoneW + safezoneX";
+            y = "0.476 * safezoneH + safezoneY";
             w = "0.018 * safezoneW";
             h = "0.024 * safezoneH";
         };
-
         class PLAYER_SKILLS_UAV_LABEL: RscADMPStructuredText {
             idc = IDC_ADMINPANEL_PLAYER_SKILLS_UAV_LABEL;
-            text = "<t font='RobotoCondensedBold' size='0.75'>UAV</t>";
-            x = "0.923 * safezoneW + safezoneX";
-            y = "0.540 * safezoneH + safezoneY";
-            w = "0.030 * safezoneW";
+            text = "<t font='RobotoCondensed' size='0.7'>UAV operator</t>";
+            x = "0.872 * safezoneW + safezoneX";
+            y = "0.476 * safezoneH + safezoneY";
+            w = "0.052 * safezoneW";
             h = "0.024 * safezoneH";
         };
-
-        // LEAD - the mission's isLeader customVariable, the platoon-view and
-        // HQ-tag gate. With this, the panel covers every skill flag the
-        // mission defines (isISR, isJFO, isLeader).
         class PLAYER_SKILLS_MKS_CHECKBOX: RscADMPCheckbox {
             idc = IDC_ADMINPANEL_PLAYER_SKILLS_MKS_CHECKBOX;
-            x = "0.951 * safezoneW + safezoneX";
-            y = "0.540 * safezoneH + safezoneY";
+            x = "0.925 * safezoneW + safezoneX";
+            y = "0.476 * safezoneH + safezoneY";
             w = "0.018 * safezoneW";
             h = "0.024 * safezoneH";
         };
-
         class PLAYER_SKILLS_MKS_LABEL: RscADMPStructuredText {
             idc = IDC_ADMINPANEL_PLAYER_SKILLS_MKS_LABEL;
-            text = "<t font='RobotoCondensedBold' size='0.75'>MKS</t>";
-            x = "0.971 * safezoneW + safezoneX";
-            y = "0.540 * safezoneH + safezoneY";
-            w = "0.030 * safezoneW";
+            text = "<t font='RobotoCondensed' size='0.7'>Marksman</t>";
+            x = "0.944 * safezoneW + safezoneX";
+            y = "0.476 * safezoneH + safezoneY";
+            w = "0.048 * safezoneW";
             h = "0.024 * safezoneH";
         };
-
         class PLAYER_SKILLS_SNP_CHECKBOX: RscADMPCheckbox {
             idc = IDC_ADMINPANEL_PLAYER_SKILLS_SNP_CHECKBOX;
             x = "0.853 * safezoneW + safezoneX";
-            y = "0.569 * safezoneH + safezoneY";
+            y = "0.504 * safezoneH + safezoneY";
             w = "0.018 * safezoneW";
             h = "0.024 * safezoneH";
         };
         class PLAYER_SKILLS_SNP_LABEL: RscADMPStructuredText {
             idc = IDC_ADMINPANEL_PLAYER_SKILLS_SNP_LABEL;
-            text = "<t font='RobotoCondensedBold' size='0.75'>SNP</t>";
-            x = "0.873 * safezoneW + safezoneX";
-            y = "0.569 * safezoneH + safezoneY";
-            w = "0.030 * safezoneW";
+            text = "<t font='RobotoCondensed' size='0.7'>Sniper</t>";
+            x = "0.872 * safezoneW + safezoneX";
+            y = "0.504 * safezoneH + safezoneY";
+            w = "0.052 * safezoneW";
+            h = "0.024 * safezoneH";
+        };
+        class PLAYER_SKILLS_HVY_CHECKBOX: RscADMPCheckbox {
+            idc = IDC_ADMINPANEL_PLAYER_SKILLS_HVY_CHECKBOX;
+            x = "0.925 * safezoneW + safezoneX";
+            y = "0.504 * safezoneH + safezoneY";
+            w = "0.018 * safezoneW";
+            h = "0.024 * safezoneH";
+        };
+        class PLAYER_SKILLS_HVY_LABEL: RscADMPStructuredText {
+            idc = IDC_ADMINPANEL_PLAYER_SKILLS_HVY_LABEL;
+            text = "<t font='RobotoCondensed' size='0.7'>Heavy Weapons</t>";
+            x = "0.944 * safezoneW + safezoneX";
+            y = "0.504 * safezoneH + safezoneY";
+            w = "0.048 * safezoneW";
             h = "0.024 * safezoneH";
         };
         class PLAYER_SKILLS_APPLY_BUTTON: RscADMPButton {
@@ -1061,7 +1064,7 @@ class GVAR(console) {
             y = "0.566 * safezoneH + safezoneY";
             w = "0.085 * safezoneW";
             h = "0.030 * safezoneH";
-            colorBackground[] = {0.85, 0.28, 0.20, 1};
+            colorBackground[] = {0.761, 0.659, 0.471, 1};
             colorText[] = {0.05, 0.05, 0.05, 1};
             onButtonClick = "[] call admp_fnc_applySkills;";
         };
@@ -1292,7 +1295,7 @@ class GVAR(console) {
             y = "0.930 * safezoneH + safezoneY";
             w = "0.143 * safezoneW";
             h = "0.032 * safezoneH";
-            colorBackground[] = {0.85, 0.28, 0.20, 1};
+            colorBackground[] = {0.761, 0.659, 0.471, 1};
             colorText[] = {0.05, 0.05, 0.05, 1};
             onButtonClick = "[] call admp_fnc_fullHeal;";
         };
@@ -1365,7 +1368,7 @@ class GVAR(message) {
             y = "0.686 * safezoneH + safezoneY";
             w = "0.190 * safezoneW";
             h = "0.034 * safezoneH";
-            colorBackground[] = {0.85, 0.28, 0.20, 1};
+            colorBackground[] = {0.761, 0.659, 0.471, 1};
         };
 
         class SEND_BUTTON: RscADMPButton {

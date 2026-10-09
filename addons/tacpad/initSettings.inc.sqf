@@ -18,13 +18,13 @@
     QGVAR(scheme), "LIST",
     [
         "Colour scheme",
-        "Four day grounds and four night ones, in matching pairs: FIELD GREY with NIGHT / RED, OLIVE with NIGHT OLIVE, SAND with NIGHT SAND, BRASS with NIGHT BRASS. A night scheme is a dark ground with the day scheme's own accent held down to what does not blow your eyes out at 0200. CUSTOM uses the three colours below. Also switchable in-game from the gear under the message reader."
+        "Four day grounds and four night ones, in matching pairs: JMSB DAY with JMSB NIGHT (the unit's ranger green and tan; night is the default), FIELD GREY with NIGHT / RED, OLIVE with NIGHT OLIVE, SAND with NIGHT SAND. A night scheme is a dark ground with the day scheme's own accent held down to what does not blow your eyes out at 0200. CUSTOM uses the three colours below. Also switchable in-game from the gear under the message reader."
     ],
     ["1st Joint Multi-Functional Strike Battalion", "Tacpad"],
     [
-        ["light", "olive", "sand", "brass", "dark", "nightOlive", "nightSand", "nightBrass", "custom"],
-        ["Field Grey", "Olive", "Sand", "Brass", "Night / Red", "Night Olive", "Night Sand", "Night Brass", "Custom"],
-        0
+        ["jmsb", "light", "olive", "sand", "nightJmsb", "dark", "nightOlive", "nightSand", "custom"],
+        ["JMSB Day", "Field Grey", "Olive", "Sand", "JMSB Night", "Night / Red", "Night Olive", "Night Sand", "Custom"],
+        4
     ],
     false,
     {[QGVAR(scheme_changed), []] call CBA_fnc_localEvent}

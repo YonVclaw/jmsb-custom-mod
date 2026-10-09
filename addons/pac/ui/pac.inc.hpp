@@ -13,22 +13,23 @@
 // experience i keep asking for so start over ... make it look as much like
 // the web as possible").
 //
-// THE COLOURS ARE THE WEBSITE'S, from public/style.css: near-black ground,
-// a slightly lighter panel, hairline rules, off-white ink, grey for the
-// secondary text, phosphor green for the accent and links, red for danger.
+// THE COLOURS ARE THE UNIT'S (rebrand 2026-10-08, the G logo: ranger green
+// and tan): dark green ground, ranger-green panel, paper ink, sage for the
+// secondary text, tan for the accent and links, red for danger - the same
+// tokens jmsb.info and pac.jmsb.info paint with.
 // The typeface is the suite's (RobotoCondensed) because that is what the
 // game has; everything else is the stylesheet's.
 
-#define PAC_C_GROUND   {0.043, 0.055, 0.067, 1}
-#define PAC_C_WELL     {0.027, 0.039, 0.047, 1}
-#define PAC_C_PANEL    {0.071, 0.086, 0.106, 1}
-#define PAC_C_RAISE    {0.090, 0.110, 0.133, 1}
-#define PAC_C_LINE     {0.141, 0.169, 0.200, 1}
-#define PAC_C_INK      {0.890, 0.914, 0.937, 1}
-#define PAC_C_DIM      {0.545, 0.592, 0.639, 1}
-#define PAC_C_FAINT    {0.361, 0.404, 0.451, 1}
-#define PAC_C_ACCENT   {0.576, 0.812, 0.447, 1}
-#define PAC_C_ACCENT_DIM {0.576, 0.812, 0.447, 0.13}
+#define PAC_C_GROUND   {0.125, 0.149, 0.110, 1}   // #20261C
+#define PAC_C_WELL     {0.082, 0.098, 0.071, 1}   // #151912
+#define PAC_C_PANEL    {0.227, 0.267, 0.200, 1}   // #3A4433
+#define PAC_C_RAISE    {0.290, 0.329, 0.263, 1}   // #4A5443
+#define PAC_C_LINE     {0.353, 0.396, 0.322, 1}   // #5A6552
+#define PAC_C_INK      {0.914, 0.894, 0.831, 1}   // #E9E4D3
+#define PAC_C_DIM      {0.663, 0.682, 0.584, 1}   // #A9AE95
+#define PAC_C_FAINT    {0.420, 0.447, 0.376, 1}   // #6B7260
+#define PAC_C_ACCENT   {0.761, 0.659, 0.471, 1}   // #C2A878
+#define PAC_C_ACCENT_DIM {0.761, 0.659, 0.471, 0.13}
 #define PAC_C_HOT      {0.894, 0.341, 0.290, 1}
 #define PAC_C_NONE     {0, 0, 0, 0}
 
@@ -72,7 +73,7 @@ class PacButton: RscADMPButton {
     colorText[] = PAC_C_GROUND;
     colorActive[] = PAC_C_GROUND;
     colorBackground[] = PAC_C_ACCENT;
-    colorBackgroundActive[] = {0.660, 0.880, 0.540, 1};
+    colorBackgroundActive[] = {0.850, 0.760, 0.580, 1};
     colorBackgroundDisabled[] = PAC_C_LINE;
     colorDisabled[] = PAC_C_FAINT;
     colorFocused[] = PAC_C_ACCENT;
@@ -168,7 +169,7 @@ class GVAR(pac) {
         class BACKGROUND: RscADMPText {
             idc = PAC_IDC_BACKGROUND;
             x = "safezoneX"; y = "safezoneY"; w = "safezoneW"; h = "safezoneH";
-            colorBackground[] = {0.043, 0.055, 0.067, 0.98};
+            colorBackground[] = {0.125, 0.149, 0.110, 0.98};
         };
         // The bar: the website's, a shade lighter than the page with a rule
         // under it.

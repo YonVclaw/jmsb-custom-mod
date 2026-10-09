@@ -126,7 +126,7 @@ if (!isNil "jmfsb_adapter_alive_fnc_installations") then {
     {
         _x params ["_id", "_at", "", "_type"];
         _pool pushBack [_id, _at, _type, "asym"];
-    } forEach (call jmfsb_adapter_alive_fnc_installations);
+    } forEach ([] call jmfsb_adapter_alive_fnc_installations);
 };
 
 if (!isNil "jmfsb_leaders_houses") then {

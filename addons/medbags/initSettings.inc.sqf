@@ -59,6 +59,12 @@
     true
 ] call CBA_fnc_addSetting;
 
+// THESE ARE THE ACE-ONLY DEFAULTS. With ACM loaded, jmfsb_acm re-defaults all
+// five to ACM's kit at preInit (addons/acm/XEH_preInit.sqf) - one list per
+// bag, pitched at who opens it. Anyone opens the Boo Boo Bag, a Combat
+// Lifesaver (ACE medic class 1) the Medic Bag, a Medic (class 2) the Trauma,
+// Fluid and Drug kits - fnc_canUnpack*.
+
 // ---- where it goes --------------------------------------------------------
 
 // ONE ORDER FOR EVERY BAG. Each fnc_doUnpack* carried its own private _order

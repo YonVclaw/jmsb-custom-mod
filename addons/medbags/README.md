@@ -2,7 +2,10 @@
 
 `jmfsb_medbags`
 
-Medical bags and the items in them.
+Medical bags and the items in them. Anyone may open the Boo Boo Bag, a Combat
+Lifesaver (ACE medic class 1) the Medic Bag, and only a Medic (class 2) the
+Trauma, Fluid and Drug kits. What each holds is a CBA setting below - ACE kit
+by default, ACM's kit when ACM is loaded (`jmfsb_acm` re-defaults them).
 
 <!-- generated below this line by tools/gen_addon_readmes.py - do not edit -->
 

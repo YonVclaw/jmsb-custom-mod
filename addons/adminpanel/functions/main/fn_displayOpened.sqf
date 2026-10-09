@@ -25,7 +25,7 @@ if (!(player call admp_fnc_isAdmin)) exitWith {closeDialog 2;};
 [] spawn admp_fnc_refresh;
 
 [] call admp_fnc_populateEndingList;
-[] call admp_fnc_populateSkillCombos;
+[] call admp_fnc_labelSkills;
 [] call admp_fnc_updateRankCombo;
 
 [] spawn admp_fnc_refreshPIPcam; // start updating PIP cam (requires higher update rate than other UI for smooth first person cam)

@@ -48,7 +48,15 @@ class RscDisplayMain: RscStandardDisplay {
             h = "1 * (pixelH * pixelGridNoUIScale * 2)";
             text = "JMSB Operations Server";
             tooltip = "Don't forget your beer!";
-            colorBackground[] = {0.8,0.263,0.192,1};   // #CC4331
+            // THE UNIT'S COLOURS (user, 2026-10-08: "the server buttons need to
+            // match the unit colors"): tan ground, green text, as the website's
+            // buttons. The ground is a fallback - the colour settings paint it.
+            colorBackground[] = {0.761,0.659,0.471,1};   // #C2A878, the unit's tan
+            colorText[] = {0.125,0.149,0.110,1};         // #20261C, the unit's green
+            // HOVERED: white text on the unit's ranger green (user, 2026-10-08:
+            // "make the hovered text white"). The text swap is done in
+            // XEH_mainDisplay - RscButton has no hover text colour of its own.
+            colorBackgroundActive[] = {0.227,0.267,0.200,1};   // #3A4433
         };
         class GVAR(quickConnectToServer_train): GVAR(quickConnectToServer_main) {
             idc = IDC_QUICKCONNECT_LEFT;
@@ -58,7 +66,7 @@ class RscDisplayMain: RscStandardDisplay {
             h = "1 * (pixelH * pixelGridNoUIScale * 2)";
             text = "JMSB Training Server";
             tooltip = "Training Server (may not always be running)";
-            colorBackground[] = {0.8,0.263,0.192,1};   // #CC4331
+            colorBackground[] = {0.761,0.659,0.471,1};   // #C2A878, the unit's tan
         };
         class GVAR(quickConnectToServer_events): GVAR(quickConnectToServer_main) {
             idc = IDC_QUICKCONNECT_RIGHT;
@@ -68,7 +76,7 @@ class RscDisplayMain: RscStandardDisplay {
             h = "1 * (pixelH * pixelGridNoUIScale * 2)";
             text = "JMSB Events Server";
             tooltip = "Unicorns!";
-            colorBackground[] = {0.8,0.263,0.192,1};   // #CC4331
+            colorBackground[] = {0.761,0.659,0.471,1};   // #C2A878, the unit's tan
         };
     };
 };

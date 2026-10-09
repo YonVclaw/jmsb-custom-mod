@@ -63,7 +63,7 @@ class RscTitles {
                 idc = PAC_IDC_BS_BAR;
                 x = "0.35 * safezoneW + safezoneX"; y = "0.535 * safezoneH + safezoneY";
                 w = "0"; h = "0.003 * safezoneH";
-                colorBackground[] = {0.85, 0.28, 0.20, 1};
+                colorBackground[] = {0.761, 0.659, 0.471, 1};   // the unit's tan
             };
 
             // THE BOOT LINES NEED THE ROOM THEY ACTUALLY TAKE. Five entries,

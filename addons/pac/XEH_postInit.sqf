@@ -116,10 +116,12 @@ addMissionEventHandler ["ExtensionCallback", {
         case "list": {GVAR(svcChunks) = [_data]; GVAR(svcState) = "ok"};
         case "list.error": {
             GVAR(svcState) = "error";
+            GVAR(svcLastError) = _data;   // the boot repeats it in the FAILED block
             WARNING_1("service list failed: %1",_data);
         };
         case "get.error": {
             GVAR(svcState) = "error";
+            GVAR(svcLastError) = _data;
             WARNING_1("service get failed: %1",_data);
         };
         case "put.end": {TRACE_1("service put",_data)};

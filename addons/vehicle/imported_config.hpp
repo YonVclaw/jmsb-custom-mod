@@ -1503,7 +1503,6 @@ class CfgVehicles {
     };
     class Plane: Air {
         class HitPoints;
-        class Turrets;
     };
     class Helicopter: Air {
         class HitPoints;
@@ -2918,7 +2917,9 @@ class CfgVehicles {
         class HitPoints: HitPoints {
             class HitHull;
         };
-        class Turrets: Turrets {
+        // vanilla's Plane_Base_F.Turrets has no parent; ": Turrets" here made the
+        // engine log "Updating base class ''->'Turrets'" at every start (rpt 2026-10-08)
+        class Turrets {
             class CopilotTurret;
         };
     };

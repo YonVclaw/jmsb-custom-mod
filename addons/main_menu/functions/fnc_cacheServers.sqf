@@ -55,8 +55,14 @@ private _servers = [
 
     // A COLOR setting hands back [r,g,b,a] already; the default here is only
     // for the case where the setting has not been registered yet.
-    private _colour = missionNamespace getVariable [_colourVar, [0.8, 0.263, 0.192, 1]];
-    if (!(_colour isEqualTypeArray [0,0,0,0])) then {_colour = [0.8, 0.263, 0.192, 1]};
+    private _colour = missionNamespace getVariable [_colourVar, [0.761, 0.659, 0.471, 1]];
+    if (!(_colour isEqualTypeArray [0,0,0,0])) then {_colour = [0.761, 0.659, 0.471, 1]};
+    // THE OLD RED IS NOT A CHOICE. Profiles written before the rebrand hold
+    // Ghost's #CC4331 as the saved value of these settings, and CBA hands a
+    // saved value back over any new default - so the buttons stayed red after
+    // the colours changed (user, 2026-10-08: "still wrong color"). That exact
+    // red now reads as "never set" and takes the unit's tan.
+    if (_colour isEqualTo [0.8, 0.263, 0.192, 1]) then {_colour = [0.761, 0.659, 0.471, 1]};
 
     [
         trim (missionNamespace getVariable [_nameVar, ""]),

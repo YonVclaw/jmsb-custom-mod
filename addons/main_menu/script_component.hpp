@@ -27,9 +27,9 @@
 // colour before, out of their profile, so the mod's panels and buttons on
 // the menu came out a different colour on every machine. This is ours and
 // it is the same everywhere.
-#define COLOR_BCG {0.8, 0.263, 0.192, 0.8}
+#define COLOR_BCG {0.125, 0.149, 0.110, 0.8}         // #20261C, the unit's green
 
-#define COLOR_BCG_TRANS {0.8, 0.263, 0.192, 0.3}
+#define COLOR_BCG_TRANS {0.125, 0.149, 0.110, 0.3}
 
 // OUR CONTROLS ON BI'S MAIN MENU. High and out of the way on purpose -
 // RscDisplayMain is Arma's own display and its controls own the low numbers.

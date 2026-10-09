@@ -84,7 +84,7 @@ class RscADMPEdit: RscEdit {
     font = "RobotoCondensed";
     sizeEx = "0.8 * (0.025 * safezoneH)";
     colorText[] = {0.90, 0.90, 0.88, 1};
-    colorSelection[] = {0.85, 0.28, 0.20, 0.5};
+    colorSelection[] = {0.761, 0.659, 0.471, 0.5};
     colorDisabled[] = {0.55, 0.55, 0.53, 1};
     colorBackground[] = {0.07, 0.07, 0.07, 1};
     autocomplete = "";
@@ -105,7 +105,7 @@ class RscADMPCombo: RscCombo {
     colorBackground[] = {0.07, 0.07, 0.07, 1};
     colorSelect[] = {0, 0, 0, 1};
     colorSelectBackground[] = {0.5, 0.5, 0.5, 0.35};
-    colorScrollbar[] = {0.85, 0.28, 0.20, 1};
+    colorScrollbar[] = {0.761, 0.659, 0.471, 1};
     colorDisabled[] = {0.55, 0.55, 0.53, 1};
     arrowEmpty = "\A3\ui_f\data\gui\rscCommon\rscCombo\arrow_combo_ca.paa";
     arrowFull = "\A3\ui_f\data\gui\rscCommon\rscCombo\arrow_combo_active_ca.paa";
